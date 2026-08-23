@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../models/compound_model.dart';
 import '../models/unit_model.dart';
 import '../models/property_model.dart';
+import '../services/live_price_state.dart';
 
 class CompoundRepository {
   static const Duration _simulatedDelay = Duration(milliseconds: 800);
@@ -17,7 +22,56 @@ class CompoundRepository {
 
   Future<List<UnitModel>> fetchUnitsForCompound(String compoundId) async {
     await Future.delayed(_simulatedDelay);
-    return _dummyUnits.where((u) => u.parentCompoundId == compoundId).toList();
+    
+    // Start with the standard mock units for this compound
+    final list = _dummyUnits.where((u) => u.parentCompoundId == compoundId).toList();
+    
+    // Merge with live price state updates!
+    final livePrices = LivePriceState.instance.currentPrices;
+    if (livePrices.isNotEmpty) {
+      final updatedList = list.map((u) {
+        try {
+          final tick = livePrices.firstWhere((t) => t.unitNumber == u.unitNumber);
+          return u.copyWith(
+            priceEGP: tick.priceEGP,
+            pricePerSqFt: tick.pricePerSqFt,
+          );
+        } catch (_) {
+          return u;
+        }
+      }).toList();
+
+      // Dynamically add new units from live prices that aren't in dummy list!
+      final liveUnitsForCompound = livePrices.where((t) => t.compoundId == compoundId);
+      final existingNumbers = updatedList.map((u) => u.unitNumber).toSet();
+      
+      for (final tick in liveUnitsForCompound) {
+        if (!existingNumbers.contains(tick.unitNumber)) {
+          updatedList.add(UnitModel(
+            unitNumber: tick.unitNumber,
+            configuration: tick.assetDetail,
+            areaSqFt: tick.pricePerSqFt > 0 ? (tick.priceEGP / tick.pricePerSqFt) : 1000.0,
+            priceEGP: tick.priceEGP,
+            isVacant: true,
+            assetClass: 'Residential Suite',
+            furnishingStatus: 'Standard Finishing',
+            pricePerSqFt: tick.pricePerSqFt,
+            parkingSpaces: 1,
+            constructionPhase: 'Under Construction',
+            parentCompoundId: compoundId,
+            paymentMilestones: const [
+              PaymentMilestone(title: 'Booking EOI Fee', percentageDue: 10, isPaid: false),
+              PaymentMilestone(title: 'Contract Handover', percentageDue: 90, isPaid: false),
+            ],
+            floorTier: 'Ground Floor',
+            areaSquareMeters: tick.pricePerSqFt > 0 ? (tick.priceEGP / tick.pricePerSqFt) / 10.764 : 100.0,
+          ));
+        }
+      }
+      return updatedList;
+    }
+    
+    return list;
   }
 
   Future<List<Lead>> fetchLeads() async {
@@ -35,14 +89,189 @@ class CompoundRepository {
     return _dummyFractionalBlocks;
   }
 
+  static UnitModel? findUnitByNumber(String unitNumber) {
+    try {
+      return _dummyUnits.firstWhere((u) => u.unitNumber == unitNumber);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<Map<String, String>>> fetchRegionalAverages() async {
     await Future.delayed(_simulatedDelay);
     return _dummyRegionalAverages;
   }
 
+  static final List<Map<String, dynamic>> _localSubmittedEOIs = [];
+
+  Uri get _submitUri {
+    const String prodEndpoint = 'https://new-build-egypt.com/api/v1/eoi/submit';
+    if (kIsWeb) {
+      final baseUri = Uri.parse(Uri.base.toString());
+      if (baseUri.host == 'localhost' || baseUri.host == '127.0.0.1') {
+        return Uri.parse('http://localhost:8000/api/v1/eoi/submit');
+      } else {
+        return Uri(
+          scheme: baseUri.scheme,
+          host: baseUri.host,
+          port: baseUri.port,
+          path: '/api/v1/eoi/submit',
+        );
+      }
+    } else {
+      if (kDebugMode) {
+        return Uri.parse('http://localhost:8000/api/v1/eoi/submit');
+      }
+      return Uri.parse(prodEndpoint);
+    }
+  }
+
+  Future<void> submitEOI({
+    required String clientName,
+    required String clientEmail,
+    required String clientPhone,
+    required String amount,
+    required String compoundId,
+    required String compoundTitle,
+    required String unitType,
+    String paymentMethod = 'Not Specified',
+  }) async {
+    final docId = FirebaseFirestore.instance.collection('eois').doc().id;
+    final data = {
+      'id': docId,
+      'clientName': clientName,
+      'clientEmail': clientEmail,
+      'clientPhone': clientPhone,
+      'amount': amount,
+      'compoundId': compoundId,
+      'compoundTitle': compoundTitle,
+      'unitType': unitType,
+      'paymentMethod': paymentMethod,
+      'timestamp': FieldValue.serverTimestamp(),
+      'date': DateTime.now().toIso8601String().split('T')[0],
+    };
+
+    _localSubmittedEOIs.add(data);
+
+    // 1. Try to submit to Firebase Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('eois')
+          .doc(docId)
+          .set(data)
+          .timeout(const Duration(seconds: 4));
+      debugPrint("[CompoundRepository] EOI successfully submitted to Firestore.");
+    } catch (e) {
+      debugPrint("[CompoundRepository] EOI Firestore save failed/offline (saved to local cache): $e");
+    }
+
+    // 2. HTTP Submission to local backend / website server (if not localhost)
+    if (_submitUri.host != 'localhost' && _submitUri.host != '127.0.0.1') {
+      try {
+        final double amtDouble = double.tryParse(amount) ?? 0.0;
+        final payload = {
+          'id': docId,
+          'name': clientName,
+          'email': clientEmail,
+          'phone': clientPhone,
+          'amount': amtDouble,
+          'compound_id': compoundId,
+          'compound_title': compoundTitle,
+          'unit_type': unitType,
+          'payment_method': paymentMethod,
+          'timestamp': DateTime.now().toUtc().toIso8601String(),
+        };
+
+        final response = await http.post(
+          _submitUri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode(payload),
+        ).timeout(const Duration(seconds: 6));
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          debugPrint("[CompoundRepository] HTTP EOI submission successful: ${response.body}");
+        } else {
+          debugPrint("[CompoundRepository] HTTP EOI submission failed with code ${response.statusCode}: ${response.body}");
+        }
+      } catch (e) {
+        debugPrint("[CompoundRepository] HTTP EOI submission error: $e");
+      }
+    }
+  }
+
   Future<List<Map<String, String>>> fetchBrokerHistory() async {
-    await Future.delayed(_simulatedDelay);
-    return _dummyBrokerHistory;
+    List<Map<String, dynamic>> firestoreEOIs = [];
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('eois')
+          .get()
+          .timeout(const Duration(seconds: 3));
+
+      for (var doc in snapshot.docs) {
+        firestoreEOIs.add(doc.data());
+      }
+    } catch (e) {
+      debugPrint("[CompoundRepository] Error fetching EOIs from Firestore: $e");
+    }
+
+    final Set<String> processedIds = {};
+    final List<Map<String, String>> mergedList = [];
+
+    // 1. Add Firestore EOIs
+    for (final item in firestoreEOIs) {
+      final id = item['id'] ?? '';
+      if (id.isNotEmpty) processedIds.add(id);
+
+      final double amt = double.tryParse(item['amount']?.toString() ?? '0') ?? 0;
+      final payoutStr = "+${_formatEGP(amt)} EGP";
+      mergedList.add({
+        'id': id,
+        'date': item['date'] ?? '',
+        'details': "${item['compoundTitle']} ${item['unitType']} EOI Secure",
+        'payout': payoutStr,
+        'amount': item['amount']?.toString() ?? '0',
+      });
+    }
+
+    // 2. Add local memory EOIs
+    for (final item in _localSubmittedEOIs) {
+      final id = item['id'] ?? '';
+      if (id.isNotEmpty && processedIds.contains(id)) continue;
+      if (id.isNotEmpty) processedIds.add(id);
+
+      final double amt = double.tryParse(item['amount']?.toString() ?? '0') ?? 0;
+      final payoutStr = "+${_formatEGP(amt)} EGP";
+      mergedList.add({
+        'id': id,
+        'date': item['date'] ?? '',
+        'details': "${item['compoundTitle']} ${item['unitType']} EOI Secure",
+        'payout': payoutStr,
+        'amount': item['amount']?.toString() ?? '0',
+      });
+    }
+
+    // 3. Add dummy base history
+    for (final dummy in _dummyBrokerHistory) {
+      final amtClean = dummy['payout']!.replaceAll(RegExp(r'[^0-9]'), '');
+      mergedList.add({
+        'id': 'dummy_${dummy['date']}_${dummy['details']}',
+        'date': dummy['date']!,
+        'details': dummy['details']!,
+        'payout': dummy['payout']!,
+        'amount': amtClean,
+      });
+    }
+
+    mergedList.sort((a, b) => b['date']!.compareTo(a['date']!));
+    return mergedList;
+  }
+
+  static String _formatEGP(double val) {
+    final RegExp reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    return val.toInt().toString().replaceAllMapped(reg, (Match m) => '${m[1]},');
   }
 
   static const List<CompoundModel> _dummyCompounds = [
@@ -55,18 +284,26 @@ class CompoundRepository {
       basePriceEGP: 45000000,
       areaSqFt: 1800,
       completionPercentage: 45.0,
-      heroImageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200',
-      cardImageUrl: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=600',
+      heroImageUrl: 'images/skyhills/ski-hills-overview.jpg',
+      cardImageUrl: 'images/skyhills/ski-hills.jpg',
       primaryView: 'New October City Skyline',
       galleryPhotos: [
-        MediaAsset(title: 'Sky Lobby', url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'High Pool', url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'High Suite', url: 'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&q=80&w=300'),
+        MediaAsset(title: 'Overview', url: 'images/skyhills/ski-hills-overview.jpg'),
+        MediaAsset(title: 'Overview Mobile', url: 'images/skyhills/ski-hills-overview-mobile.webp'),
+        MediaAsset(title: 'Sky Hills Main', url: 'images/skyhills/ski-hills.jpg'),
+        MediaAsset(title: 'Sky Hills 44', url: 'images/skyhills/ski-hills-44.jpg'),
+        MediaAsset(title: 'Pricing View', url: 'images/skyhills/ski-hills-pricing.jpg'),
+        MediaAsset(title: 'Services View', url: 'images/skyhills/ski-hills-services.jpg'),
+        MediaAsset(title: 'Units View', url: 'images/skyhills/ski-hills-units.jpg'),
       ],
       droneClips: [
-        MediaAsset(title: 'Lobby Flight', url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Skyline View', url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Phase 1 Drone', url: 'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&q=80&w=300'),
+        MediaAsset(title: 'Overview WebP', url: 'images/skyhills/ski-hills-overview.webp'),
+        MediaAsset(title: 'Main WebP', url: 'images/skyhills/ski-hills.webp'),
+        MediaAsset(title: 'Sky Hills 44 WebP', url: 'images/skyhills/ski-hills-44.webp'),
+        MediaAsset(title: 'Pricing WebP', url: 'images/skyhills/ski-hills-pricing.webp'),
+        MediaAsset(title: 'Services WebP', url: 'images/skyhills/ski-hills-services.webp'),
+        MediaAsset(title: 'Units WebP', url: 'images/skyhills/ski-hills-units.webp'),
+        MediaAsset(title: 'Mobile WebP', url: 'images/skyhills/ski-hills-mobile.webp'),
       ],
       walkthroughs: [
         WalkthroughAsset(title: 'Interior 3D', room: 'Penthouse A'),
@@ -74,9 +311,9 @@ class CompoundRepository {
         WalkthroughAsset(title: 'Lobby VR', room: 'Main Entrance'),
       ],
       brochures: [
-        BrochureAsset(title: 'Full Masterplan', url: 'https://gateway.ihome.com.eg/docs/sky_hills_masterplan.pdf'),
-        BrochureAsset(title: 'Price Catalog', url: 'https://gateway.ihome.com.eg/docs/sky_hills_prices.pdf'),
-        BrochureAsset(title: 'Dior Brochure', url: 'https://gateway.ihome.com.eg/docs/sky_hills_dior.pdf'),
+        BrochureAsset(title: 'Full Masterplan', url: 'https://gateway.iliving.com.eg/docs/sky_hills_masterplan.pdf'),
+        BrochureAsset(title: 'Price Catalog', url: 'https://gateway.iliving.com.eg/docs/sky_hills_prices.pdf'),
+        BrochureAsset(title: 'Dior Brochure', url: 'https://gateway.iliving.com.eg/docs/sky_hills_dior.pdf'),
       ],
     ),
     CompoundModel(
@@ -88,18 +325,20 @@ class CompoundRepository {
       basePriceEGP: 15000000,
       areaSqFt: 3200,
       completionPercentage: 72.0,
-      heroImageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&q=80&w=1200',
-      cardImageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
+      heroImageUrl: 'images/lamar/lamar-1.jpg',
+      cardImageUrl: 'images/lamar/lamar-2.jpg',
       primaryView: 'Landscaped Green Compound',
       galleryPhotos: [
-        MediaAsset(title: 'Villa Entrance', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Private Park', url: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Main Greenery', url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=300'),
+        MediaAsset(title: 'Villa Exterior 1', url: 'images/lamar/lamar-1.jpg'),
+        MediaAsset(title: 'Villa Exterior 2', url: 'images/lamar/lamar-2.jpg'),
+        MediaAsset(title: 'Villa Exterior 3', url: 'images/lamar/lamar-3.jpg'),
+        MediaAsset(title: 'Villa Exterior 4', url: 'images/lamar/lamar-4.jpg'),
+        MediaAsset(title: 'Compound Garden', url: 'images/lamar/lamarrrr.jpg'),
       ],
       droneClips: [
-        MediaAsset(title: 'Park Flythrough', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Zayed Gate Drone', url: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Villa Overlook', url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=300'),
+        MediaAsset(title: 'Park Flythrough', url: 'images/lamar/lamar-1.jpg'),
+        MediaAsset(title: 'Zayed Gate Drone', url: 'images/lamar/lamar-3.jpg'),
+        MediaAsset(title: 'Villa Overlook', url: 'images/lamar/lamarrrr.jpg'),
       ],
       walkthroughs: [
         WalkthroughAsset(title: 'Family Villa 3D', room: 'Main Salon'),
@@ -107,9 +346,9 @@ class CompoundRepository {
         WalkthroughAsset(title: 'Master Suite 3D', room: 'Private Wing'),
       ],
       brochures: [
-        BrochureAsset(title: 'Community Guide', url: 'https://gateway.ihome.com.eg/docs/lamar_community.pdf'),
-        BrochureAsset(title: 'Villa Layouts', url: 'https://gateway.ihome.com.eg/docs/lamar_layouts.pdf'),
-        BrochureAsset(title: 'Escrow Document', url: 'https://gateway.ihome.com.eg/docs/lamar_escrow.pdf'),
+        BrochureAsset(title: 'Community Guide', url: 'https://gateway.iliving.com.eg/docs/lamar_community.pdf'),
+        BrochureAsset(title: 'Villa Layouts', url: 'https://gateway.iliving.com.eg/docs/lamar_layouts.pdf'),
+        BrochureAsset(title: 'Escrow Document', url: 'https://gateway.iliving.com.eg/docs/lamar_escrow.pdf'),
       ],
     ),
     CompoundModel(
@@ -121,18 +360,19 @@ class CompoundRepository {
       basePriceEGP: 29000000,
       areaSqFt: 4800,
       completionPercentage: 35.0,
-      heroImageUrl: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1200',
-      cardImageUrl: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=600',
+      heroImageUrl: 'images/zayed_lagoons/zayed-lahogons1.jpg',
+      cardImageUrl: 'images/zayed_lagoons/zayed-lagons2.jpeg',
       primaryView: 'West Cairo Marina Lagoon',
       galleryPhotos: [
-        MediaAsset(title: 'Lagoon Front', url: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Private Dock', url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'West Marina', url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=300'),
+        MediaAsset(title: 'Lagoon Exterior 1', url: 'images/zayed_lagoons/zayed-lahogons1.jpg'),
+        MediaAsset(title: 'Lagoon Exterior 2', url: 'images/zayed_lagoons/zayed-lagons2.jpeg'),
+        MediaAsset(title: 'Lagoon Exterior 3', url: 'images/zayed_lagoons/zayed-lagons3.jpg'),
+        MediaAsset(title: 'Villafront View', url: 'images/zayed_lagoons/zayed-3.jpg'),
       ],
       droneClips: [
-        MediaAsset(title: 'Marina Drone', url: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Lagoon Sweep', url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=300'),
-        MediaAsset(title: 'Yacht Dock Cam', url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=300'),
+        MediaAsset(title: 'Marina Drone', url: 'images/zayed_lagoons/zayed-lagons2.jpeg'),
+        MediaAsset(title: 'Lagoon Sweep', url: 'images/zayed_lagoons/zayed-lahogons1.jpg'),
+        MediaAsset(title: 'Yacht Dock Cam', url: 'images/zayed_lagoons/zayed-3.jpg'),
       ],
       walkthroughs: [
         WalkthroughAsset(title: 'Dock VR', room: 'Yacht Slip'),
@@ -140,15 +380,15 @@ class CompoundRepository {
         WalkthroughAsset(title: 'Marina Deck VR', room: 'Sunset Promenade'),
       ],
       brochures: [
-        BrochureAsset(title: 'Waterfront Plans', url: 'https://gateway.ihome.com.eg/docs/zayed_lagoons_waterfront.pdf'),
-        BrochureAsset(title: 'Marina Catalog', url: 'https://gateway.ihome.com.eg/docs/zayed_lagoons_marina.pdf'),
-        BrochureAsset(title: 'Booking Schedule', url: 'https://gateway.ihome.com.eg/docs/zayed_lagoons_booking.pdf'),
+        BrochureAsset(title: 'Waterfront Plans', url: 'https://gateway.iliving.com.eg/docs/zayed_lagoons_waterfront.pdf'),
+        BrochureAsset(title: 'Marina Catalog', url: 'https://gateway.iliving.com.eg/docs/zayed_lagoons_marina.pdf'),
+        BrochureAsset(title: 'Booking Schedule', url: 'https://gateway.iliving.com.eg/docs/zayed_lagoons_booking.pdf'),
       ],
     ),
   ];
 
   static final List<UnitModel> _dummyUnits = [
-    UnitModel(
+    const UnitModel(
       unitNumber: 'B01B202',
       configuration: '3 BR Garden Villa',
       areaSqFt: 1615.0,
@@ -167,7 +407,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'A103B202',
       configuration: '3 BR Luxury Suite',
       areaSqFt: 1937.0,
@@ -186,7 +426,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'B101B202',
       configuration: '3 BR Luxury Suite',
       areaSqFt: 1883.0,
@@ -205,7 +445,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'A01B202',
       configuration: '2 BR Garden Apartment',
       areaSqFt: 1291.0,
@@ -224,7 +464,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'B401B202',
       configuration: '4 BR Sky Penthouse',
       areaSqFt: 2690.0,
@@ -243,7 +483,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'A301B202',
       configuration: '3 BR Sky Suite',
       areaSqFt: 2260.0,
@@ -262,7 +502,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'B302B202',
       configuration: '3 BR Sky Suite',
       areaSqFt: 2098.0,
@@ -281,7 +521,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'B202B202',
       configuration: '3 BR Luxury Suite',
       areaSqFt: 2045.0,
@@ -300,7 +540,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'A203B202',
       configuration: '3 BR Luxury Suite',
       areaSqFt: 2368.0,
@@ -319,7 +559,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'B201B202',
       configuration: '3 BR Luxury Suite',
       areaSqFt: 2152.0,
@@ -338,7 +578,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'LM/12/1204',
       configuration: '2 BR + Maid',
       areaSqFt: 3200.0,
@@ -357,7 +597,7 @@ class CompoundRepository {
         PaymentMilestone(title: 'Milestone 4: Superstructure Handover', percentageDue: 40, isPaid: false),
       ],
     ),
-    UnitModel(
+    const UnitModel(
       unitNumber: 'ZL/12/1204',
       configuration: '2 BR + Maid',
       areaSqFt: 4800.0,
@@ -416,7 +656,7 @@ class CompoundRepository {
       timestamp: DateTime.now().subtract(const Duration(days: 1)),
       relationshipManager: 'Alistair Sterling',
       buyerRegistryInfo: 'UK Royal Crown Real Estate Trust Ltd - Registry #8849',
-      invoiceUrl: 'https://gateway.ihome.com.eg/escrow/invoice_ZL_08_801.pdf',
+      invoiceUrl: 'https://gateway.iliving.com.eg/escrow/invoice_ZL_08_801.pdf',
     ),
     BookingTransaction(
       transactionId: 'TX-99421-B',
@@ -428,7 +668,7 @@ class CompoundRepository {
       timestamp: DateTime.now().subtract(const Duration(hours: 12)),
       relationshipManager: 'Alistair Sterling',
       buyerRegistryInfo: 'Mansoor Holding Capital - Registry #1194',
-      invoiceUrl: 'https://gateway.ihome.com.eg/escrow/invoice_SH_12_1204.pdf',
+      invoiceUrl: 'https://gateway.iliving.com.eg/escrow/invoice_SH_12_1204.pdf',
     ),
     BookingTransaction(
       transactionId: 'TX-99422-C',
@@ -440,7 +680,7 @@ class CompoundRepository {
       timestamp: DateTime.now().subtract(const Duration(days: 4)),
       relationshipManager: 'Alistair Sterling',
       buyerRegistryInfo: 'Volkov Maritime Logistics Group',
-      invoiceUrl: 'https://gateway.ihome.com.eg/escrow/invoice_LM_05_501.pdf',
+      invoiceUrl: 'https://gateway.iliving.com.eg/escrow/invoice_LM_05_501.pdf',
     ),
   ];
 
@@ -451,7 +691,7 @@ class CompoundRepository {
       'roi': '9.2%',
       'shareEGP': '5,000',
       'percentage': 0.72,
-      'image': 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=300',
+      'image': 'images/zayed_lagoons/zayed-lahogons1.jpg',
     },
     {
       'title': 'SKY HILLS MICRO H1',
@@ -459,7 +699,7 @@ class CompoundRepository {
       'roi': '9.5%',
       'shareEGP': '10,000',
       'percentage': 0.91,
-      'image': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=300',
+      'image': 'images/skyhills/ski-hills.jpg',
     },
     {
       'title': 'LAMAR GARDEN G5',
@@ -467,7 +707,7 @@ class CompoundRepository {
       'roi': '8.8%',
       'shareEGP': '2,500',
       'percentage': 0.34,
-      'image': 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=300',
+      'image': 'images/lamar/lamar-2.jpg',
     },
     {
       'title': 'LAGOONS DOCK L4',
@@ -475,7 +715,7 @@ class CompoundRepository {
       'roi': '9.0%',
       'shareEGP': '5,000',
       'percentage': 0.58,
-      'image': 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=300',
+      'image': 'images/zayed_lagoons/zayed-3.jpg',
     },
     {
       'title': 'SKY HILLS PENTHOUSE S8',
@@ -483,7 +723,7 @@ class CompoundRepository {
       'roi': '9.8%',
       'shareEGP': '25,000',
       'percentage': 0.85,
-      'image': 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&q=80&w=300',
+      'image': 'images/skyhills/ski-hills-units.jpg',
     },
     {
       'title': 'LAMAR PLAZA VILLAS P2',
@@ -491,7 +731,7 @@ class CompoundRepository {
       'roi': '8.5%',
       'shareEGP': '50,000',
       'percentage': 0.49,
-      'image': 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&q=80&w=300',
+      'image': 'images/lamar/lamar-3.jpg',
     },
   ];
 

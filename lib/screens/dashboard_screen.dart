@@ -11,7 +11,8 @@ import '../widgets/luxury_shimmer.dart';
 import '../widgets/interactive_tap_bounce.dart';
 import 'unit_details_screen.dart';
 import '../services/sync_state.dart';
-
+import '../widgets/image_loader.dart';
+import '../l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(viewportFraction: 0.92);
     _pageController.addListener(() {
       setState(() {
         _pageOffset = _pageController.page ?? 0.0;
@@ -59,40 +60,55 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final iconColor = isDark ? AppColors.textLight : AppColors.textDark;
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: LuxuryTheme.backgroundBlack,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       drawer: const LuxurySidebar(),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 80,
+            expandedHeight: 70,
             floating: true,
             pinned: true,
-            backgroundColor: LuxuryTheme.backgroundBlack,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
             leading: IconButton(
-              icon: const Icon(Icons.menu_open_sharp, color: LuxuryTheme.primaryGold, size: 28),
+              icon: Icon(Icons.menu_rounded, color: iconColor, size: 24),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
-            title: const Text(
-              'iHOME SALES & BROKERAGE',
+            title: Text(
+              l10n.salesBrokerage.toUpperCase(),
               style: TextStyle(
-                color: LuxuryTheme.primaryGold,
+                fontFamily: AppTextStyles.fontFamily,
+                color: textColor,
                 fontSize: 14,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.0,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
             ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.search_rounded, color: iconColor, size: 22),
+                onPressed: () {},
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
           SliverToBoxAdapter(
-            child: _isLoading ? _buildShimmerView() : _buildContentGrid(),
+            child: _isLoading ? _buildShimmerView(isDark) : _buildContentGrid(l10n, isDark),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildShimmerView() {
+  Widget _buildShimmerView(bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -100,12 +116,12 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         children: [
           Container(
             width: double.infinity,
-            height: 230,
+            height: 240,
             decoration: BoxDecoration(
-              color: LuxuryTheme.surfaceBrown,
-              borderRadius: BorderRadius.circular(8),
+              color: isDark ? AppColors.darkCard : AppColors.lightCard,
+              borderRadius: AppBorderRadius.large,
             ),
-            child: const LuxuryShimmer(width: double.infinity, height: 230),
+            child: const LuxuryShimmer(width: double.infinity, height: 240),
           ),
           const SizedBox(height: 24),
           const LuxuryShimmer(width: 150, height: 16),
@@ -116,58 +132,87 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
             itemCount: 3,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.6,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.65,
             ),
-            itemBuilder: (context, index) => const LuxuryShimmer(width: double.infinity, height: 120),
+            itemBuilder: (context, index) => Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                borderRadius: AppBorderRadius.medium,
+              ),
+              child: const LuxuryShimmer(width: double.infinity, height: 120),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContentGrid() {
+  Widget _buildContentGrid(AppLocalizations l10n, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeroSlider(),
-        _buildSectionHeader('EGYPTIAN LUXURY PORTFOLIO'),
-        _buildProjectsGrid3Column(),
-        _buildSectionHeader('LIVE CONSTRUCTION PROGRESS'),
-        _buildConstructionGrid3Column(),
-        const SizedBox(height: 40),
+        _buildHeroSlider(isDark),
+        const SizedBox(height: 8),
+        _buildSectionHeader(l10n.portfolioTitle, isDark),
+        _buildProjectsGrid3Column(isDark),
+        const SizedBox(height: 12),
+        _buildSectionHeader(l10n.constructionTitle, isDark),
+        _buildConstructionGrid3Column(isDark),
+        const SizedBox(height: 48),
       ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, bool isDark) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 28.0, bottom: 12.0),
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 24.0, bottom: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: LuxuryTheme.primaryGold,
-              fontSize: 10,
+            style: TextStyle(
+              fontFamily: AppTextStyles.fontFamily,
+              color: textColor,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1.8,
+              letterSpacing: 0.2,
             ),
           ),
-          Container(width: 80, height: 1.5, color: LuxuryTheme.cardBrown),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withAlpha(isDark ? 30 : 15),
+              borderRadius: AppBorderRadius.pill,
+            ),
+            child: const Text(
+              'EXPLORE ALL',
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: AppColors.accent,
+                fontSize: 9.5,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeroSlider() {
-    return SizedBox(
-      height: 250,
-      child: Stack(
-        children: [
-          PageView.builder(
+  Widget _buildHeroSlider(bool isDark) {
+    if (_compounds.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 240,
+          child: PageView.builder(
             controller: _pageController,
             itemCount: _compounds.length,
             itemBuilder: (context, index) {
@@ -176,116 +221,162 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               if (_pageController.position.haveDimensions) {
                 offset = _pageOffset - index;
               }
-              double translationBg = offset * 45.0;
-              double translationFg = offset * -140.0;
+              double translationBg = offset * 30.0;
               double textOpacity = (1.0 - offset.abs().clamp(0.0, 1.0));
 
-              return ClipRRect(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Transform.translate(
-                      offset: Offset(translationBg, 0),
-                      child: Image.network(
-                        compound.heroImageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(color: LuxuryTheme.cardBrown),
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UnitDetailsScreen(compound: compound),
                       ),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: AppBorderRadius.large,
+                      boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            LuxuryTheme.backgroundBlack.withAlpha(230),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 24,
-                      left: 20,
-                      right: 20,
-                      child: Transform.translate(
-                        offset: Offset(translationFg, 0),
-                        child: Opacity(
-                          opacity: textOpacity,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: LuxuryTheme.primaryGold,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'EXCLUSIVE NEW CAMPAIGN',
-                                  style: TextStyle(
-                                    color: LuxuryTheme.backgroundBlack,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                    child: ClipRRect(
+                      borderRadius: AppBorderRadius.large,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Transform.translate(
+                            offset: Offset(translationBg, 0),
+                            child: ImageLoader(
+                              imageUrl: compound.heroImageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                compound.title,
-                                style: const TextStyle(
-                                  color: LuxuryTheme.textWhite,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                stops: [0.0, 0.45, 1.0],
+                                colors: [
+                                  Color(0xCC1A1A2E),
+                                  Color(0x551A1A2E),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 14,
+                            left: 16,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(225),
+                                borderRadius: AppBorderRadius.pill,
+                              ),
+                              child: const Text(
+                                'FEATURED COMPOUND',
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: AppColors.textDark,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${compound.description.split('.').first}.',
-                                style: const TextStyle(
-                                  color: LuxuryTheme.textSilver,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
+                          Positioned(
+                            bottom: 16,
+                            left: 16,
+                            right: 16,
+                            child: Opacity(
+                              opacity: textOpacity,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    compound.title,
+                                    style: const TextStyle(
+                                      fontFamily: AppTextStyles.fontFamily,
+                                      color: Colors.white,
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on_outlined, color: Colors.white70, size: 13),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        compound.location,
+                                        style: const TextStyle(
+                                          fontFamily: AppTextStyles.fontFamily,
+                                          color: Colors.white70,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '${(compound.basePriceEGP / 1000000).toStringAsFixed(1)}M EGP',
+                                        style: const TextStyle(
+                                          fontFamily: AppTextStyles.fontFamily,
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               );
             },
           ),
-          Positioned(
-            bottom: 12,
-            right: 20,
-            child: Row(
-              children: List.generate(_compounds.length, (index) {
-                double currentActive = (_pageOffset - index).abs();
-                double width = lerpDouble(6.0, 16.0, (1.0 - currentActive).clamp(0.0, 1.0)) ?? 6.0;
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_compounds.length, (index) {
+            double currentActive = (_pageOffset - index).abs();
+            double width = lerpDouble(6.0, 20.0, (1.0 - currentActive).clamp(0.0, 1.0)) ?? 6.0;
 
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: width,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: currentActive < 0.5 ? LuxuryTheme.primaryGold : LuxuryTheme.textMuted,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: width,
+              height: 5,
+              margin: const EdgeInsets.symmetric(horizontal: 2.5),
+              decoration: BoxDecoration(
+                color: currentActive < 0.5
+                    ? AppColors.primary
+                    : (isDark ? AppColors.textLightMuted.withAlpha(80) : AppColors.textDarkMuted.withAlpha(80)),
+                borderRadius: AppBorderRadius.pill,
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 
-  Widget _buildProjectsGrid3Column() {
+  Widget _buildProjectsGrid3Column(bool isDark) {
     final syncState = SyncScope.of(context);
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
     return StreamBuilder<List<UnitPriceTick>>(
       stream: syncState.priceFeed,
       initialData: syncState.latestPrices,
@@ -300,8 +391,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 0.60,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.58,
             ),
             itemBuilder: (context, index) {
               final compound = _compounds[index];
@@ -327,16 +418,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: LuxuryTheme.surfaceBrown,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(80),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
+                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                    borderRadius: AppBorderRadius.medium,
+                    boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,42 +430,40 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                           children: [
                             Positioned.fill(
                               child: ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(10),
-                                ),
-                                child: Image.network(
-                                  compound.cardImageUrl,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                child: ImageLoader(
+                                  imageUrl: compound.cardImageUrl,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(color: LuxuryTheme.cardBrown),
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                                  ),
                                 ),
                               ),
                             ),
                             Positioned(
-                              top: 8,
-                              left: 8,
+                              top: 6,
+                              left: 6,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: LuxuryTheme.backgroundBlack.withAlpha(200),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: LuxuryTheme.primaryGold, width: 1),
+                                  color: Colors.white.withAlpha(220),
+                                  borderRadius: AppBorderRadius.pill,
                                 ),
                                 child: Text(
                                   compound.category.toUpperCase(),
                                   style: const TextStyle(
-                                    color: LuxuryTheme.primaryGold,
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    color: AppColors.textDark,
                                     fontSize: 7,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
                             ),
                             if (isLive)
                               Positioned(
-                                top: 8,
-                                right: 8,
+                                top: 6,
+                                right: 6,
                                 child: _LiveBadge(),
                               ),
                           ],
@@ -394,10 +476,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                           children: [
                             Text(
                               compound.title,
-                              style: const TextStyle(
-                                color: LuxuryTheme.textWhite,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: textColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -405,74 +488,59 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                             const SizedBox(height: 2),
                             Text(
                               compound.location,
-                              style: const TextStyle(
-                                color: LuxuryTheme.textMuted,
-                                fontSize: 8,
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: textMuted,
+                                fontSize: 8.5,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   '${compound.areaSqFt.toInt()} SQFT',
-                                  style: const TextStyle(
-                                    color: LuxuryTheme.textSilver,
+                                  style: TextStyle(
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    color: textMuted,
                                     fontSize: 8,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        if (isLive)
-                                          Container(
-                                            width: 5,
-                                            height: 5,
-                                            margin: const EdgeInsets.only(right: 4),
-                                            decoration: const BoxDecoration(
-                                              color: Colors.green,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                        Text(
-                                          '${(price / 1000000).toStringAsFixed(1)}M EGP',
-                                          style: const TextStyle(
-                                            color: LuxuryTheme.primaryGold,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (delta != 0) ...[
-                                      const SizedBox(height: 2),
-                                      _PriceDeltaChip(delta: delta),
-                                    ],
-                                  ],
+                                Text(
+                                  '${(price / 1000000).toStringAsFixed(1)}M',
+                                  style: const TextStyle(
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    color: AppColors.accent,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            if (delta != 0) ...[
+                              const SizedBox(height: 2),
+                              _PriceDeltaChip(delta: delta),
+                            ],
+                            const SizedBox(height: 6),
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              padding: const EdgeInsets.symmetric(vertical: 5),
                               decoration: BoxDecoration(
-                                color: LuxuryTheme.cardBrown,
-                                borderRadius: BorderRadius.circular(6),
+                                color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                                borderRadius: AppBorderRadius.pill,
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
-                                  'EXPLORE MEDIA & UNITS',
+                                  'DETAILS',
                                   style: TextStyle(
-                                    color: LuxuryTheme.textWhite,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    color: textColor,
+                                    fontSize: 7.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
                               ),
@@ -491,10 +559,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     );
   }
 
-
-
-
-  Widget _buildConstructionGrid3Column() {
+  Widget _buildConstructionGrid3Column(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.builder(
@@ -509,10 +574,264 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ),
         itemBuilder: (context, index) {
           final compound = _compounds[index];
-          return ProgressWheel(
-            percentage: compound.completionPercentage,
-            label: compound.title,
-            size: 110,
+          return GestureDetector(
+            onTap: () => _showConstructionGallery(context, compound, isDark),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                borderRadius: AppBorderRadius.medium,
+                boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+              ),
+              child: ProgressWheel(
+                percentage: compound.completionPercentage,
+                label: compound.title,
+                size: 90,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showConstructionGallery(BuildContext context, CompoundModel compound, bool isDark) {
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+              ),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: textMuted.withAlpha(80),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                compound.title,
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: textColor,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'LIVE CONSTRUCTION PROGRESS',
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: AppColors.accent,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withAlpha(isDark ? 35 : 18),
+                            borderRadius: AppBorderRadius.pill,
+                          ),
+                          child: Text(
+                            '${compound.completionPercentage.toInt()}% COMPLETE',
+                            style: const TextStyle(
+                              fontFamily: AppTextStyles.fontFamily,
+                              color: AppColors.accent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, thickness: 1),
+                  Expanded(
+                    child: compound.galleryPhotos.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No construction images available.',
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: textMuted,
+                              ),
+                            ),
+                          )
+                        : GridView.builder(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.2,
+                            ),
+                            itemCount: compound.galleryPhotos.length,
+                            itemBuilder: (context, idx) {
+                              final photo = compound.galleryPhotos[idx];
+                              return GestureDetector(
+                                onTap: () => _openFullscreenGallery(context, compound, idx),
+                                child: ClipRRect(
+                                  borderRadius: AppBorderRadius.medium,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      ImageLoader(
+                                        imageUrl: photo.url,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      Container(
+                                        decoration: const BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: [
+                                              Color(0xCC000000),
+                                              Colors.transparent,
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 8,
+                                        left: 8,
+                                        right: 8,
+                                        child: Text(
+                                          photo.title,
+                                          style: const TextStyle(
+                                            fontFamily: AppTextStyles.fontFamily,
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openFullscreenGallery(BuildContext context, CompoundModel compound, int initialIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          int currentIndex = initialIndex;
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return Scaffold(
+                backgroundColor: Colors.black,
+                appBar: AppBar(
+                  backgroundColor: Colors.black,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  title: Text(
+                    '${compound.title} - Photo ${currentIndex + 1}/${compound.galleryPhotos.length}',
+                    style: const TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                body: PageView.builder(
+                  controller: PageController(initialPage: initialIndex),
+                  itemCount: compound.galleryPhotos.length,
+                  onPageChanged: (idx) {
+                    setDialogState(() {
+                      currentIndex = idx;
+                    });
+                  },
+                  itemBuilder: (context, idx) {
+                    final photo = compound.galleryPhotos[idx];
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: InteractiveViewer(
+                            minScale: 0.5,
+                            maxScale: 4.0,
+                            child: Center(
+                              child: ImageLoader(
+                                imageUrl: photo.url,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          color: const Color(0xFF101014),
+                          width: double.infinity,
+                          child: Text(
+                            photo.title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: AppTextStyles.fontFamily,
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              );
+            },
           );
         },
       ),
@@ -553,19 +872,19 @@ class _LiveBadgeState extends State<_LiveBadge>
     return FadeTransition(
       opacity: _opacity,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: LuxuryTheme.primaryGold,
-          borderRadius: BorderRadius.circular(4),
+          color: AppColors.success,
+          borderRadius: AppBorderRadius.pill,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 5,
-              height: 5,
+              width: 4,
+              height: 4,
               decoration: const BoxDecoration(
-                color: LuxuryTheme.backgroundBlack,
+                color: Colors.white,
                 shape: BoxShape.circle,
               ),
             ),
@@ -573,7 +892,8 @@ class _LiveBadgeState extends State<_LiveBadge>
             const Text(
               'LIVE',
               style: TextStyle(
-                color: LuxuryTheme.backgroundBlack,
+                fontFamily: AppTextStyles.fontFamily,
+                color: Colors.white,
                 fontSize: 7,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.5,
@@ -628,23 +948,23 @@ class _PriceDeltaChipState extends State<_PriceDeltaChip> with SingleTickerProvi
   Widget build(BuildContext context) {
     final isPositive = widget.delta > 0;
     final prefix = isPositive ? '+' : '';
-    final color = isPositive ? Colors.greenAccent : Colors.redAccent;
+    final color = isPositive ? AppColors.success : AppColors.error;
     final formattedDelta = '$prefix${(widget.delta / 1000000).toStringAsFixed(1)}M';
 
     return ScaleTransition(
       scale: _scale,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: color, width: 0.8),
+          color: color.withAlpha(25),
+          borderRadius: AppBorderRadius.pill,
         ),
         child: Text(
           formattedDelta,
           style: TextStyle(
+            fontFamily: AppTextStyles.fontFamily,
             color: color,
-            fontSize: 7,
+            fontSize: 7.5,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -652,4 +972,3 @@ class _PriceDeltaChipState extends State<_PriceDeltaChip> with SingleTickerProvi
     );
   }
 }
-

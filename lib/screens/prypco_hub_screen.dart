@@ -1,10 +1,14 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/luxury_theme.dart';
 import '../repositories/compound_repository.dart';
 import '../widgets/interactive_tap_bounce.dart';
 import '../widgets/luxury_shimmer.dart';
+import '../services/auth_service.dart';
+import '../services/live_price_state.dart';
+import '../repositories/operations_mock_data.dart';
+import '../l10n/app_localizations.dart';
 
 class PrypcoHubScreen extends StatefulWidget {
   const PrypcoHubScreen({super.key});
@@ -35,9 +39,58 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
 
   Future<void> _loadData() async {
     final blocks = await _repository.fetchFractionalBlocks();
+    
+    final user = AuthService.instance.currentProfile;
+    double targetPropertyVal = 25000000;
+    double targetMonthlySalary = 150000;
+    
+    if (user != null && user.ownedUnitIds.isNotEmpty) {
+      final unitId = user.ownedUnitIds.first;
+      double? foundPrice;
+      
+      final tick = LivePriceState.instance.tickForUnit(unitId);
+      if (tick != null) {
+        foundPrice = tick.priceEGP;
+      }
+      
+      if (foundPrice == null) {
+        final unit = CompoundRepository.findUnitByNumber(unitId);
+        if (unit != null) {
+          foundPrice = unit.priceEGP;
+        }
+      }
+      
+      if (foundPrice == null) {
+        try {
+          final ledger = OperationsMockData.dummyLedgers.firstWhere(
+            (l) => l.clientId == user.clientId || l.unitId == unitId,
+          );
+          foundPrice = ledger.downPayment.amountEGP +
+              ledger.installments.fold(0.0, (sum, inst) => sum + inst.amountEGP);
+        } catch (_) {}
+      }
+      
+      if (foundPrice != null && foundPrice > 0) {
+        targetPropertyVal = foundPrice;
+        
+        final double loanAmount = targetPropertyVal * 0.80;
+        const double monthlyInterestRate = (12.5 / 100) / 12;
+        const int numberOfPayments = 15 * 12;
+        final double powFactor = pow(1 + monthlyInterestRate, numberOfPayments).toDouble();
+        final double monthlyPayment = powFactor > 1
+            ? loanAmount * (monthlyInterestRate * powFactor) / (powFactor - 1)
+            : loanAmount / numberOfPayments;
+            
+        final calculatedSalary = (monthlyPayment / 0.35);
+        targetMonthlySalary = calculatedSalary.clamp(20000, 2000000);
+      }
+    }
+
     if (mounted) {
       setState(() {
         _fractionalBlocks = blocks;
+        _propertyValue = targetPropertyVal;
+        _monthlySalary = targetMonthlySalary;
         _isLoading = false;
       });
     }
@@ -51,45 +104,77 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final iconColor = isDark ? AppColors.textLight : AppColors.textDark;
+
     return Scaffold(
-      backgroundColor: LuxuryTheme.backgroundBlack,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text(
-          'PRYPCO INVESTMENT HUB',
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        title: Text(
+          l10n.prypcoHubTitle.toUpperCase(),
           style: TextStyle(
-            color: LuxuryTheme.primaryGold,
+            fontFamily: AppTextStyles.fontFamily,
+            color: textColor,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
+            letterSpacing: 1.0,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: LuxuryTheme.primaryGold, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: LuxuryTheme.primaryGold,
-          labelColor: LuxuryTheme.primaryGold,
-          unselectedLabelColor: LuxuryTheme.textMuted,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.0),
-          tabs: const [
-            Tab(text: 'FRACTIONAL BLOCKS'),
-            Tab(text: 'MORTGAGE PRE-APPROVAL'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            height: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+              borderRadius: AppBorderRadius.pill,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: isDark ? AppColors.accent : AppColors.primary,
+                borderRadius: AppBorderRadius.pill,
+                boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted,
+              labelStyle: const TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
+              tabs: [
+                Tab(text: l10n.fractionalBlocks.toUpperCase()),
+                Tab(text: l10n.mortgagePreApproval.toUpperCase()),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _isLoading ? _buildLoadingView() : _buildFractionalBlocksTab(),
-          _buildMortgageAssistTab(),
+          _isLoading ? _buildLoadingView(isDark) : _buildFractionalBlocksTab(isDark),
+          _buildMortgageAssistTab(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildLoadingView() {
+  Widget _buildLoadingView(bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -103,37 +188,53 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
             itemCount: 6,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
               childAspectRatio: 0.55,
             ),
-            itemBuilder: (context, index) => const LuxuryShimmer(width: double.infinity, height: 160),
+            itemBuilder: (context, index) => Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                borderRadius: AppBorderRadius.medium,
+              ),
+              child: const LuxuryShimmer(width: double.infinity, height: 160),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFractionalBlocksTab() {
+  Widget _buildFractionalBlocksTab(bool isDark) {
+    final l10n = AppLocalizations.of(context);
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'PRYPCO FRACTIONAL MICRO-ASSETS',
+            Text(
+              l10n.fractionalMicroAssets.toUpperCase(),
               style: TextStyle(
-                color: LuxuryTheme.primaryGold,
-                fontSize: 11,
+                fontFamily: AppTextStyles.fontFamily,
+                color: textColor,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Co-own highly vetted high-yield luxury real estate starting from minor allocations.',
-              style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 10),
+            Text(
+              l10n.fractionalSubtitle,
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: textMuted,
+                fontSize: 10.5,
+              ),
             ),
             const SizedBox(height: 16),
             GridView.builder(
@@ -142,37 +243,37 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
               itemCount: _fractionalBlocks.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.55,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.52,
               ),
               itemBuilder: (context, index) {
                 final block = _fractionalBlocks[index];
 
                 return InteractiveTapBounce(
                   onTap: () {
-                    _showPurchaseBlockDialog(block);
+                    _showPurchaseBlockDialog(block, isDark);
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: LuxuryTheme.surfaceBrown,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
+                      color: cardBg,
+                      borderRadius: AppBorderRadius.medium,
+                      boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(6),
-                                topRight: Radius.circular(6),
-                              ),
-                              image: DecorationImage(
-                                image: NetworkImage(block['image']!),
-                                fit: BoxFit.cover,
-                                onError: (e, s) {},
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            child: Image(
+                              image: block['image']!.startsWith('http')
+                                  ? NetworkImage(block['image']!)
+                                  : AssetImage(block['image']!) as ImageProvider,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (e, s, _) => Container(
+                                color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
                               ),
                             ),
                           ),
@@ -184,9 +285,10 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                             children: [
                               Text(
                                 block['title']!,
-                                style: const TextStyle(
-                                  color: LuxuryTheme.textWhite,
-                                  fontSize: 9.5,
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: textColor,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
@@ -195,8 +297,9 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                               const SizedBox(height: 2),
                               Text(
                                 block['location']!,
-                                style: const TextStyle(
-                                  color: LuxuryTheme.textMuted,
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: textMuted,
                                   fontSize: 8,
                                 ),
                                 maxLines: 1,
@@ -206,13 +309,23 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'EST. ROI',
-                                    style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 7, fontWeight: FontWeight.bold),
+                                  Text(
+                                    l10n.estRoi.toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: AppTextStyles.fontFamily,
+                                      color: textMuted,
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Text(
                                     block['roi']!,
-                                    style: const TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontFamily: AppTextStyles.fontFamily,
+                                      color: AppColors.success,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -220,30 +333,45 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'MIN ENTRY',
-                                    style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 7, fontWeight: FontWeight.bold),
+                                  Text(
+                                    l10n.minEntry.toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: AppTextStyles.fontFamily,
+                                      color: textMuted,
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Text(
-                                    '${block['shareEGP']} EGP',
-                                    style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 9, fontWeight: FontWeight.bold),
+                                    '${block['shareEGP']}',
+                                    style: const TextStyle(
+                                      fontFamily: AppTextStyles.fontFamily,
+                                      color: AppColors.accent,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(2),
+                                borderRadius: AppBorderRadius.pill,
                                 child: LinearProgressIndicator(
                                   value: block['percentage']!,
-                                  backgroundColor: LuxuryTheme.cardBrown,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(LuxuryTheme.primaryGold),
+                                  backgroundColor: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
                                   minHeight: 4,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Text(
-                                '${(block['percentage']! * 100).toInt()}% FUNDED',
-                                style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 7, fontWeight: FontWeight.bold),
+                                '${l10n.funded} ${(block['percentage']! * 100).toInt()}%',
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: textMuted,
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -260,14 +388,20 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildMortgageAssistTab() {
+  Widget _buildMortgageAssistTab(bool isDark) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+
     final double downPaymentAmount = _propertyValue * (_downPaymentPercent / 100);
     final double loanAmount = _propertyValue - downPaymentAmount;
     final double monthlyInterestRate = (_interestRate / 100) / 12;
     final int numberOfPayments = _loanTenureYears * 12;
-    final double monthlyPayment = loanAmount *
-        (monthlyInterestRate * (1 + monthlyInterestRate).toDouble() * numberOfPayments.toDouble()) /
-        ((1 + monthlyInterestRate).toDouble() * numberOfPayments.toDouble() - 1);
+    
+    final double powFactor = pow(1 + monthlyInterestRate, numberOfPayments).toDouble();
+    final double monthlyPayment = monthlyInterestRate > 0 && powFactor > 1
+        ? loanAmount * (monthlyInterestRate * powFactor) / (powFactor - 1)
+        : loanAmount / numberOfPayments;
 
     final double dbrRatio = (monthlyPayment / _monthlySalary) * 100;
     final bool isEligible = dbrRatio <= 50;
@@ -278,25 +412,30 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'ELITE MORTGAGE PRE-APPROVAL ENGINE',
               style: TextStyle(
-                color: LuxuryTheme.primaryGold,
-                fontSize: 11,
+                fontFamily: AppTextStyles.fontFamily,
+                color: textColor,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Perform high-fidelity debt-burden ratio analysis against regional bank compliance standards.',
-              style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 10),
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: textMuted,
+                fontSize: 10.5,
+              ),
             ),
             const SizedBox(height: 20),
             _buildCalculatorSlider(
               'Target Property Value (EGP)',
               _propertyValue,
-              5000000,
+              1000000,
               150000000,
               (val) {
                 setState(() {
@@ -304,6 +443,7 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                 });
               },
               isCurrency: true,
+              isDark: isDark,
             ),
             _buildCalculatorSlider(
               'Down Payment Ratio (%)',
@@ -316,6 +456,7 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                 });
               },
               isPercent: true,
+              isDark: isDark,
             ),
             _buildCalculatorSlider(
               'Dynamic Interest Rate (%)',
@@ -328,6 +469,7 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                 });
               },
               isPercent: true,
+              isDark: isDark,
             ),
             _buildCalculatorSlider(
               'Loan Tenure (Years)',
@@ -339,27 +481,30 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                   _loanTenureYears = val.toInt();
                 });
               },
+              isDark: isDark,
             ),
             _buildCalculatorSlider(
               'Customer Monthly Verified Income (EGP)',
               _monthlySalary,
               20000,
-              1000000,
+              2000000,
               (val) {
                 setState(() {
                   _monthlySalary = val;
                 });
               },
               isCurrency: true,
+              isDark: isDark,
             ),
             const SizedBox(height: 24),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: LuxuryTheme.surfaceBrown,
-                borderRadius: BorderRadius.circular(8),
+                color: cardBg,
+                borderRadius: AppBorderRadius.large,
+                boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
                 border: Border.all(
-                  color: isEligible ? LuxuryTheme.primaryGold : Colors.red,
+                  color: isEligible ? AppColors.success.withAlpha(80) : AppColors.error.withAlpha(80),
                   width: 1.5,
                 ),
               ),
@@ -368,13 +513,23 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'CALCULATED LOAN AMOUNT',
-                        style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         '${(loanAmount / 1000000).toStringAsFixed(2)}M EGP',
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 13, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -382,29 +537,45 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'ESTIMATED MONTHLY INSTALLMENT',
-                        style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         '${monthlyPayment.toStringAsFixed(0)} EGP',
-                        style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 14, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: AppColors.accent,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
-                  const Divider(color: LuxuryTheme.cardBrown, height: 20),
+                  Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'DEBT BURDEN RATIO (DBR)',
-                        style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         '${dbrRatio.toStringAsFixed(1)}%',
                         style: TextStyle(
-                          color: isEligible ? Colors.green : Colors.red,
-                          fontSize: 14,
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: isEligible ? AppColors.success : AppColors.error,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -414,21 +585,26 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'REGULATORY ELIGIBILITY STATUS',
-                        style: TextStyle(color: LuxuryTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isEligible ? Colors.green.withAlpha(38) : Colors.red.withAlpha(38),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: isEligible ? Colors.green : Colors.red, width: 1),
+                          color: (isEligible ? AppColors.success : AppColors.error).withAlpha(25),
+                          borderRadius: AppBorderRadius.pill,
                         ),
                         child: Text(
                           isEligible ? 'QUALIFIED (DBR <= 50%)' : 'REJECTED (EXCEEDS LIMITS)',
                           style: TextStyle(
-                            color: isEligible ? Colors.green : Colors.red,
+                            fontFamily: AppTextStyles.fontFamily,
+                            color: isEligible ? AppColors.success : AppColors.error,
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                           ),
@@ -439,37 +615,40 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            InteractiveTapBounce(
-              onTap: isEligible
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Secure digital bank pre-approval reference generated.'),
-                          backgroundColor: LuxuryTheme.primaryGold,
-                        ),
-                      );
-                    }
-                  : null,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isEligible ? LuxuryTheme.primaryGold : LuxuryTheme.cardBrown,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isEligible ? LuxuryTheme.primaryGold : LuxuryTheme.cardBrown,
-                    width: 1,
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: isEligible
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Secure digital bank pre-approval reference generated.'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppBorderRadius.pill,
                   ),
                 ),
                 child: Text(
                   'DISPATCH BANK PRE-APPROVAL',
                   style: TextStyle(
-                    color: isEligible ? LuxuryTheme.backgroundBlack : LuxuryTheme.textMuted,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                    letterSpacing: 1.0,
+                    fontFamily: AppTextStyles.fontFamily,
+                    color: isEligible
+                        ? Colors.white
+                        : (isDark ? AppColors.textLightMuted : AppColors.textDarkMuted),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
@@ -489,7 +668,11 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
     ValueChanged<double> onChanged, {
     bool isCurrency = false,
     bool isPercent = false,
+    required bool isDark,
   }) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
     String displayValue = '';
     if (isCurrency) {
       if (value >= 1000000) {
@@ -511,20 +694,30 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
           children: [
             Text(
               label.toUpperCase(),
-              style: const TextStyle(color: LuxuryTheme.textSilver, fontSize: 10, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: textMuted,
+                fontSize: 9.5,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
               displayValue,
-              style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: textColor,
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
         Slider(
-          value: value,
+          value: value.clamp(minVal, maxVal),
           min: minVal,
           max: maxVal,
-          activeColor: LuxuryTheme.primaryGold,
-          inactiveColor: LuxuryTheme.cardBrown,
+          activeColor: isDark ? AppColors.accent : AppColors.primary,
+          inactiveColor: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
           onChanged: onChanged,
         ),
         const SizedBox(height: 6),
@@ -532,113 +725,139 @@ class _PrypcoHubScreenState extends State<PrypcoHubScreen> with SingleTickerProv
     );
   }
 
-  void _showPurchaseBlockDialog(Map<String, dynamic> block) {
-    showGeneralDialog(
+  void _showPurchaseBlockDialog(Map<String, dynamic> block, bool isDark) {
+    final surfaceBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'PurchaseBlock Dismiss',
-      barrierColor: Colors.black.withAlpha(166),
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, anim1, anim2) {
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Material(
-                color: LuxuryTheme.surfaceBrown.withAlpha(230),
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: surfaceBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
                 child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: LuxuryTheme.primaryGold, width: 2),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'OWN FRACTIONAL MICRO-BLOCK',
-                        style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        block['title']!,
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        block['location']!,
-                        style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 12),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Estimated Annualized Return', style: TextStyle(color: LuxuryTheme.textSilver, fontSize: 12)),
-                          Text(block['roi']!, style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Individual Share Base Value', style: TextStyle(color: LuxuryTheme.textSilver, fontSize: 12)),
-                          Text('${block['shareEGP']} EGP', style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 14, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      InteractiveTapBounce(
-                        onTap: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Fractional allocation of ${block['title']} purchased successfully!'),
-                              backgroundColor: LuxuryTheme.primaryGold,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: LuxuryTheme.primaryGold,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'CONFIRM MICRO-INVESTMENT SHARE',
-                            style: TextStyle(color: LuxuryTheme.backgroundBlack, fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: textMuted.withAlpha(80),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-            ),
+              Text(
+                'OWN FRACTIONAL MICRO-BLOCK',
+                style: TextStyle(
+                  fontFamily: AppTextStyles.fontFamily,
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                block['title']!,
+                style: TextStyle(
+                  fontFamily: AppTextStyles.fontFamily,
+                  color: textColor,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                block['location']!,
+                style: TextStyle(
+                  fontFamily: AppTextStyles.fontFamily,
+                  color: textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Estimated Annualized Return',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    block['roi']!,
+                    style: const TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: AppColors.success,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Individual Share Base Value',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    '${block['shareEGP']} EGP',
+                    style: const TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: AppColors.accent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppBorderRadius.pill,
+                    ),
+                  ),
+                  child: const Text(
+                    'CLOSE ANALYTICS VIEW',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: anim1, curve: Curves.fastLinearToSlowEaseIn),
-          ),
-          child: child,
         );
       },
     );

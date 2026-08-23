@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-# platform :ios, '13.0'
+platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -28,7 +28,7 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  use_frameworks! :linkage => :static
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -37,7 +37,81 @@ target 'Runner' do
 end
 
 post_install do |installer|
+  # Allow non-modular includes at the project level (fixes firebase_auth framework headers)
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+  end
+
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      if config.name.to_s.downcase.include?('debug')
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf'
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+      else
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+      end
+    end
+    if target.name == 'BoringSSL-GRPC'
+      target.source_build_phase.files.each do |file|
+        if file.settings && file.settings['COMPILER_FLAGS']
+          flags = file.settings['COMPILER_FLAGS'].split
+          flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
+          file.settings['COMPILER_FLAGS'] = flags.join(' ')
+        end
+      end
+    end
+    if target.name == 'gRPC-Core'
+      target.build_configurations.each do |config|
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+      end
+    end
+  end
+
+  # Fix gRPC-Core modulemap path: CocoaPods xcconfig references it at
+  # Headers/Private/grpc/ but only generates it in Target Support Files/
+  pods_root = File.join(__dir__, 'Pods')
+  grpc_modulemap_dir = File.join(pods_root, 'Headers', 'Private', 'grpc')
+  grpc_modulemap_src = File.join(pods_root, 'Target Support Files', 'gRPC-Core', 'gRPC-Core.modulemap')
+  grpc_modulemap_dst = File.join(grpc_modulemap_dir, 'gRPC-Core.modulemap')
+  puts "[gRPC-Fix] Source modulemap exists: #{File.exist?(grpc_modulemap_src)}"
+  if File.exist?(grpc_modulemap_src)
+    Dir.mkdir(grpc_modulemap_dir) unless Dir.exist?(grpc_modulemap_dir)
+    File.delete(grpc_modulemap_dst) if File.exist?(grpc_modulemap_dst)
+    File.write(grpc_modulemap_dst, File.read(grpc_modulemap_src))
+    puts "[gRPC-Fix] Copied modulemap to #{grpc_modulemap_dst}"
+  end
+
+  # Patch gRPC-Core and gRPC-C++ template parsing issue on Xcode 16+
+  ['gRPC-Core', 'gRPC-C++'].each do |pod_name|
+    basic_seq_path = File.join(pods_root, "#{pod_name}/src/core/lib/promise/detail/basic_seq.h")
+    if File.exist?(basic_seq_path)
+      File.chmod(0644, basic_seq_path)
+      content = File.read(basic_seq_path)
+      content.gsub!('Traits::template CallSeqFactory', 'Traits::CallSeqFactory')
+      File.write(basic_seq_path, content)
+      puts "[gRPC-Fix] Patched template in #{basic_seq_path}"
+    end
+  end
+
+  # Fix xcconfigs: remove broken weak_framework and enforce allow non-modular includes
+  Dir.glob(File.join(pods_root, 'Target Support Files', '**', '*.xcconfig')).each do |xcconfig_path|
+    if File.exist?(xcconfig_path)
+      content = File.read(xcconfig_path)
+      modified = false
+      if content.include?('-weak_framework "FirebaseFirestoreInternal"')
+        content.gsub!('-weak_framework "FirebaseFirestoreInternal"', '')
+        modified = true
+      end
+      unless content.include?('CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES')
+        content << "\nCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES\n"
+        content << "OTHER_CFLAGS = $(inherited) -Wno-error=non-modular-include-in-framework-module\n"
+        modified = true
+      end
+      File.write(xcconfig_path, content) if modified
+    end
   end
 end

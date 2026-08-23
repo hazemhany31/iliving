@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>iLiving Luxury - Admin Portal</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Open Graph Metadata -->
+    <meta property="og:title" content="iLiving Luxury - Admin Portal">
+    <meta property="og:description" content="Secure administrative control panel for iLiving property pricing and client EOI submissions.">
+    <meta property="og:type" content="website">
+    <!-- Google Fonts: Outfit for English, Cairo for Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0d0b09;
+            --bg-card: rgba(26, 22, 19, 0.7);
+            --bg-card-login: rgba(18, 15, 12, 0.85);
+            --gold-primary: #d4af37;
+            --gold-hover: #f3e5ab;
+            --text-light: #f5f3ef;
+            --text-white: #ffffff;
+            --text-muted: #a39e93;
+            --border-gold: rgba(212, 175, 55, 0.2);
+            --border-hover: rgba(212, 175, 55, 0.5);
+            --error-red: #cc3333;
+            --success-green: #2ecc71;
+            --font-family: 'Outfit', 'Cairo', sans-serif;
+            --input-bg: rgba(0, 0, 0, 0.4);
+            --input-border: rgba(212, 175, 55, 0.12);
+            --btn-logout-bg: rgba(204, 51, 51, 0.08);
+            --btn-logout-border: rgba(204, 51, 51, 0.2);
+            --btn-logout-hover: rgba(204, 51, 51, 0.2);
+            --focus-ring: 0 0 0 3px rgba(212, 175, 55, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+        }
+
+        body {
+            background: radial-gradient(circle at top, #241f1a 0%, var(--bg-dark) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            direction: ltr;
+            overflow-x: hidden;
+        }
+
+        /* Keyboard Accessibility: Visible Focus Rings */
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--gold-primary) !important;
+            outline-offset: 2px !important;
+            box-shadow: var(--focus-ring) !important;
+        }
+
+        /* ===== LOGIN GATE ===== */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-dark);
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        .login-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Animated Background Particles */
+        .login-bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--gold-primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleFloat linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                opacity: 0;
+                transform: translateY(100vh) scale(0);
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-10vh) scale(1.5);
+            }
+        }
+
+        /* Gold Radial Glow */
+        .login-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            animation: glowPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+        }
+
+        /* Login Card */
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: 440px;
+            max-width: 90vw;
+            background: var(--bg-card-login);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.7),
+                0 0 60px rgba(212, 175, 55, 0.05),
+                inset 0 1px 0 rgba(212, 175, 55, 0.1);
+            animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform: translateY(30px);
+            opacity: 0;
+        }
+
+        @keyframes cardEnter {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Gold Line Accent */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+            border-radius: 0 0 10px 10px;
+        }
+
+        .login-brand {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-brand-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 18px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: iconShimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes iconShimmer {
+            0%, 100% { box-shadow: 0 0 0 rgba(212, 175, 55, 0); }
+            50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.15); }
+        }
+
+        .login-brand h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-white);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .login-brand h1 span {
+            color: var(--gold-primary);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .login-brand p {
+            color: var(--text-muted);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        .login-field {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .login-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-input-icon {
+            position: absolute;
+            left: 16px;
+            color: rgba(212, 175, 55, 0.4);
+            z-index: 1;
+            transition: color 0.3s ease;
+        }
+
+        .login-field input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(212, 175, 55, 0.12);
+            border-radius: 12px;
+            padding: 15px 16px 15px 48px;
+            color: var(--text-white);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.35s ease;
+        }
+
+        .login-field input::placeholder {
+            color: rgba(163, 158, 147, 0.5);
+        }
+
+        .login-field input:focus {
+            border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08), 0 0 20px rgba(212, 175, 55, 0.06);
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        .login-field input:focus + .login-input-icon,
+        .login-field input:focus ~ .login-input-icon {
+            color: var(--gold-primary);
+        }
+
+        .login-input-wrap:focus-within .login-input-icon {
+            color: var(--gold-primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.3s ease;
+            z-index: 1;
+        }
+
+        .password-toggle:hover {
+            color: var(--gold-primary);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, #b89020 100%);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-error {
+            text-align: center;
+            color: var(--error-red);
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 16px;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .login-error.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(212, 175, 55, 0.08);
+        }
+
+        .login-footer p {
+            color: rgba(163, 158, 147, 0.4);
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Shake animation for wrong credentials */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .login-card.shake {
+            animation: shake 0.5s ease;
+        }
+
+        /* ===== ADMIN PORTAL (HIDDEN UNTIL LOGIN) ===== */
+        .admin-portal {
+            display: none;
+            padding: 30px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .admin-portal.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Adjust for Arabic text where needed */
+        .ar-text {
+            direction: rtl;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        header {
+            max-width: 1300px;
+            margin: 0 auto 30px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5px solid var(--border-gold);
+            padding-bottom: 20px;
+        }
+
+        .logo-section h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--text-white);
+            text-transform: uppercase;
+        }
+
+        .logo-section h1 span {
+            color: var(--gold-primary);
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .logo-section p {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .actions-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--text-light);
+            border: 1px solid var(--border-gold);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, #b89020 100%);
+            color: #000000;
+            border: none;
+            font-weight: 800;
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #e5c158 0%, var(--gold-primary) 100%);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            color: #000000;
+        }
+
+        .btn-logout {
+            background: var(--btn-logout-bg);
+            border: 1px solid var(--btn-logout-border);
+            color: #ff6666;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-logout:hover {
+            background: var(--btn-logout-hover);
+            border-color: rgba(204, 51, 51, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .admin-user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(212, 175, 55, 0.06);
+            border: 1px solid rgba(212, 175, 55, 0.12);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .admin-user-badge .user-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--success-green);
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(46, 204, 113, 0.4);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Hidden file input */
+        #fileInput {
+            display: none;
+        }
+
+        main {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-gold);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gold-primary);
+            opacity: 0.7;
+        }
+
+        .stat-card:hover {
+            border-color: var(--gold-primary);
+        }
+
+        .stat-card h3 {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card p {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-white);
+        }
+
+        .stat-card p span {
+            color: var(--gold-primary);
+        }
+
+        /* Filters Section */
+        .controls-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-gold);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 2;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-gold);
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: var(--text-white);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 160px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-gold);
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-white);
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-select:focus {
+            border-color: var(--gold-primary);
+        }
+
+        .filter-select option {
+            background: var(--bg-dark);
+            color: var(--text-white);
+        }
+
+        /* Table Section */
+        .table-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-gold);
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1.5px solid var(--border-gold);
+            padding: 15px 20px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.08);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(212, 175, 55, 0.02);
+        }
+
+        .unit-badge {
+            font-weight: 800;
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .compound-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gold-primary);
+            text-transform: uppercase;
+            background: rgba(212, 175, 55, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .price-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-gold);
+            border-radius: 6px;
+            padding: 4px 10px;
+            max-width: 180px;
+            transition: border-color 0.3s ease;
+        }
+
+        .price-input-container:focus-within {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.15);
+        }
+
+        .price-input-container input {
+            background: transparent;
+            border: none;
+            color: var(--text-white);
+            font-size: 14px;
+            font-weight: 700;
+            width: 100%;
+            outline: none;
+            text-align: right;
+        }
+
+        .price-input-container span {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .calc-val {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Asset details text input inside table rows */
+        .cell-input-text {
+            background: transparent;
+            border: none;
+            color: var(--text-white);
+            width: 100%;
+            font-size: 13px;
+            outline: none;
+            transition: border-bottom 0.2s ease;
+            border-bottom: 1px dashed transparent;
+        }
+
+        .cell-input-text:focus {
+            border-bottom: 1px solid var(--gold-primary);
+        }
+
+        .layout-select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-gold);
+            padding: 8px 10px;
+            border-radius: 6px;
+            color: var(--text-white);
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            width: 130px;
+            transition: border-color 0.3s ease;
+        }
+
+        .layout-select:focus {
+            border-color: var(--gold-primary);
+        }
+
+        .layout-select option {
+            background: var(--bg-dark);
+        }
+
+        .actions-col {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action-delete {
+            background: rgba(204, 51, 51, 0.1);
+            border: 1px solid rgba(204, 51, 51, 0.2);
+            color: #ff6666;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action-delete:hover {
+            background: var(--error-red);
+            color: var(--text-white);
+            border-color: var(--error-red);
+        }
+
+        /* Floating Add Form */
+        .add-form-trigger {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #151310;
+            border: 1.5px solid var(--border-gold);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        .modal-content h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-white);
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-gold);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            font-size: 24px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--text-white);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-gold);
+            border-radius: 6px;
+            padding: 12px;
+            color: var(--text-white);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--gold-primary);
+        }
+
+        /* Success/Error Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            display: none;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); }
+            to { transform: translateX(0); }
+        }
+
+        .toast-success {
+            background: var(--success-green);
+            color: #000000;
+        }
+
+        .toast-error {
+            background: var(--error-red);
+            color: var(--text-white);
+        }
+
+        /* Tab Navigation */
+        .tabs-container {
+            max-width: 1300px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1.5px solid rgba(212, 175, 55, 0.15);
+            padding-bottom: 0px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 12px 24px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-white);
+        }
+
+        .tab-btn.active {
+            color: var(--gold-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2.5px;
+            background: var(--gold-primary);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* EOI Specific Badges and Styling */
+        .payment-method-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-white);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .eoi-amount-text {
+            color: var(--text-white);
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .timestamp-text {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* Clean Admin Footer Styles */
+        .admin-footer {
+            max-width: 1300px;
+            margin: 40px auto 20px auto;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1.5px solid var(--border-gold);
+            color: var(--text-muted);
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Mobile Responsive media queries */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            .admin-portal {
+                padding: 10px;
+            }
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                align-items: center;
+            }
+            .logo-section h1 {
+                font-size: 24px;
+            }
+            .actions-section {
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+                gap: 10px;
+            }
+            .btn, .btn-logout, .admin-user-badge {
+                width: calc(50% - 10px);
+                justify-content: center;
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            .btn-logout {
+                width: 100%;
+            }
+            .tabs-container {
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            .tab-btn {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .controls-card {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 15px;
+                gap: 12px;
+            }
+            .search-box, .filter-select {
+                width: 100%;
+                min-width: 0;
+            }
+            .table-container {
+                border-radius: 6px;
+            }
+            .add-form-trigger {
+                bottom: 20px;
+                right: 20px;
+                font-size: 12px;
+                padding: 12px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 40px 24px;
+            }
+            .login-brand h1 {
+                font-size: 22px;
+            }
+            .btn, .btn-logout, .admin-user-badge {
+                width: 100%;
+            }
+            .tab-btn {
+                width: 50%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN GATE OVERLAY ===== -->
+    <div class="login-overlay" id="loginOverlay">
+        <!-- Animated Particles Background -->
+        <div class="login-bg-canvas" id="particleCanvas"></div>
+        <!-- Gold Glow -->
+        <div class="login-glow"></div>
+
+        <!-- Login Card -->
+        <div class="login-card" id="loginCard">
+            <div class="login-brand">
+                <div class="login-brand-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                </div>
+                <h1>iLiving <span>Luxury</span></h1>
+                <p>Secure Admin Access</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="login-field">
+                    <label for="loginEmail">Admin Email</label>
+                    <div class="login-input-wrap">
+                        <input type="email" id="loginEmail" placeholder="admin@iliving.com" autocomplete="email" required aria-required="true">
+                        <div class="login-input-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="login-field">
+                    <label for="loginPassword">Password</label>
+                    <div class="login-input-wrap">
+                        <input type="password" id="loginPassword" placeholder="••••••••••" autocomplete="current-password" required aria-required="true">
+                        <div class="login-input-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </div>
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility()" aria-label="Toggle Password Visibility">
+                            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    Authenticate
+                </button>
+
+                <div class="login-error" id="loginError">
+                    Invalid credentials. Access denied.
+                </div>
+            </form>
+
+            <div class="login-footer">
+                <p>Protected Admin Portal &bull; iLiving Luxury &copy; 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN PORTAL (Hidden until login) ===== -->
+    <div class="admin-portal" id="adminPortal">
+        <div class="toast toast-success" id="successToast">Successfully Exported prices.json!</div>
+        <div class="toast toast-error" id="errorToast">Error loading file!</div>
+
+        <header>
+            <div class="logo-section">
+                <h1>iLiving <span>Luxury</span> <span id="serverStatusBadge" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; vertical-align: middle; margin-left: 10px; font-weight: 600; display: inline-block;">Checking server...</span></h1>
+                <p>Admin Portal — Price & Installment Manager</p>
+            </div>
+            <div class="actions-section">
+                <div class="admin-user-badge">
+                    <span class="user-dot"></span>
+                    <span id="loggedInUser">admin</span>
+                </div>
+                <button class="btn" onclick="triggerFileInput()" aria-label="Load Prices JSON">
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    Load prices.json
+                </button>
+                <input type="file" id="fileInput" accept=".json" onchange="loadFile(event)">
+                
+                <button class="btn btn-gold" onclick="exportData()" aria-label="Export Prices JSON">
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    Export prices.json
+                </button>
+
+                <button class="btn-logout" onclick="handleLogout()" aria-label="Logout">
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <nav class="tabs-container" aria-label="Admin Navigation" role="tablist">
+            <button id="listingsTabBtn" role="tab" aria-selected="true" aria-controls="listingsTab" class="tab-btn active" onclick="switchTab('listingsTab', this)">Listings Manager</button>
+            <button id="eoiTabBtn" role="tab" aria-selected="false" aria-controls="eoiTab" class="tab-btn" onclick="switchTab('eoiTab', this)">EOI Leads Dashboard</button>
+        </nav>
+
+        <main>
+            <!-- Listings Tab Content -->
+            <div id="listingsTab" class="tab-content active" role="tabpanel" aria-labelledby="listingsTabBtn">
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Active Units</h3>
+                        <p id="statTotalUnits">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Value (EGP)</h3>
+                        <p id="statTotalValue">0M <span>EGP</span></p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Average Unit Price</h3>
+                        <p id="statAvgPrice">0M <span>EGP</span></p>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="controls-card">
+                    <div class="search-box">
+                        <input type="text" id="searchFilter" placeholder="Search by Unit Number, Asset Description..." oninput="applyFilters()">
+                    </div>
+                    
+                    <select id="compoundFilter" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">All Compounds</option>
+                        <option value="dev_1">Sky Hills (dev_1)</option>
+                        <option value="dev_2">Lamar (dev_2)</option>
+                        <option value="dev_3">Zayed Lagoons (dev_3)</option>
+                    </select>
+
+                    <select id="layoutFilter" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">All Installments</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Semi-Annual">Semi-Annual</option>
+                        <option value="Annual">Annual</option>
+                        <option value="Monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <!-- Units Table -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 12%;">Unit Number</th>
+                                <th scope="col" style="width: 12%;">Compound</th>
+                                <th scope="col" style="width: 22%;">Price (EGP)</th>
+                                <th scope="col" style="width: 18%;">Price per Sqft (EGP)</th>
+                                <th scope="col" style="width: 16%;">Installment Layout</th>
+                                <th scope="col" style="width: 20%;">Asset Details</th>
+                                <th scope="col" style="width: 8%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unitsTableBody">
+                            <!-- Dynamic units rows here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- EOI Leads Tab Content -->
+            <div id="eoiTab" class="tab-content" role="tabpanel" aria-labelledby="eoiTabBtn">
+                <!-- Quick Stats for EOI -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total EOI Submissions</h3>
+                        <p id="eoiStatTotalLeads">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Escrow Value</h3>
+                        <p id="eoiStatTotalEscrow">0M <span>EGP</span></p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Top Allocated Compound</h3>
+                        <p id="eoiStatTopCompound">-</p>
+                    </div>
+                </div>
+
+                <!-- Filters for EOI -->
+                <div class="controls-card">
+                    <div class="search-box" style="flex: 3;">
+                        <input type="text" id="eoiSearchFilter" placeholder="Search by Client Name, Email, Phone..." oninput="applyEoiFilters()">
+                    </div>
+                    
+                    <select id="eoiCompoundFilter" class="filter-select" onchange="applyEoiFilters()">
+                        <option value="ALL">All Compounds</option>
+                        <option value="dev_1">Sky Hills (dev_1)</option>
+                        <option value="dev_2">Lamar (dev_2)</option>
+                        <option value="dev_3">Zayed Lagoons (dev_3)</option>
+                    </select>
+                    
+                    <select id="eoiPaymentFilter" class="filter-select" onchange="applyEoiFilters()">
+                        <option value="ALL">All Funding Methods</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Credit Card (Stripe)">Credit Card (Stripe)</option>
+                        <option value="Crypto Escrow">Crypto Escrow</option>
+                        <option value="Cheque Deposit">Cheque Deposit</option>
+                    </select>
+                </div>
+
+                <!-- EOI Leads Table -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 16%;">Client Name</th>
+                                <th scope="col" style="width: 16%;">Contact Email</th>
+                                <th scope="col" style="width: 12%;">Verified Mobile</th>
+                                <th scope="col" style="width: 14%;">Deposit Value</th>
+                                <th scope="col" style="width: 14%;">Portfolio (Compound)</th>
+                                <th scope="col" style="width: 8%;">Unit Spec</th>
+                                <th scope="col" style="width: 12%;">Funding Method</th>
+                                <th scope="col" style="width: 8%;">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eoiTableBody">
+                            <!-- Dynamic EOI rows here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Floating Action Add Button -->
+        <button class="btn btn-gold add-form-trigger" onclick="openAddModal()" aria-label="Add Unit">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Unit
+        </button>
+
+        <footer class="admin-footer">
+            <p>Protected Admin Control Panel &bull; iLiving Luxury &copy; 2026</p>
+        </footer>
+
+        <!-- Add Unit Modal -->
+        <div class="modal" id="addUnitModal">
+            <div class="modal-content">
+                <h2>Add New Luxury Unit <span class="close-btn" onclick="closeAddModal()">&times;</span></h2>
+                <form id="addUnitForm" onsubmit="addUnit(event)">
+                    <div class="form-group">
+                        <label for="addUnitNumber">Unit Number</label>
+                        <input type="text" id="addUnitNumber" aria-required="true" required placeholder="e.g. B01B202">
+                    </div>
+                    <div class="form-group">
+                        <label for="addCompoundId">Compound</label>
+                        <select id="addCompoundId" aria-required="true" required>
+                            <option value="dev_1">Sky Hills (dev_1)</option>
+                            <option value="dev_2">Lamar (dev_2)</option>
+                            <option value="dev_3">Zayed Lagoons (dev_3)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addPrice">Total Price (EGP)</label>
+                        <input type="number" id="addPrice" aria-required="true" required placeholder="e.g. 3850000">
+                    </div>
+                    <div class="form-group">
+                        <label for="addArea">Area Size (Sqm)</label>
+                        <input type="number" id="addArea" aria-required="true" required placeholder="e.g. 150">
+                    </div>
+                    <div class="form-group">
+                        <label for="addLayout">Installment Layout</label>
+                        <select id="addLayout" aria-required="true" required>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Semi-Annual">Semi-Annual</option>
+                            <option value="Annual">Annual</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addAssetDetail">Asset Details</label>
+                        <input type="text" id="addAssetDetail" aria-required="true" required placeholder="e.g. Luxury Ground Villa">
+                    </div>
+                    <button type="submit" class="btn btn-gold" style="width: 100%; justify-content: center; margin-top: 10px;">Save Unit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== AUTHENTICATION SYSTEM =====
+        // Admin credentials — change these to your own
+        // Pre-computed SHA-256 hashes of credentials for production security
+        const ADMIN_CREDENTIALS = [
+            { email: 'admin@iliving.com', passwordHash: '2e72fa9197c5f3258b566203eceaf15391d24e633abe50e5a21cb6b66936280c' },
+            { email: 'hazem@iliving.com', passwordHash: '0432f57763bcc68ab9a737e8e7cbe3a621dc9f49c974b0c0440572deb848707a' },
+            { email: 'ceo@iliving.com', passwordHash: '1d1c5c5304d2786cb9b7b625e2fee7a60bfe44b2d8d8540c6372d7d48a6cd4ba' }
+        ];
+
+        // Cryptographic hashing helper
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Generate floating particles
+        function generateParticles() {
+            const canvas = document.getElementById('particleCanvas');
+            if (!canvas) return;
+            const count = 40;
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = (Math.random() * 3 + 1) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDuration = (Math.random() * 8 + 6) + 's';
+                particle.style.animationDelay = (Math.random() * 10) + 's';
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+                canvas.appendChild(particle);
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const pw = document.getElementById('loginPassword');
+            const icon = document.getElementById('eyeIcon');
+            if (pw.type === 'password') {
+                pw.type = 'text';
+                icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+            } else {
+                pw.type = 'password';
+                icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            const card = document.getElementById('loginCard');
+            const btn = document.getElementById('loginBtn');
+
+            // Disable button while checking
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            try {
+                const inputHash = await sha256(password);
+                // Simulate a brief verification delay for realism
+                setTimeout(() => {
+                    const match = ADMIN_CREDENTIALS.find(
+                        c => c.email.toLowerCase() === email && c.passwordHash === inputHash
+                    );
+
+                    if (match) {
+                        // Success — store session and reveal portal
+                        sessionStorage.setItem('iliving_auth', JSON.stringify({ email: match.email, ts: Date.now() }));
+                        revealAdminPortal(match.email);
+                    } else {
+                        // Failed — shake + show error
+                        card.classList.add('shake');
+                        errorEl.classList.add('visible');
+                        errorEl.textContent = 'Invalid credentials. Access denied.';
+                        btn.textContent = 'Authenticate';
+                        btn.disabled = false;
+
+                        setTimeout(() => card.classList.remove('shake'), 500);
+                        setTimeout(() => errorEl.classList.remove('visible'), 4000);
+                    }
+                }, 600);
+            } catch (err) {
+                console.error("Authentication error:", err);
+                btn.textContent = 'Authenticate';
+                btn.disabled = false;
+                errorEl.classList.add('visible');
+                errorEl.textContent = 'Security check failed. Try again.';
+            }
+        }
+
+        function revealAdminPortal(email) {
+            const overlay = document.getElementById('loginOverlay');
+            const portal = document.getElementById('adminPortal');
+            const userBadge = document.getElementById('loggedInUser');
+
+            // Show email in header
+            userBadge.textContent = email;
+
+            // Fade out login
+            overlay.classList.add('hidden');
+
+            // Show portal
+            setTimeout(() => {
+                portal.classList.add('visible');
+                initPortalData();
+            }, 400);
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('iliving_auth');
+            const overlay = document.getElementById('loginOverlay');
+            const portal = document.getElementById('adminPortal');
+
+            portal.classList.remove('visible');
+            setTimeout(() => {
+                overlay.classList.remove('hidden');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginBtn').textContent = 'Authenticate';
+                document.getElementById('loginBtn').disabled = false;
+            }, 300);
+        }
+
+        function checkExistingSession() {
+            const session = sessionStorage.getItem('iliving_auth');
+            if (session) {
+                try {
+                    const data = JSON.parse(session);
+                    // Session valid for 8 hours
+                    if (data.email && (Date.now() - data.ts) < 8 * 60 * 60 * 1000) {
+                        revealAdminPortal(data.email);
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            return false;
+        }
+
+        // ===== PORTAL DATA =====
+        let unitsData = [];
+
+        // Escape HTML entities to prevent DOM XSS vulnerabilities
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            const text = String(str);
+            return text.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        const fallbackData = [
+          {"unit_number": "A301B404", "compound_id": "dev_1", "price_egp": 2821616.0, "price_per_sqft": 587.35, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A301B404", "compound_id": "dev_1", "price_egp": 2675812.0, "price_per_sqft": 556.88, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A301B404", "compound_id": "dev_1", "price_egp": 5543216.0, "price_per_sqft": 1154.12, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT93", "compound_id": "dev_1", "price_egp": 5443200.0, "price_per_sqft": 1208.53, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B01-207", "compound_id": "dev_1", "price_egp": 3016000.0, "price_per_sqft": 700.91, "installment_layout": "Quarterly", "asset_detail": "Ground Floor Villa", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A103B208", "compound_id": "dev_1", "price_egp": 5248800.0, "price_per_sqft": 1137.83, "installment_layout": "Semi-Annual", "asset_detail": "1st Floor Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A01-207", "compound_id": "dev_1", "price_egp": 3016000.0, "price_per_sqft": 701.23, "installment_layout": "Quarterly", "asset_detail": "2 BR Garden Apartment", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A01B208", "compound_id": "dev_1", "price_egp": 2915984.0, "price_per_sqft": 633.63, "installment_layout": "Quarterly", "asset_detail": "2 BR Garden Apartment", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B501B409", "compound_id": "dev_1", "price_egp": 5662000.0, "price_per_sqft": 1196.28, "installment_layout": "Quarterly", "asset_detail": "5th Floor Penthouse", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A01B203", "compound_id": "dev_1", "price_egp": 5231960.0, "price_per_sqft": 1154.96, "installment_layout": "Semi-Annual", "asset_detail": "2 BR Garden Apartment", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A301B208", "compound_id": "dev_1", "price_egp": 2538000.0, "price_per_sqft": 551.62, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B01B202", "compound_id": "dev_1", "price_egp": 4150000.0, "price_per_sqft": 940.62, "installment_layout": "Quarterly", "asset_detail": "Luxury Ground Villa", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C301B409", "compound_id": "dev_1", "price_egp": 3880000.0, "price_per_sqft": 822.03, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A502B310", "compound_id": "dev_1", "price_egp": 3950200.0, "price_per_sqft": 822.79, "installment_layout": "Quarterly", "asset_detail": "5th Floor Penthouse", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C203B404", "compound_id": "dev_1", "price_egp": 2675812.0, "price_per_sqft": 556.53, "installment_layout": "Quarterly", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C203B404", "compound_id": "dev_1", "price_egp": 2821616.0, "price_per_sqft": 586.98, "installment_layout": "Quarterly", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A101B409", "compound_id": "dev_1", "price_egp": 5348800.0, "price_per_sqft": 1129.39, "installment_layout": "Quarterly", "asset_detail": "1st Floor Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B102B409", "compound_id": "dev_1", "price_egp": 3936600.0, "price_per_sqft": 836.51, "installment_layout": "Semi-Annual", "asset_detail": "1st Floor Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C201B409", "compound_id": "dev_1", "price_egp": 3330600.0, "price_per_sqft": 702.95, "installment_layout": "Installment", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B403B208", "compound_id": "dev_1", "price_egp": 3672000.0, "price_per_sqft": 797.74, "installment_layout": "Semi-Annual", "asset_detail": "4th Floor Sky Penthouse", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A201B409", "compound_id": "dev_1", "price_egp": 5248800.0, "price_per_sqft": 1111.09, "installment_layout": "Quarterly", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B02B409", "compound_id": "dev_1", "price_egp": 4449000.0, "price_per_sqft": 944.59, "installment_layout": "Semi-Annual", "asset_detail": "Ground Floor Villa", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B01B409", "compound_id": "dev_1", "price_egp": 4528000.0, "price_per_sqft": 955.48, "installment_layout": "Quarterly", "asset_detail": "Ground Floor Villa", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A401B409", "compound_id": "dev_1", "price_egp": 2484000.0, "price_per_sqft": 525.38, "installment_layout": "Quarterly", "asset_detail": "4th Floor Sky Penthouse", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B104B203", "compound_id": "dev_1", "price_egp": 2624400.0, "price_per_sqft": 580.23, "installment_layout": "Semi-Annual", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C401B409", "compound_id": "dev_1", "price_egp": 3930000.0, "price_per_sqft": 830.69, "installment_layout": "Quarterly", "asset_detail": "4th Floor Sky Penthouse", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT150", "compound_id": "dev_1", "price_egp": 3875000.0, "price_per_sqft": 820.8, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT154", "compound_id": "dev_1", "price_egp": 2821600.0, "price_per_sqft": 597.42, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C203B409", "compound_id": "dev_1", "price_egp": 2624400.0, "price_per_sqft": 557.43, "installment_layout": "Semi-Annual", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT167", "compound_id": "dev_1", "price_egp": 2789200.0, "price_per_sqft": 589.06, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B302B208", "compound_id": "dev_1", "price_egp": 3353400.0, "price_per_sqft": 724.59, "installment_layout": "Annual", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C303B409", "compound_id": "dev_1", "price_egp": 2475568.0, "price_per_sqft": 524.71, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "A01B409", "compound_id": "dev_1", "price_egp": 3070000.0, "price_per_sqft": 649.6, "installment_layout": "Quarterly", "asset_detail": "2 BR Garden Apartment", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C103B409", "compound_id": "dev_1", "price_egp": 2918800.0, "price_per_sqft": 616.17, "installment_layout": "Quarterly", "asset_detail": "1st Floor Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B303B208", "compound_id": "dev_1", "price_egp": 3672000.0, "price_per_sqft": 797.39, "installment_layout": "Quarterly", "asset_detail": "3rd Floor Sky Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B101B409", "compound_id": "dev_1", "price_egp": 3936600.0, "price_per_sqft": 836.86, "installment_layout": "Semi-Annual", "asset_detail": "1st Floor Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B402B409", "compound_id": "dev_1", "price_egp": 3342600.0, "price_per_sqft": 708.93, "installment_layout": "Semi-Annual", "asset_detail": "4th Floor Sky Penthouse", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "C102B409", "compound_id": "dev_1", "price_egp": 2624400.0, "price_per_sqft": 557.79, "installment_layout": "Semi-Annual", "asset_detail": "1st Floor Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT113", "compound_id": "dev_1", "price_egp": 2675800.0, "price_per_sqft": 581.19, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT189", "compound_id": "dev_1", "price_egp": 2664960.0, "price_per_sqft": 603.07, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT151", "compound_id": "dev_1", "price_egp": 3880000.0, "price_per_sqft": 821.69, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT109", "compound_id": "dev_1", "price_egp": 3896102.0, "price_per_sqft": 862.54, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT124", "compound_id": "dev_1", "price_egp": 3342600.0, "price_per_sqft": 709.08, "installment_layout": "Semi-Annual", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT107", "compound_id": "dev_1", "price_egp": 4860000.0, "price_per_sqft": 1076.41, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT161", "compound_id": "dev_1", "price_egp": 2635200.0, "price_per_sqft": 582.36, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT207", "compound_id": "dev_1", "price_egp": 4015000.0, "price_per_sqft": 907.34, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT100", "compound_id": "dev_1", "price_egp": 6561000.0, "price_per_sqft": 1366.31, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "B101B202", "compound_id": "dev_1", "price_egp": 4015000.0, "price_per_sqft": 908.99, "installment_layout": "Quarterly", "asset_detail": "2nd Floor Luxury Suite", "updated_at": "2026-07-08T16:14:23Z"},
+          {"unit_number": "UNIT197", "compound_id": "dev_1", "price_egp": 5054400.0, "price_per_sqft": 1142.75, "installment_layout": "Quarterly", "asset_detail": "Premium Suite", "updated_at": "2026-07-08T16:14:23Z"}
+        ];
+
+        const computedAreas = {};
+        let serverConnected = false;
+        let isSyncing = false;
+        let eoiData = [];
+        let filteredEoiData = [];
+
+        function initPortalData() {
+            const local = localStorage.getItem('iliving_units_data');
+            if (local) {
+                try {
+                    unitsData = JSON.parse(local);
+                } catch(e) {
+                    unitsData = [...fallbackData];
+                }
+            } else {
+                unitsData = [...fallbackData];
+            }
+
+            // Initialize area sizes
+            unitsData.forEach(u => {
+                const id = u.unit_number;
+                if (!computedAreas[id]) {
+                    const price = parseFloat(u.price_egp) || 1.0;
+                    const sqft = parseFloat(u.price_per_sqft) || 1.0;
+                    computedAreas[id] = price / sqft;
+                }
+            });
+
+            updateDashboard();
+            checkServerConnection();
+            loadEoiData(true);
+        }
+
+        function checkServerConnection() {
+            const badge = document.getElementById('serverStatusBadge');
+            if (!window.location.protocol.startsWith('http')) {
+                badge.textContent = 'Offline (Local Only)';
+                badge.style.background = 'rgba(230, 126, 34, 0.2)';
+                badge.style.color = '#e67e22';
+                badge.style.border = '1px solid rgba(230, 126, 34, 0.4)';
+                serverConnected = false;
+                return;
+            }
+
+            fetch('/api/v1/units/prices.json')
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('Not ok');
+                })
+                .then(data => {
+                    badge.textContent = 'Live Connected';
+                    badge.style.background = 'rgba(46, 204, 113, 0.2)';
+                    badge.style.color = '#2ecc71';
+                    badge.style.border = '1px solid rgba(46, 204, 113, 0.4)';
+                    serverConnected = true;
+                    
+                    if (data && (Array.isArray(data.units) || Array.isArray(data))) {
+                        unitsData = Array.isArray(data.units) ? data.units : data;
+                        
+                        unitsData.forEach(u => {
+                            const id = u.unit_number;
+                            const price = parseFloat(u.price_egp) || 1.0;
+                            const sqft = parseFloat(u.price_per_sqft) || 1.0;
+                            computedAreas[id] = price / sqft;
+                        });
+                        
+                        updateDashboard();
+                    }
+                })
+                .catch(err => {
+                    badge.textContent = 'Server Disconnected';
+                    badge.style.background = 'rgba(231, 76, 60, 0.2)';
+                    badge.style.color = '#e74c3c';
+                    badge.style.border = '1px solid rgba(231, 76, 60, 0.4)';
+                    serverConnected = false;
+                });
+        }
+
+        function saveToServer() {
+            if (!serverConnected) return;
+            
+            const badge = document.getElementById('serverStatusBadge');
+            badge.textContent = 'Syncing...';
+            badge.style.background = 'rgba(241, 196, 15, 0.2)';
+            badge.style.color = '#f1c40f';
+            badge.style.border = '1px solid rgba(241, 196, 15, 0.4)';
+            
+            isSyncing = true;
+            
+            fetch('/api/v1/units/prices.json', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ "units": unitsData })
+            })
+            .then(res => {
+                if (res.ok) {
+                    badge.textContent = 'Live Connected';
+                    badge.style.background = 'rgba(46, 204, 113, 0.2)';
+                    badge.style.color = '#2ecc71';
+                    badge.style.border = '1px solid rgba(46, 204, 113, 0.4)';
+                    showToast('successToast', 'Published Live Successfully!');
+                } else {
+                    throw new Error('Save failed');
+                }
+            })
+            .catch(err => {
+                badge.textContent = 'Sync Failed';
+                badge.style.background = 'rgba(231, 76, 60, 0.2)';
+                badge.style.color = '#e74c3c';
+                badge.style.border = '1px solid rgba(231, 76, 60, 0.4)';
+                showToast('errorToast', 'Failed to publish changes live.');
+            })
+            .finally(() => {
+                isSyncing = false;
+            });
+        }
+
+        function triggerFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data && (Array.isArray(data.units) || Array.isArray(data))) {
+                        unitsData = Array.isArray(data.units) ? data.units : data;
+                        
+                        unitsData.forEach(u => {
+                            const id = u.unit_number;
+                            const price = parseFloat(u.price_egp) || 1.0;
+                            const sqft = parseFloat(u.price_per_sqft) || 1.0;
+                            computedAreas[id] = price / sqft;
+                        });
+
+                        saveToLocalStorage();
+                        updateDashboard();
+                        showToast('successToast', 'Loaded prices.json Successfully!');
+                    } else {
+                        showToast('errorToast', 'Invalid JSON format!');
+                    }
+                } catch (err) {
+                    showToast('errorToast', 'Error parsing JSON file!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('iliving_units_data', JSON.stringify(unitsData));
+            if (serverConnected) {
+                saveToServer();
+            }
+        }
+
+        function updateDashboard() {
+            updateStats();
+            renderTable(unitsData);
+        }
+
+        function updateStats() {
+            const count = unitsData.length;
+            let totalValue = 0;
+            unitsData.forEach(u => {
+                totalValue += parseFloat(u.price_egp) || 0;
+            });
+            const avg = count > 0 ? totalValue / count : 0;
+
+            document.getElementById('statTotalUnits').textContent = count;
+            document.getElementById('statTotalValue').innerHTML = `${(totalValue / 1000000).toFixed(1)}M <span style="font-size: 13px; color: var(--gold-primary);">EGP</span>`;
+            document.getElementById('statAvgPrice').innerHTML = `${(avg / 1000000).toFixed(2)}M <span style="font-size: 13px; color: var(--gold-primary);">EGP</span>`;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('unitsTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">No luxury units found matching criteria.</td></tr>`;
+                return;
+            }
+
+            data.forEach((u, index) => {
+                const tr = document.createElement('tr');
+                
+                let compName = u.compound_id;
+                if (u.compound_id === 'dev_1') compName = 'Sky Hills';
+                if (u.compound_id === 'dev_2') compName = 'Lamar';
+                if (u.compound_id === 'dev_3') compName = 'Zayed Lagoons';
+
+                tr.innerHTML = `
+                    <td><span class="unit-badge">${escapeHTML(u.unit_number)}</span></td>
+                    <td><span class="compound-badge">${escapeHTML(compName)}</span></td>
+                    <td>
+                        <div class="price-input-container">
+                            <input type="number" value="${Math.round(u.price_egp)}" onchange="updateUnitValue('${escapeHTML(u.unit_number)}', this.value, 'price', ${index})">
+                            <span>EGP</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="calc-val" id="sqft_${index}">${Math.round(u.price_per_sqft)} EGP/sqft</span>
+                    </td>
+                    <td>
+                        <select class="layout-select" onchange="updateUnitValue('${escapeHTML(u.unit_number)}', this.value, 'layout', ${index})">
+                            <option value="Quarterly" ${u.installment_layout === 'Quarterly' ? 'selected' : ''}>Quarterly</option>
+                            <option value="Semi-Annual" ${u.installment_layout === 'Semi-Annual' ? 'selected' : ''}>Semi-Annual</option>
+                            <option value="Annual" ${u.installment_layout === 'Annual' ? 'selected' : ''}>Annual</option>
+                            <option value="Monthly" ${u.installment_layout === 'Monthly' ? 'selected' : ''}>Monthly</option>
+                            <option value="Installment" ${u.installment_layout === 'Installment' ? 'selected' : ''}>Installment</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="cell-input-text" value="${escapeHTML(u.asset_detail)}" onchange="updateUnitValue('${escapeHTML(u.unit_number)}', this.value, 'asset_detail', ${index})">
+                    </td>
+                    <td>
+                        <div class="actions-col">
+                            <button class="btn-action-delete" onclick="deleteUnit(${index})" aria-label="Delete Unit">&times;</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateUnitValue(unitNumber, value, field, index) {
+            const u = unitsData.find(item => item.unit_number === unitNumber);
+            if (!u) return;
+
+            if (field === 'price') {
+                const numericPrice = parseFloat(value) || 0;
+                if (numericPrice <= 0) {
+                    showToast('errorToast', 'Price must be a positive number.');
+                    updateDashboard();
+                    return;
+                }
+                u.price_egp = numericPrice;
+
+                const area = computedAreas[unitNumber] || 1.0;
+                u.price_per_sqft = area > 0 ? Math.round(numericPrice / area) : 0;
+                
+                const sqftLabel = document.getElementById(`sqft_${index}`);
+                if (sqftLabel) {
+                    sqftLabel.textContent = `${Math.round(u.price_per_sqft)} EGP/sqft`;
+                }
+            } else if (field === 'layout') {
+                u.installment_layout = value;
+            } else if (field === 'asset_detail') {
+                if (!value.trim()) {
+                    showToast('errorToast', 'Asset detail cannot be empty.');
+                    updateDashboard();
+                    return;
+                }
+                u.asset_detail = value.trim();
+            }
+
+            u.updated_at = new Date().toISOString();
+            saveToLocalStorage();
+            updateStats();
+        }
+
+        function deleteUnit(index) {
+            if (confirm("Are you sure you want to remove this unit from the list?")) {
+                unitsData.splice(index, 1);
+                saveToLocalStorage();
+                updateDashboard();
+            }
+        }
+
+        function applyFilters() {
+            const query = document.getElementById('searchFilter').value.toLowerCase();
+            const compound = document.getElementById('compoundFilter').value;
+            const layout = document.getElementById('layoutFilter').value;
+
+            const filtered = unitsData.filter(u => {
+                const matchesQuery = u.unit_number.toLowerCase().includes(query) || 
+                                     u.asset_detail.toLowerCase().includes(query);
+                
+                const matchesCompound = compound === 'ALL' || u.compound_id === compound;
+                const matchesLayout = layout === 'ALL' || u.installment_layout === layout;
+
+                return matchesQuery && matchesCompound && matchesLayout;
+            });
+
+            renderTable(filtered);
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+                el.setAttribute('aria-selected', 'false');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+
+            const addBtn = document.querySelector('.add-form-trigger');
+            if (addBtn) {
+                if (tabId === 'eoiTab') {
+                    addBtn.style.display = 'none';
+                } else {
+                    addBtn.style.display = 'flex';
+                }
+            }
+
+            if (tabId === 'eoiTab') {
+                loadEoiData();
+            }
+        }
+
+        // EOI Leads Dashboard Logic
+        function formatEGP(val) {
+            if (val === undefined || val === null) return '0';
+            const num = parseFloat(val);
+            return num.toLocaleString('en-US');
+        }
+
+        function formatDateTime(isoString) {
+            if (!isoString) return '-';
+            try {
+                const date = new Date(isoString);
+                if (isNaN(date.getTime())) return isoString;
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                const hh = String(date.getHours()).padStart(2, '0');
+                const min = String(date.getMinutes()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+            } catch (_) {
+                return isoString;
+            }
+        }
+
+        function loadEoiData(silent = false) {
+            const local = localStorage.getItem('iliving_eois_data');
+            let cachedEois = [];
+            if (local) {
+                try {
+                    cachedEois = JSON.parse(local);
+                } catch(e) {}
+            }
+
+            if (!window.location.protocol.startsWith('http')) {
+                const mock = {
+                    "eois": [
+                        {
+                            "id": "eoi_seed_1",
+                            "name": "Maximilian Von",
+                            "email": "max@von-capital.com",
+                            "phone": "+44 7700 900077",
+                            "amount": 24000000,
+                            "compound_id": "dev_3",
+                            "compound_title": "Zayed Lagoons",
+                            "unit_type": "Villa",
+                            "payment_method": "Crypto Escrow",
+                            "timestamp": "2026-07-08T15:24:00Z"
+                        },
+                        {
+                            "id": "eoi_seed_2",
+                            "name": "Seraphina Laurent",
+                            "email": "seraphina@laurent-couture.fr",
+                            "phone": "+33 6 5557 0192",
+                            "amount": 18500000,
+                            "compound_id": "dev_1",
+                            "compound_title": "Sky Hills",
+                            "unit_type": "Penthouse",
+                            "payment_method": "Credit Card (Stripe)",
+                            "timestamp": "2026-07-08T16:45:00Z"
+                        },
+                        {
+                            "id": "eoi_seed_3",
+                            "name": "Alistair Sterling",
+                            "email": "sterling@iliving.com.eg",
+                            "phone": "+20 100 019 7979",
+                            "amount": 15200000,
+                            "compound_id": "dev_2",
+                            "compound_title": "Lamar Compound",
+                            "unit_type": "Duplex",
+                            "payment_method": "Bank Transfer",
+                            "timestamp": "2026-07-08T17:10:00Z"
+                        }
+                    ]
+                };
+                
+                eoiData = [...cachedEois];
+                mock.eois.forEach(m => {
+                    if (!eoiData.some(x => x.id === m.id)) {
+                        eoiData.push(m);
+                    }
+                });
+                
+                applyEoiFilters();
+                return;
+            }
+
+            fetch('/api/v1/eois')
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('Failed to fetch EOI');
+                })
+                .then(data => {
+                    if (data && Array.isArray(data.eois)) {
+                        eoiData = data.eois;
+                        eoiData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        localStorage.setItem('iliving_eois_data', JSON.stringify(eoiData));
+                        applyEoiFilters();
+                        if (!silent) {
+                            showToast('successToast', 'Refreshed EOI Leads successfully!');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Error loading EOI data:", err);
+                    if (cachedEois.length > 0) {
+                        eoiData = cachedEois;
+                        applyEoiFilters();
+                    }
+                    if (!silent) {
+                        showToast('errorToast', 'Error loading EOI data from server. Showing cached data.');
+                    }
+                });
+        }
+
+        function applyEoiFilters() {
+            const query = document.getElementById('eoiSearchFilter').value.toLowerCase();
+            const compound = document.getElementById('eoiCompoundFilter').value;
+            const payment = document.getElementById('eoiPaymentFilter').value;
+
+            filteredEoiData = eoiData.filter(e => {
+                const matchesQuery = (e.name && e.name.toLowerCase().includes(query)) ||
+                                     (e.email && e.email.toLowerCase().includes(query)) ||
+                                     (e.phone && e.phone.toLowerCase().includes(query));
+                
+                const matchesCompound = compound === 'ALL' || e.compound_id === compound;
+                const matchesPayment = payment === 'ALL' || e.payment_method === payment;
+
+                return matchesQuery && matchesCompound && matchesPayment;
+            });
+
+            updateEoiDashboard();
+        }
+
+        function updateEoiDashboard() {
+            const totalLeads = filteredEoiData.length;
+            const totalEscrow = filteredEoiData.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+            
+            const compoundCounts = {};
+            filteredEoiData.forEach(e => {
+                const title = e.compound_title || e.compound_id || 'Unknown';
+                compoundCounts[title] = (compoundCounts[title] || 0) + 1;
+            });
+            let topCompound = '-';
+            let maxCount = 0;
+            for (const [comp, count] of Object.entries(compoundCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topCompound = comp;
+                }
+            }
+            if (maxCount > 0) {
+                topCompound = `${topCompound} (${maxCount})`;
+            }
+
+            document.getElementById('eoiStatTotalLeads').textContent = totalLeads;
+            document.getElementById('eoiStatTotalEscrow').innerHTML = `${(totalEscrow / 1000000).toFixed(2)}M <span>EGP</span>`;
+            document.getElementById('eoiStatTopCompound').textContent = topCompound;
+
+            const tbody = document.getElementById('eoiTableBody');
+            tbody.innerHTML = '';
+
+            if (filteredEoiData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">No EOI submissions found.</td></tr>`;
+                return;
+            }
+
+            filteredEoiData.forEach(e => {
+                const tr = document.createElement('tr');
+                
+                const compTitle = e.compound_title || e.compound_id || '';
+                const compBadge = `<span class="compound-badge">${escapeHTML(compTitle)}</span>`;
+                const unitBadge = `<span class="unit-badge" style="font-size: 11px;">${escapeHTML(e.unit_type || '-')}</span>`;
+                const amtFormatted = `<span class="eoi-amount-text">${formatEGP(e.amount)}</span> <span style="font-size: 10px; color: var(--text-muted);">EGP</span>`;
+                const dateFormatted = `<span class="timestamp-text">${formatDateTime(e.timestamp)}</span>`;
+
+                tr.innerHTML = `
+                    <td><strong style="color: var(--text-white);">${escapeHTML(e.name || '-')}</strong></td>
+                    <td>${escapeHTML(e.email || '-')}</td>
+                    <td>${escapeHTML(e.phone || '-')}</td>
+                    <td>${amtFormatted}</td>
+                    <td>${compBadge}</td>
+                    <td>${unitBadge}</td>
+                    <td><span class="payment-method-badge">${escapeHTML(e.payment_method || '-')}</span></td>
+                    <td>${dateFormatted}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportData() {
+            const output = {
+                "units": unitsData
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(output, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "prices.json");
+            dlAnchorElem.click();
+            showToast('successToast', 'prices.json Exported Successfully!');
+        }
+
+        function showToast(id, msg) {
+            const toast = document.getElementById(id);
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Modal triggers
+        function openAddModal() {
+            document.getElementById('addUnitModal').style.display = 'flex';
+        }
+
+        function closeAddModal() {
+            document.getElementById('addUnitModal').style.display = 'none';
+        }
+
+        function addUnit(event) {
+            event.preventDefault();
+            
+            const num = document.getElementById('addUnitNumber').value.trim();
+            const comp = document.getElementById('addCompoundId').value;
+            const priceVal = document.getElementById('addPrice').value;
+            const areaVal = document.getElementById('addArea').value;
+            const layout = document.getElementById('addLayout').value;
+            const desc = document.getElementById('addAssetDetail').value.trim();
+
+            if (!num || !desc) {
+                showToast('errorToast', 'All fields are required.');
+                return;
+            }
+
+            const price = parseFloat(priceVal) || 0;
+            const area = parseFloat(areaVal) || 0;
+
+            if (price <= 0) {
+                showToast('errorToast', 'Price must be a positive number.');
+                return;
+            }
+            if (area <= 0) {
+                showToast('errorToast', 'Area size must be a positive number.');
+                return;
+            }
+
+            const newUnit = {
+                "unit_number": num,
+                "compound_id": comp,
+                "price_egp": price,
+                "price_per_sqft": Math.round(price / area),
+                "installment_layout": layout,
+                "asset_detail": desc,
+                "updated_at": new Date().toISOString()
+            };
+
+            computedAreas[num] = area;
+
+            unitsData.unshift(newUnit);
+            saveToLocalStorage();
+            updateDashboard();
+            closeAddModal();
+            document.getElementById('addUnitForm').reset();
+            showToast('successToast', 'Luxury Unit added successfully!');
+        }
+
+        // ===== INITIALIZATION =====
+        window.onload = function() {
+            generateParticles();
+            
+            // Check for existing valid session
+            if (!checkExistingSession()) {
+                // Stay on login screen — focus email field
+                setTimeout(() => {
+                    document.getElementById('loginEmail').focus();
+                }, 900);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,16 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/luxury_theme.dart';
+import '../l10n/app_localizations.dart';
+import '../services/locale_service.dart';
 import '../screens/document_viewer_screen.dart';
 import '../screens/eoi_capture_screen.dart';
 import '../screens/prypco_hub_screen.dart';
 import '../screens/yield_analytics_screen.dart';
 import '../screens/property_ops_dashboard.dart';
+import '../screens/admin/admin_portal_shell.dart';
+import '../screens/change_password_screen.dart';
+import '../services/auth_service.dart';
+import 'user_avatar.dart';
+import 'profile_picture_dialog.dart';
 
 class LuxurySidebar extends StatelessWidget {
   const LuxurySidebar({super.key});
 
+  String _getUserRole(BuildContext context) {
+    final profile = AuthService.instance.currentProfile;
+    if (profile == null) return '';
+    if (profile.email.contains('sterling') || profile.clientId == 'client_broker') {
+      return 'Elite Relationship Manager';
+    }
+    if (profile.email.contains('admin')) {
+      return 'System Administrator';
+    }
+    return 'VIP Client';
+  }
+
+  String _getUserSubText() {
+    final profile = AuthService.instance.currentProfile;
+    if (profile == null) return '';
+    if (profile.email.contains('sterling') || profile.clientId == 'client_broker') {
+      return 'LIC# EG-iH-9942';
+    }
+    if (profile.email.contains('admin')) {
+      return 'ROOT ACCESS';
+    }
+    final code = profile.clientId.replaceAll('client_', '');
+    return 'CLIENT CODE: $code';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Drawer(
       backgroundColor: LuxuryTheme.backgroundBlack,
       elevation: 16,
@@ -33,38 +69,28 @@ class LuxurySidebar extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: LuxuryTheme.primaryGold, width: 2),
-                          image: DecorationImage(
-                            image: const NetworkImage(
-                                'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200'),
-                            fit: BoxFit.cover,
-                            onError: (exception, stackTrace) {},
-                          ),
-                        ),
+                      UserAvatar(
+                        radius: 30,
+                        showEditBadge: true,
+                        onTap: () => ProfilePictureDialog.show(context),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Alistair Sterling',
-                              style: TextStyle(
+                            Text(
+                              AuthService.instance.currentProfile?.displayName ?? 'Alistair Sterling',
+                              style: const TextStyle(
                                 color: LuxuryTheme.textWhite,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
                               ),
                             ),
-                            const Text(
-                              'Elite Relationship Manager',
-                              style: TextStyle(
+                            Text(
+                              _getUserRole(context),
+                              style: const TextStyle(
                                 color: LuxuryTheme.primaryGold,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -78,9 +104,9 @@ class LuxurySidebar extends StatelessWidget {
                                 color: LuxuryTheme.cardBrown,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
-                                'LIC# EG-iH-9942',
-                                style: TextStyle(
+                              child: Text(
+                                _getUserSubText(),
+                                style: const TextStyle(
                                   color: LuxuryTheme.textSilver,
                                   fontSize: 8,
                                   fontWeight: FontWeight.bold,
@@ -100,7 +126,55 @@ class LuxurySidebar extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 children: [
-                  _buildSectionTitle('OPERATIONAL UTILITIES'),
+                  // Language Switcher Tile
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: LuxuryTheme.surfaceBrown,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: LuxuryTheme.primaryGold, width: 1),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.language, color: LuxuryTheme.primaryGold, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.switchLanguage,
+                              style: const TextStyle(
+                                color: LuxuryTheme.textWhite,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        InkWell(
+                          onTap: () => LocaleService.instance.toggleLocale(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: LuxuryTheme.primaryGold,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              LocaleService.instance.isArabic ? l10n.english : l10n.arabic,
+                              style: const TextStyle(
+                                color: LuxuryTheme.backgroundBlack,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _buildSectionTitle(l10n.quickActions.toUpperCase()),
                   const SizedBox(height: 8),
                   GridView.count(
                     shrinkWrap: true,
@@ -113,17 +187,17 @@ class LuxurySidebar extends StatelessWidget {
                       _buildGridItem(
                         context,
                         Icons.verified_user_outlined,
-                        'Licensing',
+                        l10n.docTitle,
                         () => _viewSecureDocument(
                           context,
-                          'Company Licensing & Governance',
-                          'https://gateway.ihome.com.eg/governance/license_v9.pdf',
+                          l10n.docTitle,
+                          'https://gateway.iliving.com.eg/governance/license_v9.pdf',
                         ),
                       ),
                       _buildGridItem(
                         context,
                         Icons.monetization_on_outlined,
-                        'EOI Form',
+                        l10n.navEoi,
                         () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -137,7 +211,7 @@ class LuxurySidebar extends StatelessWidget {
                       _buildGridItem(
                         context,
                         Icons.pie_chart_outline_rounded,
-                        'PRYPCO',
+                        l10n.navPrypco,
                         () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -151,7 +225,7 @@ class LuxurySidebar extends StatelessWidget {
                       _buildGridItem(
                         context,
                         Icons.analytics_outlined,
-                        'Analytics',
+                        l10n.navYield,
                         () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -166,7 +240,7 @@ class LuxurySidebar extends StatelessWidget {
                       _buildGridItem(
                         context,
                         Icons.calculate_outlined,
-                        'Yield Calc',
+                        l10n.investmentCalculator,
                         () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -181,17 +255,17 @@ class LuxurySidebar extends StatelessWidget {
                       _buildGridItem(
                         context,
                         Icons.folder_shared_outlined,
-                        'Marketing',
+                        l10n.navDocuments,
                         () => _viewSecureDocument(
                           context,
-                          'Luxury Brochure Hub',
-                          'https://gateway.ihome.com.eg/brochures/sky_hills_brochure.pdf',
+                          l10n.navDocuments,
+                          'https://gateway.iliving.com.eg/brochures/sky_hills_brochure.pdf',
                         ),
                       ),
                       _buildGridItem(
                         context,
                         Icons.domain_outlined,
-                        'Property Ops',
+                        l10n.navPropertyOps,
                         () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -203,64 +277,233 @@ class LuxurySidebar extends StatelessWidget {
                           );
                         },
                       ),
+                      if (AuthService.instance.currentProfile?.isAdmin ?? false)
+                        _buildGridItem(
+                          context,
+                          Icons.dashboard_customize_outlined,
+                          l10n.navAdminPortal,
+                          () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AdminPortalShell(),
+                              ),
+                            );
+                          },
+                        ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _buildSectionTitle('EOI LEADERBOARD'),
+                  _buildSectionTitle(l10n.eoiTitle.toUpperCase()),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: LuxuryTheme.surfaceBrown,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                          Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildLeaderboardRow('1', 'Maximilian V.', '24M EGP'),
-                        const Divider(color: LuxuryTheme.cardBrown, height: 12),
-                        _buildLeaderboardRow('2', 'Seraphina L.', '18.5M EGP'),
-                        const Divider(color: LuxuryTheme.cardBrown, height: 12),
-                        _buildLeaderboardRow(
-                            '3', 'Alistair S. (You)', '15.2M EGP'),
-                      ],
-                    ),
+                  StreamBuilder<QuerySnapshot?>(
+                    stream: Firebase.apps.isNotEmpty
+                        ? FirebaseFirestore.instance.collection('eois').snapshots()
+                        : const Stream.empty(),
+                    builder: (context, snapshot) {
+                      List<Map<String, dynamic>> leaderboardItems = [];
+
+                      if (snapshot.hasData && snapshot.data != null) {
+                        final docs = snapshot.data!.docs;
+                        final Map<String, double> groupedClients = {};
+
+                        for (var doc in docs) {
+                          final data = doc.data() as Map<String, dynamic>? ?? {};
+                          final name = data['clientName'] ?? data['name'] ?? '';
+                          final amtDouble = double.tryParse(data['amount']?.toString() ?? '0') ?? 0.0;
+                          if (name.isNotEmpty && amtDouble > 0) {
+                            groupedClients[name] = (groupedClients[name] ?? 0.0) + amtDouble;
+                          }
+                        }
+
+                        groupedClients.forEach((name, amount) {
+                          leaderboardItems.add({
+                            'name': name,
+                            'amount': amount,
+                          });
+                        });
+
+                        leaderboardItems.sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
+                      }
+
+                      // Fallback real clients if we have less than 3
+                      final List<Map<String, dynamic>> fallbacks = [
+                        {'name': 'أحمد شاذلي عبد الجواد', 'amount': 24000000.0},
+                        {'name': 'محمود غانم إبراهيم', 'amount': 18500000.0},
+                        {'name': 'marrow علي محمد', 'amount': 15200000.0},
+                      ];
+
+                      for (var fallback in fallbacks) {
+                        if (leaderboardItems.length >= 3) break;
+                        // Avoid duplicates if already submitted in Firestore
+                        final fallbackShortName = fallback['name'].toString().split(' ')[0];
+                        if (!leaderboardItems.any((item) => item['name'].toString().contains(fallbackShortName))) {
+                          leaderboardItems.add(fallback);
+                        }
+                      }
+
+                      // Keep top 3
+                      if (leaderboardItems.length > 3) {
+                        leaderboardItems = leaderboardItems.sublist(0, 3);
+                      }
+
+                      final currentProfile = AuthService.instance.currentProfile;
+                      final currentName = currentProfile?.displayName ?? '';
+
+                      // Ensure current user is on the leaderboard at rank 3 if not in top 2
+                      if (currentName.isNotEmpty) {
+                        int myIndex = -1;
+                        for (int i = 0; i < leaderboardItems.length; i++) {
+                          final name = leaderboardItems[i]['name']?.toString() ?? '';
+                          if (name == currentName || currentName.contains(name) || name.contains(currentName)) {
+                            myIndex = i;
+                            break;
+                          }
+                        }
+                        if (myIndex == -1) {
+                          // Not found in top 3, replace the 3rd item with current user
+                          const myAmt = 15200000.0; // default volume
+                          if (leaderboardItems.length >= 3) {
+                            leaderboardItems[2] = {'name': currentName, 'amount': myAmt};
+                          } else {
+                            leaderboardItems.add({'name': currentName, 'amount': myAmt});
+                          }
+                        }
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: LuxuryTheme.surfaceBrown,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
+                        ),
+                        child: Column(
+                          children: List.generate(leaderboardItems.length * 2 - 1, (index) {
+                            if (index.isOdd) {
+                              return const Divider(color: LuxuryTheme.cardBrown, height: 12);
+                            }
+                            final itemIndex = index ~/ 2;
+                            final item = leaderboardItems[itemIndex];
+                            final String rank = (itemIndex + 1).toString();
+                            
+                            String displayName = item['name'] ?? '';
+                            if (currentName.isNotEmpty &&
+                                (displayName == currentName ||
+                                 currentName.contains(displayName) ||
+                                 displayName.contains(currentName))) {
+                              displayName = '$displayName (You)';
+                            }
+
+                            // Truncate name beautifully if too long (especially for Arabic names)
+                            if (displayName.length > 25) {
+                              displayName = '${displayName.substring(0, 23)}...';
+                            }
+                            
+                            final double amount = item['amount'] as double;
+                            String formattedAmt = '';
+                            if (amount >= 1000000) {
+                              formattedAmt = '${(amount / 1000000).toStringAsFixed(1)}M EGP';
+                            } else if (amount >= 1000) {
+                              formattedAmt = '${(amount / 1000).toStringAsFixed(0)}K EGP';
+                            } else {
+                              formattedAmt = '${amount.toStringAsFixed(0)} EGP';
+                            }
+
+                            return _buildLeaderboardRow(rank, displayName, formattedAmt);
+                          }),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(16.0),
-              color: LuxuryTheme.surfaceBrown,
-              child: Row(
+              decoration: const BoxDecoration(
+                color: LuxuryTheme.surfaceBrown,
+                border: Border(
+                  top: BorderSide(color: LuxuryTheme.cardBrown, width: 1.5),
+                ),
+              ),
+              child: Column(
                 children: [
-                  const Icon(Icons.logout, color: LuxuryTheme.primaryGold),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Logout Broker Session',
-                    style: TextStyle(
-                      color: LuxuryTheme.textWhite,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                  InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.lock_reset_rounded, color: LuxuryTheme.primaryGold, size: 20),
+                          SizedBox(width: 12),
+                          Text(
+                            'Change Password',
+                            style: TextStyle(
+                              color: LuxuryTheme.textWhite,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Spacer(),
+                          Icon(Icons.chevron_right_rounded, color: LuxuryTheme.textMuted, size: 18),
+                        ],
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
+                  const Divider(color: LuxuryTheme.cardBrown, height: 1),
+                  InkWell(
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await AuthService.instance.logout();
+                      if (context.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            l10n.navLogout,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            l10n.active,
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Active',
-                    style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -345,15 +588,19 @@ class LuxurySidebar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
-          name,
-          style: const TextStyle(
-            color: LuxuryTheme.textWhite,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+        Expanded(
+          child: Text(
+            name,
+            style: const TextStyle(
+              color: LuxuryTheme.textWhite,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 12),
         Text(
           volume,
           style: const TextStyle(

@@ -1,0 +1,495 @@
+{
+  "@@locale": "en",
+  "appTitle": "iLiving Luxury Real Estate",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "search": "Search",
+  "filter": "Filter",
+  "reset": "Reset",
+  "export": "Export",
+  "refresh": "Refresh",
+  "actions": "Actions",
+  "status": "Status",
+  "details": "Details",
+  "loading": "Loading...",
+  "noData": "No data available",
+  "success": "Success",
+  "error": "Error",
+  "warning": "Warning",
+  "info": "Information",
+  "submit": "Submit",
+  "view": "View",
+  "download": "Download",
+  "print": "Print",
+
+  "switchLanguage": "Switch Language",
+  "english": "English",
+  "arabic": "العربية",
+
+  "loginTitle": "Welcome Back",
+  "loginSubtitle": "Sign in to access your luxury real estate portal",
+  "email": "Email Address",
+  "password": "Password",
+  "signIn": "Sign In",
+  "quickAdminAccess": "Quick Admin Access",
+  "invalidCredentials": "Invalid email or password",
+  "rememberMe": "Remember Me",
+  "forgotPassword": "Forgot Password?",
+  "guestLogin": "Continue as Guest",
+
+  "navDashboard": "Dashboard",
+  "navPropertyOps": "Property Operations",
+  "navElectricity": "Electricity & Utilities",
+  "navBookings": "My Bookings",
+  "navEoi": "EOI Capture",
+  "navPrypco": "PRYPCO Hub",
+  "navDocuments": "Document Viewer",
+  "navYield": "Yield Analytics",
+  "navCompoundMap": "Compound Map",
+  "navAdminPortal": "Admin Portal",
+  "navSettings": "Settings",
+  "navLogout": "Logout",
+
+  "dashboardGreeting": "Welcome back",
+  "dashboardOverview": "Portfolio Overview",
+  "activeContracts": "Active Contracts",
+  "totalInvestments": "Total Investments",
+  "upcomingPayments": "Upcoming Payments",
+  "quickActions": "Quick Actions",
+  "recentActivities": "Recent Activity",
+  "propertiesOwned": "Properties Owned",
+  "totalValue": "Total Portfolio Value",
+
+  "propertyDetails": "Property Details",
+  "unitNumber": "Unit Number",
+  "buildingName": "Building Name",
+  "compoundName": "Compound Name",
+  "floor": "Floor",
+  "bedrooms": "Bedrooms",
+  "bathrooms": "Bathrooms",
+  "areaSqft": "Area (Sq Ft)",
+  "price": "Price",
+  "requestGatePass": "Request Gate Pass",
+  "maintenanceRequest": "Maintenance Request",
+  "downloadContract": "Download Contract",
+
+  "utilityTitle": "Electricity & Utility Payments",
+  "accountNumber": "Account Number",
+  "meterNumber": "Meter Number",
+  "currentBill": "Current Bill Amount",
+  "dueDate": "Due Date",
+  "payNow": "Pay Now",
+  "paymentMethod": "Payment Method",
+  "creditCard": "Credit / Debit Card",
+  "bankTransfer": "Bank Transfer",
+  "paymentSuccessful": "Payment Completed Successfully",
+  "paymentFailed": "Payment Failed. Please try again.",
+  "receipt": "Payment Receipt",
+
+  "myBookings": "My Bookings & Reservations",
+  "bookingId": "Booking ID",
+  "bookingDate": "Booking Date",
+  "depositAmount": "Deposit Amount",
+  "viewInvoice": "View Invoice",
+  "active": "Active",
+  "completed": "Completed",
+  "cancelled": "Cancelled",
+  "pending": "Pending",
+
+  "eoiTitle": "Expression of Interest (EOI)",
+  "fullName": "Full Name",
+  "phone": "Phone Number",
+  "preferredProject": "Preferred Project",
+  "budgetRange": "Budget Range",
+  "paymentPlan": "Preferred Payment Plan",
+  "signature": "Digital Signature",
+  "submitEoi": "Submit Expression of Interest",
+  "eoiSuccess": "Your EOI has been submitted successfully!",
+
+  "prypcoTitle": "PRYPCO Fractional Real Estate",
+  "expectedYield": "Expected Annual Yield",
+  "minimumInvestment": "Minimum Investment",
+  "investNow": "Invest Now",
+  "investmentCalculator": "Investment Calculator",
+  "projectedReturns": "Projected Returns",
+
+  "docTitle": "Document Viewer & Vault",
+  "contracts": "Contracts",
+  "receipts": "Receipts",
+  "identityDocs": "Identity Documents",
+  "gatePasses": "Gate Passes",
+
+  "yieldTitle": "Yield & ROI Analytics",
+  "capitalAppreciation": "Capital Appreciation",
+  "rentalYield": "Rental Yield",
+  "historicalPerformance": "Historical Performance",
+
+  "mapTitle": "Interactive Master Plan",
+  "availableUnits": "Available",
+  "reservedUnits": "Reserved",
+  "soldUnits": "Sold",
+  "filterByPrice": "Filter by Price",
+
+  "adminTitle": "iLiving Executive Admin Portal",
+  "executiveDashboard": "Executive Dashboard",
+  "projectsModule": "Projects",
+  "compoundsModule": "Compounds",
+  "buildingsModule": "Buildings",
+  "unitInventoryModule": "Unit Inventory",
+  "contractsModule": "Contracts",
+  "installmentsModule": "Installments",
+  "paymentsModule": "Payments Ledger",
+  "customersModule": "Customer CRM",
+
+  "totalRevenue": "Total Revenue",
+  "occupancyRate": "Occupancy Rate",
+  "totalUnitsCount": "Total Units",
+  "salesPerformance": "Sales Performance",
+  "revenueDistribution": "Revenue Distribution",
+  "monthlyTrend": "Monthly Trend",
+
+  "addProject": "Add New Project",
+  "editProject": "Edit Project",
+  "projectName": "Project Name",
+  "developer": "Developer",
+  "location": "Location",
+
+  "addCompound": "Add New Compound",
+  "editCompound": "Edit Compound",
+  "city": "City",
+  "region": "Region",
+
+  "addBuilding": "Add Building",
+  "editBuilding": "Edit Building",
+  "totalFloors": "Total Floors",
+  "completionDate": "Completion Date",
+
+  "addUnit": "Add Unit",
+  "editUnit": "Edit Unit",
+  "unitType": "Unit Type",
+
+  "addContract": "Add Contract",
+  "editContract": "Edit Contract",
+  "contractNumber": "Contract Number",
+  "customerName": "Customer Name",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "rentAmount": "Rent / Total Amount",
+
+  "addInstallment": "Add Installment",
+  "dueDateHeader": "Due Date",
+  "amountHeader": "Amount",
+  "penalty": "Penalty",
+  "paid": "Paid",
+  "overdue": "Overdue",
+  "recordPayment": "Record Payment",
+
+  "transactionId": "Transaction ID",
+  "paymentDate": "Payment Date",
+  "exportCsv": "Export CSV",
+  "exportPdf": "Export PDF",
+
+  "addCustomer": "Add Customer",
+  "editCustomer": "Edit Customer",
+  "nationalId": "National ID / Passport",
+  "unitsOwned": "Units Owned",
+
+  "confirmDelete": "Are you sure you want to delete this item?",
+  "deleteWarning": "This action cannot be undone.",
+  "itemsPerPage": "Items per page",
+  "showingResults": "Showing {start} to {end} of {total} results",
+  "@showingResults": {
+    "placeholders": {
+      "start": {"type": "int"},
+      "end": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "profilePictureTitle": "Profile Picture",
+  "changeProfilePicture": "Change Profile Picture",
+  "removeProfilePicture": "Remove Profile Picture",
+  "enterImageUrl": "Enter Image URL",
+  "imageUrlPlaceholder": "https://example.com/photo.jpg",
+  "presetAvatars": "Preset Luxury Avatars",
+  "profilePictureUpdated": "Profile picture updated successfully",
+  "profilePictureRemoved": "Profile picture removed",
+  "invalidImageUrl": "Invalid image URL. Must start with http:// or https://",
+  "uploadFailed": "Failed to update profile picture",
+  "portfolioTitle": "Egyptian Luxury Portfolio",
+  "constructionTitle": "Live Construction Progress",
+  "salesBrokerage": "iLiving Sales & Brokerage",
+
+  "navDiscovery": "Discovery",
+  "navCrmLedger": "CRM & Ledger",
+  "salesMode": "Admin Portal",
+  "ownerOpsMode": "Owner / Ops Mode",
+
+  "bookingLeadConsole": "Booking & Lead Console",
+  "liveLeads": "Live Leads",
+  "bookingTransactions": "Booking Transactions",
+  "activeLeadsPipeline": "Active Client Leads Pipeline",
+  "contactNow": "Contact Now",
+  "statusNew": "New",
+  "statusProposal": "Proposal",
+  "statusMeeting": "Meeting",
+
+  "selectDeveloperPortfolio": "Select Developer Portfolio",
+  "selectUnitSpecification": "Select Unit Specification",
+  "prospectClientDossier": "Prospect Client Dossier",
+  "clientLegalName": "Client Legal Entity / Individual Name",
+  "clientEmail": "Client Secure Contact Email",
+  "verifiedMobile": "Verified Mobile (Including CC)",
+  "commitEoi": "Commit Secure EOI Capture",
+
+  "prypcoHubTitle": "PRYPCO Investment Hub",
+  "mortgagePreApproval": "Mortgage Pre-Approval",
+  "fractionalBlocks": "Fractional Blocks",
+  "fractionalMicroAssets": "PRYPCO Fractional Micro-Assets",
+  "fractionalSubtitle": "Co-own highly vetted high-yield luxury real estate starting from minor allocations.",
+  "estRoi": "EST. ROI",
+  "minEntry": "MIN ENTRY",
+  "funded": "Funded",
+
+  "installmentReminderSettings": "Installment Reminder Settings",
+  "reminderDaysBeforeDue": "Reminder Days Before Due Date",
+  "addReminderDay": "Add Reminder Day",
+  "runReminderEngine": "Run Reminder Engine Now",
+  "reminderEngineSuccess": "Reminder engine executed successfully. Dispatched {count} push notifications.",
+  "payNow": "Pay Now",
+  "viewStatementPdf": "View Statement PDF",
+  "uploadStatementPdf": "Upload Statement PDF",
+  "latestStatementPdf": "Latest Statement PDF",
+  "previousStatementPdf": "Previous Statement PDF",
+  "noPdfAvailable": "No PDF Statement Available",
+  "autoRemindersEnabled": "Enable Automated Reminders",
+  "daysBeforeDue": "{days} Days Before",
+
+  "ownerOpsModeHeader": "OWNER / OPS MODE",
+  "realTimeSystemOperations": "REAL-TIME SYSTEM OPERATIONS",
+  "signOut": "SIGN OUT",
+  "cloudSyncConnected": "Cloud Sync: Connected (Tap to Sync)",
+  "cloudSyncRefreshed": "Cloud Sync Connection Refreshed",
+  "realTimeSyncActivated": "Real-Time Sync Activated",
+  "restrictedOwnerAccess": "RESTRICTED OWNER ACCESS",
+  "myAllocatedPortfolioAsset": "MY ALLOCATED PORTFOLIO ASSET",
+  "selectPortfolioAsset": "SELECT PORTFOLIO ASSET",
+  "projectCompoundHeader": "PROJECT / COMPOUND",
+  "unitAllocationHeader": "UNIT ALLOCATION",
+  "allocatedUnitLabel": "ALLOCATED UNIT: {unit}",
+  "@allocatedUnitLabel": {
+    "placeholders": {
+      "unit": {"type": "String"}
+    }
+  },
+  "selectedUnitLabel": "SELECTED UNIT: {unit}",
+  "@selectedUnitLabel": {
+    "placeholders": {
+      "unit": {"type": "String"}
+    }
+  },
+  "searchAllocatedUnits": "Search your allocated units...",
+  "quickSearchUnitPlaceholder": "Quick search unit (e.g. B202, B201, B203...)",
+  "propertyInformation": "PROPERTY INFORMATION",
+  "unitTypeConfig": "Unit Type / Config",
+  "unitAreaSqmSqft": "Unit Area (Sqm / Sqft)",
+  "unitStatusLabel": "Unit Status",
+  "priceValuation": "Price Valuation",
+  "ownershipStatus": "Ownership Status",
+  "soldToUser": "Sold to {name}",
+  "@soldToUser": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "developerInventory": "Developer Inventory",
+  "customerInformation": "CUSTOMER INFORMATION",
+  "noCustomerAssigned": "No customer assigned to this unit yet.",
+  "unassignedCustomer": "Unassigned Customer",
+  "clientCode": "Client Code",
+  "kycStatus": "KYC Status",
+  "contractNumberLabel": "Contract Number",
+  "verifiedStatus": "VERIFIED",
+  "notAvailable": "N/A",
+  "financialOverview": "FINANCIAL OVERVIEW",
+  "maintDeposit": "Maintenance Deposit",
+  "outstandingBalance": "Outstanding",
+  "installmentSchedulePayments": "INSTALLMENT SCHEDULE & PAYMENTS",
+  "totalInstCount": "Total Inst",
+  "noInstallmentsFound": "No installment schedule records found in Firestore for this unit.",
+  "maintDepositItemTitle": "Maintenance Deposit",
+  "dueLabel": "Due: {date}",
+  "@dueLabel": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "statusWaiting": "WAITING",
+  "statusUnpaid": "UNPAID",
+  "payAndUploadProof": "PAY & UPLOAD PROOF",
+  "maintenanceOperations": "MAINTENANCE / OPERATIONS",
+  "openTicketsCount": "Open Tickets",
+  "inProgressCount": "In-Progress",
+  "noMaintenanceRequests": "No maintenance requests filed for this unit.",
+  "fileServiceRequest": "FILE SERVICE REQUEST",
+  "ticketUrgencyPriority": "TICKET URGENCY PRIORITY",
+  "requestService": "REQUEST {trade} SERVICE",
+  "@requestService": {
+    "placeholders": {
+      "trade": {"type": "String"}
+    }
+  },
+  "filingOperationalTicket": "Filing operational ticket for Unit {unit} ({compound})",
+  "@filingOperationalTicket": {
+    "placeholders": {
+      "unit": {"type": "String"},
+      "compound": {"type": "String"}
+    }
+  },
+  "ticketTitleLabel": "Ticket Title",
+  "describeServiceRequirements": "Describe service requirements & urgency detail",
+  "verifMin5Chars": "Verification requirement: minimum 5 characters details",
+  "residentAdmin": "RESIDENT-ADMIN",
+  "ticketCreatedSuccess": "Service request {id} successfully registered for Unit {unit}.",
+  "@ticketCreatedSuccess": {
+    "placeholders": {
+      "id": {"type": "String"},
+      "unit": {"type": "String"}
+    }
+  },
+  "errorRegisteringTicket": "Error registering ticket: {error}",
+  "@errorRegisteringTicket": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "firestoreDataError": "FIRESTORE DATA ERROR",
+  "retry": "RETRY",
+  "dismiss": "DISMISS",
+  "documentsAndContracts": "DOCUMENTS & CONTRACTS",
+  "noDocumentsAvailable": "No documents available for this unit.",
+  "downloadingFile": "Downloading {title}...",
+  "@downloadingFile": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "operationalActionsUtilities": "OPERATIONAL ACTIONS & UTILITIES",
+  "exploreInteractiveBlueprint": "EXPLORE INTERACTIVE BLUEPRINT",
+  "exploreBlueprintSubtitle": "View layout showing gates, pools, clubhouses, and villa zones.",
+  "dynamicGuestAccessQr": "DYNAMIC GUEST ACCESS QR",
+  "smartGateAccessFor": "Smart Gate Access for compound gate {compound}",
+  "@smartGateAccessFor": {
+    "placeholders": {
+      "compound": {"type": "String"}
+    }
+  },
+  "courierQr": "Courier QR",
+  "visitorQr": "Visitor QR",
+  "serviceQr": "Service QR",
+  "guestPassType": "Guest ({type})",
+  "@guestPassType": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "passTypeTitle": "{type} PASS",
+  "@passTypeTitle": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "liveActive": "LIVE ACTIVE",
+  "passExpired": "PASS EXPIRED",
+  "passExpiredNotice": "Pass has expired! Please tap REGENERATE to generate a fresh QR pass.",
+  "durationLabel": "DURATION: ",
+  "mins15": "15 Mins",
+  "hour1": "1 Hour",
+  "hours2": "2 Hours",
+  "hours24": "24 Hours",
+  "visitorNameOptional": "Visitor Name (Optional)",
+  "visitorMobileOptional": "Visitor Mobile (Optional)",
+  "whatsapp": "WHATSAPP",
+  "copyCode": "COPY CODE",
+  "regenerateQr": "Regenerate QR",
+  "gatePassCopied": "Gate Pass details copied to clipboard!",
+  "rfidNfcAccessKeycard": "RFID NFC ACCESS KEYCARD",
+  "nfcBalanceLabel": "Balance: {balance} EGP",
+  "@nfcBalanceLabel": {
+    "placeholders": {
+      "balance": {"type": "String"}
+    }
+  },
+  "nfcSuspendedNotice": "NFC Keycard Balance: {balance} EGP • Status: Suspended. Contact Admin for top-up.",
+  "@nfcSuspendedNotice": {
+    "placeholders": {
+      "balance": {"type": "String"}
+    }
+  },
+  "statusSuspended": "SUSPENDED",
+  "viewStatus": "VIEW STATUS",
+  "dispatchingWhatsapp": "DISPATCHING VIA WHATSAPP API",
+  "securingPassTokens": "Securing temporary guest gate pass tokens...",
+  "rfidNfcPassReadTriggered": "RFID NFC PASS READ TRIGGERED",
+  "holdSmartTokenNearDevice": "Hold smart token card near device contact point...",
+  "submitPaymentProofModalTitle": "SUBMIT PAYMENT PROOF",
+  "installmentSequenceHeader": "Installment #{seq} - {type}",
+  "@installmentSequenceHeader": {
+    "placeholders": {
+      "seq": {"type": "String"},
+      "type": {"type": "String"}
+    }
+  },
+  "amountDue": "AMOUNT DUE",
+  "bankTransferInfo": "BANK TRANSFER INFO",
+  "uploadScreenshotLabel": "Upload Image from device:",
+  "gallery": "Gallery",
+  "camera": "Camera",
+  "sampleReceipts": "Or select from Sample Receipts:",
+  "proofScreenshotSelected": "Proof Screenshot Selected",
+  "transferRefNotes": "Transfer Ref / Notes",
+  "transferRefExample": "e.g. Transferred from Vodafone Cash 010...",
+  "submitForApproval": "SUBMIT FOR APPROVAL",
+  "paymentApprovedNotice": "Payment Approved Successfully!",
+  "paymentRejectedNotice": "Proof rejected and installment returned to unpaid.",
+  "noScreenshotUploaded": "No Screenshot Uploaded",
+  "reject": "REJECT",
+  "approve": "APPROVE",
+  "clientCustomerLabel": "Client / Customer:",
+  "unitIdLabel": "Unit ID:",
+  "amountDueLabel": "Amount Due:",
+  "submittedAtLabel": "Submitted At:",
+  "notesRefLabel": "Notes / Ref:",
+  "proofScreenshotLabel": "Proof Screenshot:",
+  "imagePreviewUnavailable": "Image Preview Unavailable",
+  "tapRegenerateBelow": "Tap REGENERATE below",
+  "expiresInCountdown": "EXPIRES IN: {hours}:{minutes}:{seconds}",
+  "@expiresInCountdown": {
+    "placeholders": {
+      "hours": {"type": "String"},
+      "minutes": {"type": "String"},
+      "seconds": {"type": "String"}
+    }
+  },
+  "building": "Building",
+  "emailAddress": "Email Address",
+  "phoneNumber": "Phone Number",
+  "contractValue": "Total Contract Value",
+  "downPayment": "Down Payment",
+  "totalPaid": "Total Paid",
+  "outstanding": "Remaining Balance",
+  "payments": "Payments",
+  "upcoming": "Upcoming",
+  "pending": "Pending",
+  "overdue": "Overdue",
+  "completed": "Completed"
+}
+

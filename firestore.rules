@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && 
+        (request.auth.token.role == role || request.auth.token.userRole == role);
+    }
+
+    function isSuperAdmin() {
+      return hasRole('SUPER_ADMIN');
+    }
+
+    function isSalesManager() {
+      return hasRole('SALES_MANAGER');
+    }
+
+    function isBroker() {
+      return hasRole('BROKER') || hasRole('SALES_AGENT');
+    }
+
+    function isFinance() {
+      return hasRole('FINANCE') || hasRole('FINANCE_OFFICER');
+    }
+
+    function isFacilityManager() {
+      return hasRole('FACILITY_MANAGER') || hasRole('PROPERTY_MANAGER');
+    }
+
+    function isSecurity() {
+      return hasRole('SECURITY');
+    }
+
+    function isStaff() {
+      return isSuperAdmin() || isSalesManager() || isBroker() || isFinance() || isFacilityManager() || isSecurity();
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
+      allow create: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
+      allow update: if isAuthenticated() && (isOwner(userId) || isSuperAdmin() || isSalesManager());
+      allow delete: if isSuperAdmin();
+    }
+
+    // Projects, Compounds, Buildings
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isSalesManager();
+    }
+
+    match /compounds/{compoundId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isSalesManager() || isFacilityManager();
+
+      match /buildings/{buildingId} {
+        allow read: if isAuthenticated();
+        allow write: if isSuperAdmin() || isSalesManager();
+      }
+    }
+
+    // Inventory Units
+    match /units/{unitId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isSalesManager() || isBroker();
+      allow delete: if isSuperAdmin();
+
+      match /price_ticks/{tickId} {
+        allow read: if isAuthenticated();
+        allow write: if isSuperAdmin() || isSalesManager();
+      }
+    }
+
+    // Ledgers & Contracts
+    match /ledgers/{ledgerId} {
+      allow read: if isAuthenticated() && (resource.data.buyerUserId == request.auth.uid || isStaff());
+      allow write: if isSuperAdmin() || isFinance();
+    }
+
+    match /contracts/{contractId} {
+      allow read: if isAuthenticated() && (resource.data.buyerUserId == request.auth.uid || isStaff());
+      allow create, update: if isSuperAdmin() || isSalesManager() || isFinance();
+      allow delete: if isSuperAdmin();
+
+      match /installments/{installmentId} {
+        allow read: if isAuthenticated() && (resource.data.buyerUserId == request.auth.uid || isStaff());
+        allow write: if isSuperAdmin() || isFinance();
+      }
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (resource.data.payerUserId == request.auth.uid || isStaff());
+      allow create: if isSuperAdmin() || isFinance();
+      allow update, delete: if isSuperAdmin() || isFinance();
+    }
+
+    // Maintenance Tickets
+    match /maintenance_tickets/{ticketId} {
+      allow read: if isAuthenticated() && (resource.data.residentUserId == request.auth.uid || isStaff());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.residentUserId == request.auth.uid || isFacilityManager() || isSuperAdmin());
+      
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+      }
+    }
+
+    // Gate Passes & Access Logs
+    match /gate_passes/{passId} {
+      allow read: if isAuthenticated() && (resource.data.hostUserId == request.auth.uid || isSecurity() || isStaff());
+      allow create, update: if isAuthenticated() && (request.resource.data.hostUserId == request.auth.uid || isStaff());
+      allow delete: if isAuthenticated() && (resource.data.hostUserId == request.auth.uid || isSuperAdmin());
+    }
+
+    match /access_logs/{logId} {
+      allow read: if isSecurity() || isSuperAdmin() || isFacilityManager();
+      allow create: if isSecurity() || isSuperAdmin();
+    }
+
+    // Documents
+    match /documents/{documentId} {
+      allow read: if isAuthenticated() && (resource.data.ownerUserId == request.auth.uid || isStaff());
+      allow create: if isAuthenticated() && (request.resource.data.ownerUserId == request.auth.uid || isStaff());
+      allow delete: if isSuperAdmin();
+    }
+
+    // Notifications & Announcements
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.targetUserId == request.auth.uid || isSuperAdmin());
+      allow write: if isStaff();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isFacilityManager();
+    }
+
+    // Audit logs
+    match /audit_logs/{auditId} {
+      allow read: if isSuperAdmin();
+      allow create: if isAuthenticated();
+    }
+  }
+}

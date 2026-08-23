@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Xcode DerivedData (Redirected for disk space)
+/ios/DerivedData/
+/ios/Runner.xcworkspace/xcuserdata/
+ios/.derived*
+ios/*_to_delete*
+ios/.*_to_delete*
+/build_old/
+/scratch/

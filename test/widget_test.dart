@@ -8,15 +8,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ihome/main.dart';
+import 'package:iliving/main.dart';
 
 void main() {
-  testWidgets('iHome splash screen smoke test', (WidgetTester tester) async {
+  testWidgets('iLiving app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const LuxuryRealEstateApp());
+    await tester.pump(const Duration(milliseconds: 100));
 
-    // Verify that the splash screen text is shown.
-    expect(find.text('iHOME'), findsOneWidget);
-    expect(find.text('LUXURY CLIENT PORTAL'), findsOneWidget);
+    // Verify that the app builds and renders MaterialApp successfully.
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

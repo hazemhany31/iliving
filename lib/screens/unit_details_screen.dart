@@ -7,6 +7,8 @@ import '../repositories/compound_repository.dart';
 import '../widgets/interactive_tap_bounce.dart';
 import '../widgets/luxury_shimmer.dart';
 import 'document_viewer_screen.dart';
+import 'compound_map_screen.dart';
+import '../widgets/image_loader.dart';
 
 class UnitDetailsScreen extends StatefulWidget {
   final CompoundModel compound;
@@ -71,13 +73,15 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: LuxuryTheme.backgroundBlack,
-      body: _isLoading ? _buildLoadingView() : _buildLoadedView(),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      body: _isLoading ? _buildLoadingView(isDark) : _buildLoadedView(isDark),
     );
   }
 
-  Widget _buildLoadingView() {
+  Widget _buildLoadingView(bool isDark) {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -86,15 +90,21 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: LuxuryTheme.primaryGold, size: 18),
+                  icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? AppColors.textLight : AppColors.textDark, size: 18),
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 8),
-                Expanded(child: const LuxuryShimmer(width: double.infinity, height: 20)),
+                const Expanded(child: LuxuryShimmer(width: double.infinity, height: 20)),
               ],
             ),
             const SizedBox(height: 24),
-            const LuxuryShimmer(width: double.infinity, height: 260),
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                borderRadius: AppBorderRadius.large,
+              ),
+              child: const LuxuryShimmer(width: double.infinity, height: 260),
+            ),
             const SizedBox(height: 24),
             GridView.builder(
               shrinkWrap: true,
@@ -102,11 +112,17 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
               itemCount: 6,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
                 childAspectRatio: 1.2,
               ),
-              itemBuilder: (context, index) => const LuxuryShimmer(width: double.infinity, height: 60),
+              itemBuilder: (context, index) => Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                  borderRadius: AppBorderRadius.medium,
+                ),
+                child: const LuxuryShimmer(width: double.infinity, height: 60),
+              ),
             ),
           ],
         ),
@@ -114,22 +130,41 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
     );
   }
 
-  Widget _buildLoadedView() {
+  Widget _buildLoadedView(bool isDark) {
+    if (_units.isEmpty) {
+      return Center(
+        child: Text(
+          'No units available',
+          style: TextStyle(
+            fontFamily: AppTextStyles.fontFamily,
+            color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted,
+          ),
+        ),
+      );
+    }
+
     final selectedUnit = _units[_selectedUnitIndex];
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Stack(
       children: [
         CustomScrollView(
           slivers: [
             SliverAppBar(
-              expandedHeight: 320,
+              expandedHeight: 340,
               pinned: true,
-              backgroundColor: LuxuryTheme.backgroundBlack,
-              leading: CircleAvatar(
-                backgroundColor: Colors.black.withAlpha(128),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: LuxuryTheme.primaryGold, size: 18),
-                  onPressed: () => Navigator.pop(context),
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.white.withAlpha(220),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textDark, size: 16),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
@@ -145,21 +180,25 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
                         });
                       },
                       itemBuilder: (context, idx) {
-                        return Image.network(
-                          _mediaImages[idx],
+                        return ImageLoader(
+                          imageUrl: _mediaImages[idx],
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(color: LuxuryTheme.cardBrown),
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          ),
                         );
                       },
                     ),
                     Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
+                          stops: [0.0, 0.45, 1.0],
                           colors: [
-                            LuxuryTheme.backgroundBlack.withAlpha(230),
+                            Color(0xBB1A1A2E),
                             Colors.transparent,
+                            Color(0x33000000),
                           ],
                         ),
                       ),
@@ -169,15 +208,18 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
                       right: 16,
                       child: Row(
                         children: [
-                          _buildCircleButton(Icons.bookmark_border_outlined, () {}),
+                          _buildCircleButton(Icons.bookmark_border_rounded, () {}),
                           const SizedBox(width: 8),
-                          _buildCircleButton(Icons.share_outlined, () {}),
+                          _buildCircleButton(Icons.share_rounded, () {}),
                           const SizedBox(width: 8),
-                          _buildCircleButton(Icons.map_outlined, () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Opening secure location routing...'),
-                                backgroundColor: LuxuryTheme.primaryGold,
+                          _buildCircleButton(Icons.map_rounded, () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CompoundMapScreen(
+                                  compound: widget.compound,
+                                  isOperationsMode: false,
+                                ),
                               ),
                             );
                           }),
@@ -185,26 +227,26 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
                       ),
                     ),
                     Positioned(
-                      bottom: 24,
+                      bottom: 20,
                       right: 20,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: AppBorderRadius.pill,
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                             decoration: BoxDecoration(
-                              color: Colors.black.withAlpha(102),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: LuxuryTheme.primaryGold.withAlpha(128), width: 1),
+                              color: Colors.black.withAlpha(120),
+                              borderRadius: AppBorderRadius.pill,
                             ),
                             child: Text(
                               '${_activeMediaIndex + 1} / ${_mediaImages.length}',
                               style: const TextStyle(
-                                color: LuxuryTheme.primaryGold,
-                                fontSize: 12,
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: Colors.white,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
@@ -226,44 +268,56 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.compound.title,
-                                style: const TextStyle(
-                                  color: LuxuryTheme.textWhite,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on, color: LuxuryTheme.primaryGold, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    widget.compound.location,
-                                    style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.compound.title,
+                                  style: TextStyle(
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    color: textColor,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.2,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on_outlined, color: AppColors.accent, size: 15),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        widget.compound.location,
+                                        style: TextStyle(
+                                          fontFamily: AppTextStyles.fontFamily,
+                                          color: textMuted,
+                                          fontSize: 12.5,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: LuxuryTheme.cardBrown,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: LuxuryTheme.primaryGold, width: 1),
+                              color: AppColors.accent.withAlpha(isDark ? 35 : 18),
+                              borderRadius: AppBorderRadius.pill,
                             ),
                             child: const Text(
-                              'VERSACE COLLAB',
+                              'PREMIUM LINE',
                               style: TextStyle(
-                                color: LuxuryTheme.primaryGold,
-                                fontSize: 10,
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: AppColors.accent,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
                               ),
                             ),
                           ),
@@ -273,29 +327,29 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
                     const SizedBox(height: 24),
                     _AnimatedSlideUp(
                       delay: 100,
-                      child: _buildSectionTitle('LIVE VACANT UNITS INVENTORY'),
+                      child: _buildSectionTitle('LIVE VACANT UNITS INVENTORY', isDark),
                     ),
                     const SizedBox(height: 12),
                     _AnimatedSlideUp(
                       delay: 150,
-                      child: _buildLiveInventoryTabSlider(),
+                      child: _buildLiveInventoryTabSlider(isDark),
                     ),
                     const SizedBox(height: 24),
                     _AnimatedSlideUp(
                       delay: 200,
-                      child: _buildSectionTitle('UNIT COMPREHENSIVE SPECIFICATIONS'),
+                      child: _buildSectionTitle('UNIT COMPREHENSIVE SPECIFICATIONS', isDark),
                     ),
                     const SizedBox(height: 12),
-                    _buildAnimatedSpecsGrid(selectedUnit),
+                    _buildAnimatedSpecsGrid(selectedUnit, isDark),
                     const SizedBox(height: 24),
                     _AnimatedSlideUp(
                       delay: 300,
-                      child: _buildSectionTitle('FINANCIAL SUMMARY & INSTALMENTS'),
+                      child: _buildSectionTitle('FINANCIAL SUMMARY & INSTALMENTS', isDark),
                     ),
                     const SizedBox(height: 12),
                     _AnimatedSlideUp(
                       delay: 350,
-                      child: _buildFinancialSummaryPanel(selectedUnit),
+                      child: _buildFinancialSummaryPanel(selectedUnit, isDark),
                     ),
                     const SizedBox(height: 120),
                   ],
@@ -308,20 +362,23 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
           bottom: 0,
           left: 0,
           right: 0,
-          child: _buildPersistentActionUtilityBar(selectedUnit),
+          child: _buildPersistentActionUtilityBar(selectedUnit, isDark),
         ),
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+
     return Text(
       title.toUpperCase(),
-      style: const TextStyle(
-        color: LuxuryTheme.primaryGold,
-        fontSize: 11,
+      style: TextStyle(
+        fontFamily: AppTextStyles.fontFamily,
+        color: textColor,
+        fontSize: 12,
         fontWeight: FontWeight.bold,
-        letterSpacing: 1.5,
+        letterSpacing: 0.8,
       ),
     );
   }
@@ -330,117 +387,113 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
     return InteractiveTapBounce(
       onTap: onTap,
       child: CircleAvatar(
-        backgroundColor: Colors.black.withAlpha(128),
-        child: Icon(icon, color: LuxuryTheme.primaryGold, size: 20),
+        radius: 18,
+        backgroundColor: Colors.white.withAlpha(220),
+        child: Icon(icon, color: AppColors.textDark, size: 18),
       ),
     );
   }
 
-  Widget _buildLiveInventoryTabSlider() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        double totalWidth = constraints.maxWidth;
-        double selectorWidth = totalWidth / _units.length;
+  Widget _buildLiveInventoryTabSlider(bool isDark) {
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
-        return Container(
-          height: 70,
-          decoration: BoxDecoration(
-            color: LuxuryTheme.backgroundDarkBrown,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
-          ),
-          child: Stack(
-            children: [
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.fastOutSlowIn,
-                left: _selectedUnitIndex * selectorWidth,
-                top: 2,
-                bottom: 2,
-                child: Container(
-                  width: selectorWidth - 4,
-                  decoration: BoxDecoration(
-                    color: LuxuryTheme.surfaceBrown,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: LuxuryTheme.primaryGold,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
+    return SizedBox(
+      height: 68,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _units.length,
+        itemBuilder: (context, idx) {
+          final unit = _units[idx];
+          final bool isSelected = _selectedUnitIndex == idx;
+
+          return InteractiveTapBounce(
+            onTap: () {
+              setState(() {
+                _selectedUnitIndex = idx;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              width: 125,
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? (isDark ? AppColors.accent : AppColors.primary)
+                    : cardBg,
+                borderRadius: AppBorderRadius.medium,
+                boxShadow: isSelected
+                    ? (isDark ? AppShadows.darkElevated : AppShadows.elevated)
+                    : (isDark ? AppShadows.darkSoft : AppShadows.soft),
               ),
-              Row(
-                children: List.generate(_units.length, (idx) {
-                  final unit = _units[idx];
-                  final bool isSelected = _selectedUnitIndex == idx;
-
-                  return Expanded(
-                    child: InteractiveTapBounce(
-                      onTap: () {
-                        setState(() {
-                          _selectedUnitIndex = idx;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        color: Colors.transparent,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  unit.unitNumber,
-                                  style: TextStyle(
-                                    color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.textWhite,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              unit.configuration,
-                              style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 9),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          unit.unitNumber,
+                          style: TextStyle(
+                            fontFamily: AppTextStyles.fontFamily,
+                            color: isSelected ? Colors.white : textColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: unit.isVacant ? AppColors.success : textMuted,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    unit.configuration,
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: isSelected ? Colors.white70 : textMuted,
+                      fontSize: 9.5,
                     ),
-                  );
-                }),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildAnimatedSpecsGrid(UnitModel unit) {
+  Widget _buildAnimatedSpecsGrid(UnitModel unit, bool isDark) {
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
     final List<Map<String, String>> specs = [
       {'label': 'ASSET CLASS', 'val': unit.assetClass},
-      {'label': 'FURNISHING STATUS', 'val': unit.furnishingStatus},
-      {'label': 'PRICE PER SQFT', 'val': '${unit.pricePerSqFt.toInt()} EGP'},
-      {'label': 'PARKING SPACES', 'val': '${unit.parkingSpaces} BAYS'},
-      {'label': 'CURRENT PHASE', 'val': unit.constructionPhase},
+      {'label': 'FURNISHING', 'val': unit.furnishingStatus},
+      {'label': 'PRICE/SQFT', 'val': '${unit.pricePerSqFt.toInt()} EGP'},
+      {'label': 'PARKING', 'val': '${unit.parkingSpaces} BAYS'},
+      {'label': 'PHASE', 'val': unit.constructionPhase},
       {'label': 'STATUS', 'val': unit.isVacant ? 'VACANT' : 'RESERVED'},
-      {'label': 'FLOOR TIER', 'val': unit.floorTier},
-      {'label': 'REALISTIC AREA', 'val': '${unit.areaSquareMeters.toInt()} m²'},
-      {'label': 'UNIT GEOMETRY', 'val': unit.unitNumber},
+      {'label': 'FLOOR', 'val': unit.floorTier},
+      {'label': 'AREA', 'val': '${unit.areaSquareMeters.toInt()} m²'},
+      {'label': 'UNIT CODE', 'val': unit.unitNumber},
     ];
 
     return GridView.builder(
@@ -449,20 +502,20 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
       itemCount: specs.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1.2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.25,
       ),
       itemBuilder: (context, index) {
         final item = specs[index];
         return _AnimatedSlideUp(
-          delay: 200 + (index * 50),
+          delay: 200 + (index * 40),
           child: Container(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(10.0),
             decoration: BoxDecoration(
-              color: LuxuryTheme.surfaceBrown,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
+              color: cardBg,
+              borderRadius: AppBorderRadius.medium,
+              boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,18 +523,20 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
               children: [
                 Text(
                   item['label']!,
-                  style: const TextStyle(
-                    color: LuxuryTheme.textMuted,
+                  style: TextStyle(
+                    fontFamily: AppTextStyles.fontFamily,
+                    color: textMuted,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   item['val']!,
-                  style: const TextStyle(
-                    color: LuxuryTheme.primaryGold,
-                    fontSize: 10,
+                  style: TextStyle(
+                    fontFamily: AppTextStyles.fontFamily,
+                    color: textColor,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 2,
@@ -495,84 +550,82 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
     );
   }
 
-  Widget _buildFinancialSummaryPanel(UnitModel unit) {
+  Widget _buildFinancialSummaryPanel(UnitModel unit, bool isDark) {
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+
     final basePrice = unit.priceEGP;
     final vat = basePrice * 0.05;
     final netPrice = basePrice + vat;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                LuxuryTheme.primaryGold.withAlpha(31),
-                LuxuryTheme.surfaceBrown.withAlpha(217),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(18.0),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: AppBorderRadius.large,
+        boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFinancialRow('Unit Base Price', _formatPrice(basePrice), isDark: isDark),
+          const SizedBox(height: 6),
+          _buildFinancialRow('Government Tax (VAT 5%)', _formatPrice(vat), isDark: isDark),
+          Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, height: 20),
+          _buildFinancialRow(
+            'Total Client Net Due',
+            _formatPrice(netPrice),
+            isTotal: true,
+            isDark: isDark,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'INSTALMENT TIMELINE SCHEDULER',
+            style: TextStyle(
+              fontFamily: AppTextStyles.fontFamily,
+              color: textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
             ),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: LuxuryTheme.primaryGold.withAlpha(64), width: 1.5),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildFinancialRow('Unit Premium Base Price', _formatPrice(basePrice)),
-              const SizedBox(height: 6),
-              _buildFinancialRow('Government Tax (VAT 5%)', _formatPrice(vat)),
-              const Divider(color: LuxuryTheme.cardBrown, height: 16),
-              _buildFinancialRow(
-                'Total Client Net Due',
-                _formatPrice(netPrice),
-                isTotal: true,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'INSTALMENT TIMELINE SCHEDULER',
-                style: TextStyle(
-                  color: LuxuryTheme.primaryGold,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...unit.paymentMilestones.map((milestone) {
-                final milestoneAmount = netPrice * (milestone.percentageDue / 100);
-                return _buildMilestoneStep(
-                  '${milestone.title} (${milestone.isPaid ? "Paid" : "Due"})',
-                  '${_formatPrice(milestoneAmount)} (${milestone.percentageDue.toInt()}%)',
-                  milestone.isPaid,
-                );
-              }),
-            ],
-          ),
-        ),
+          const SizedBox(height: 12),
+          ...unit.paymentMilestones.map((milestone) {
+            final milestoneAmount = netPrice * (milestone.percentageDue / 100);
+            return _buildMilestoneStep(
+              '${milestone.title} (${milestone.isPaid ? "Paid" : "Due"})',
+              '${_formatPrice(milestoneAmount)} (${milestone.percentageDue.toInt()}%)',
+              milestone.isPaid,
+              isDark: isDark,
+            );
+          }),
+        ],
       ),
     );
   }
 
-  Widget _buildFinancialRow(String label, String value, {bool isTotal = false}) {
+  Widget _buildFinancialRow(String label, String value, {bool isTotal = false, required bool isDark}) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: TextStyle(
-            color: isTotal ? LuxuryTheme.textWhite : LuxuryTheme.textSilver,
-            fontSize: isTotal ? 13 : 11,
+            fontFamily: AppTextStyles.fontFamily,
+            color: isTotal ? textColor : textMuted,
+            fontSize: isTotal ? 13.5 : 11.5,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         Text(
           value,
           style: TextStyle(
-            color: isTotal ? LuxuryTheme.primaryGold : LuxuryTheme.textWhite,
-            fontSize: isTotal ? 14 : 11,
+            fontFamily: AppTextStyles.fontFamily,
+            color: isTotal ? AppColors.accent : textColor,
+            fontSize: isTotal ? 15 : 12,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -580,32 +633,37 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
     );
   }
 
-  Widget _buildMilestoneStep(String label, String value, bool isPassed) {
+  Widget _buildMilestoneStep(String label, String value, bool isPassed, {required bool isDark}) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: Row(
         children: [
           Icon(
-            isPassed ? Icons.check_circle : Icons.radio_button_off,
-            color: isPassed ? LuxuryTheme.primaryGold : LuxuryTheme.textMuted,
-            size: 14,
+            isPassed ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
+            color: isPassed ? AppColors.success : textMuted,
+            size: 15,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
-                color: isPassed ? LuxuryTheme.textWhite : LuxuryTheme.textMuted,
-                fontSize: 11,
-                fontWeight: isPassed ? FontWeight.bold : FontWeight.normal,
+                fontFamily: AppTextStyles.fontFamily,
+                color: isPassed ? textColor : textMuted,
+                fontSize: 11.5,
+                fontWeight: isPassed ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              color: isPassed ? LuxuryTheme.primaryGold : LuxuryTheme.textMuted,
-              fontSize: 11,
+              fontFamily: AppTextStyles.fontFamily,
+              color: isPassed ? textColor : textMuted,
+              fontSize: 11.5,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -614,63 +672,76 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
     );
   }
 
-  Widget _buildPersistentActionUtilityBar(UnitModel unit) {
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: LuxuryTheme.surfaceBrown.withAlpha(217),
-            border: const Border(
-              top: BorderSide(color: LuxuryTheme.cardBrown, width: 1.5),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              childAspectRatio: 2.1,
-              children: [
-                _buildBarAction('COMPARE UNIT', () => _showCompareDialog(context, unit)),
-                _buildBarAction(
-                  'GENERATE INVOICE',
-                  () => _viewSecureDocument(
-                    context,
-                    'Proforma Invoice - ${unit.unitNumber}',
-                    'https://gateway.ihome.com.eg/escrow/invoice_${unit.unitNumber}.pdf',
+  Widget _buildPersistentActionUtilityBar(UnitModel unit, bool isDark) {
+    final surfaceBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: surfaceBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: () => _showCompareDialog(context, unit, isDark),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppBorderRadius.pill,
+                    ),
+                  ),
+                  child: Text(
+                    'COMPARE UNIT',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: isDark ? AppColors.textLight : AppColors.textDark,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
-                _buildBarAction('ESCROW ACCOUNT', () => _showEscrowDialog(context)),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBarAction(String label, VoidCallback onTap) {
-    return InteractiveTapBounce(
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: LuxuryTheme.cardBrown,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: LuxuryTheme.primaryGold, width: 1),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: LuxuryTheme.primaryGold,
-            fontSize: 9,
-            fontWeight: FontWeight.w900,
-          ),
-          textAlign: TextAlign.center,
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => _viewSecureDocument(
+                    context,
+                    'Proforma Invoice - ${unit.unitNumber}',
+                    'https://gateway.iliving.com.eg/escrow/invoice_${unit.unitNumber}.pdf',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppBorderRadius.pill,
+                    ),
+                  ),
+                  child: const Text(
+                    'PROFORMA INVOICE',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -680,157 +751,107 @@ class _UnitDetailsScreenState extends State<UnitDetailsScreen> with TickerProvid
     return '${(price / 1000000).toStringAsFixed(1)}M EGP';
   }
 
-  void _showCompareDialog(BuildContext context, UnitModel active) {
-    showGeneralDialog(
+  void _showCompareDialog(BuildContext context, UnitModel active, bool isDark) {
+    final surfaceBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Compare Dismiss',
-      barrierColor: Colors.black.withAlpha(166),
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, anim1, anim2) {
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Material(
-                color: LuxuryTheme.surfaceBrown.withAlpha(230),
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: surfaceBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
                 child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: LuxuryTheme.primaryGold, width: 2),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'UNIT MATRIX COMPARE',
-                        style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildCompareRow('Metric', 'Active Unit', 'Standard Spec'),
-                      const Divider(color: LuxuryTheme.cardBrown),
-                      _buildCompareRow('Number', active.unitNumber, 'AJ/27/STD'),
-                      _buildCompareRow('Config', active.configuration, '1 BR + Den'),
-                      _buildCompareRow('Parking', '${active.parkingSpaces} spaces', '1 space'),
-                      _buildCompareRow('Premium', 'Bespoke Dior', 'Standard Line'),
-                      const SizedBox(height: 16),
-                    ],
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: textMuted.withAlpha(80),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-            ),
+              Text(
+                'UNIT MATRIX COMPARE',
+                style: TextStyle(
+                  fontFamily: AppTextStyles.fontFamily,
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildCompareRow('Metric', 'Active Unit', 'Standard Spec', isHeader: true, isDark: isDark),
+              Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, height: 16),
+              _buildCompareRow('Number', active.unitNumber, 'AJ/27/STD', isDark: isDark),
+              _buildCompareRow('Config', active.configuration, '1 BR + Den', isDark: isDark),
+              _buildCompareRow('Parking', '${active.parkingSpaces} spaces', '1 space', isDark: isDark),
+              _buildCompareRow('Premium', 'Bespoke Line', 'Standard Line', isDark: isDark),
+              const SizedBox(height: 20),
+            ],
           ),
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: anim1, curve: Curves.fastLinearToSlowEaseIn),
-          ),
-          child: child,
         );
       },
     );
   }
 
-  Widget _buildCompareRow(String metric, String activeVal, String targetVal) {
+  Widget _buildCompareRow(String metric, String activeVal, String targetVal, {bool isHeader = false, required bool isDark}) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(metric, style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 11)),
-          Text(activeVal, style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 11, fontWeight: FontWeight.bold)),
-          Text(targetVal, style: const TextStyle(color: LuxuryTheme.textSilver, fontSize: 11)),
-        ],
-      ),
-    );
-  }
-
-  void _showEscrowDialog(BuildContext context) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Escrow Dismiss',
-      barrierColor: Colors.black.withAlpha(166),
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, anim1, anim2) {
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Material(
-                color: LuxuryTheme.surfaceBrown.withAlpha(230),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: LuxuryTheme.primaryGold, width: 2),
-                    ),
-                  ),
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'BROKER SECURE ESCROW',
-                        style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Official Escrow Registry Details',
-                        style: TextStyle(color: LuxuryTheme.textWhite, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 8),
-                      Text('Beneficiary: iHome Escrow Trust EGP', style: TextStyle(color: LuxuryTheme.textSilver, fontSize: 11)),
-                      Text('Bank: National Bank of Egypt (NBE) (Headquarters)', style: TextStyle(color: LuxuryTheme.textSilver, fontSize: 11)),
-                      Text('IBAN: EG22 0020 0000 1194 0009 942', style: TextStyle(color: LuxuryTheme.primaryGold, fontSize: 11, fontWeight: FontWeight.bold)),
-                      Text('Swift Code: NBEGEGXXXX', style: TextStyle(color: LuxuryTheme.textSilver, fontSize: 11)),
-                      SizedBox(height: 16),
-                    ],
-                  ),
-                ),
+          Expanded(
+            child: Text(
+              metric,
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: textMuted,
+                fontSize: 11,
+                fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: anim1, curve: Curves.fastLinearToSlowEaseIn),
+          Expanded(
+            child: Text(
+              activeVal,
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: isHeader ? textColor : AppColors.accent,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
-          child: child,
-        );
-      },
+          Expanded(
+            child: Text(
+              targetVal,
+              style: TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                color: textMuted,
+                fontSize: 11,
+                fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

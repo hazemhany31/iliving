@@ -1,6 +1,6 @@
 {
-    "name": "ihome",
-    "short_name": "ihome",
+    "name": "iliving",
+    "short_name": "iliving",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

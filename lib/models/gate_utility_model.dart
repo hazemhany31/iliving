@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../core/config/app_secrets.dart';
 
 enum GateAccessType { pedestrian, vehicle, delivery, contractor }
 
@@ -177,7 +178,9 @@ class GateAccessCode {
     required DateTime validUntil,
   }) {
     final epochMs = validUntil.millisecondsSinceEpoch;
-    return 'IHOME-GATE:$codeId:$compoundId:$epochMs';
+    final message = 'ILIVING-GATE:$codeId:$compoundId:$epochMs';
+    final signature = hmacSha256(message, AppSecrets.instance.gateSigningKey);
+    return '$message:$signature';
   }
 
   static GateAccessCode generate({
@@ -227,6 +230,133 @@ class GateAccessCode {
       qrPayloadString: qrPayload,
       notes: notes,
     );
+  }
+
+  static String hmacSha256(String message, String key) {
+    final List<int> msgBytes = _utf8Encode(message);
+    final List<int> keyBytes = _utf8Encode(key);
+    final List<int> k = List<int>.filled(64, 0);
+    if (keyBytes.length > 64) {
+      final hashedKey = _sha256(keyBytes);
+      for (int i = 0; i < hashedKey.length; i++) {
+        k[i] = hashedKey[i];
+      }
+    } else {
+      for (int i = 0; i < keyBytes.length; i++) {
+        k[i] = keyBytes[i];
+      }
+    }
+    final List<int> ipad = List<int>.filled(64, 0);
+    final List<int> opad = List<int>.filled(64, 0);
+    for (int i = 0; i < 64; i++) {
+      ipad[i] = k[i] ^ 0x36;
+      opad[i] = k[i] ^ 0x5c;
+    }
+    final List<int> innerHash = _sha256([...ipad, ...msgBytes]);
+    final List<int> outerHash = _sha256([...opad, ...innerHash]);
+    return outerHash.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  static List<int> _utf8Encode(String str) {
+    final List<int> bytes = [];
+    for (int i = 0; i < str.length; i++) {
+      final code = str.codeUnitAt(i);
+      if (code < 0x80) {
+        bytes.add(code);
+      } else if (code < 0x800) {
+        bytes.add(0xc0 | (code >> 6));
+        bytes.add(0x80 | (code & 0x3f));
+      } else {
+        bytes.add(0xe0 | (code >> 12));
+        bytes.add(0x80 | ((code >> 6) & 0x3f));
+        bytes.add(0x80 | (code & 0x3f));
+      }
+    }
+    return bytes;
+  }
+
+  static List<int> _sha256(List<int> bytes) {
+    final List<int> h = [
+      0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+      0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+    ];
+    final List<int> k = [
+      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+    ];
+    final List<int> padded = List<int>.from(bytes);
+    padded.add(0x80);
+    while ((padded.length + 8) % 64 != 0) {
+      padded.add(0x00);
+    }
+    final int lenBits = bytes.length * 8;
+    for (int i = 7; i >= 0; i--) {
+      padded.add((lenBits >> (i * 8)) & 0xff);
+    }
+    for (int chunkStart = 0; chunkStart < padded.length; chunkStart += 64) {
+      final List<int> w = List<int>.filled(64, 0);
+      for (int i = 0; i < 16; i++) {
+        w[i] = (padded[chunkStart + i * 4] << 24) |
+               (padded[chunkStart + i * 4 + 1] << 16) |
+               (padded[chunkStart + i * 4 + 2] << 8) |
+               (padded[chunkStart + i * 4 + 3]);
+      }
+      for (int i = 16; i < 64; i++) {
+        final int s0 = _rightRotate(w[i - 15], 7) ^ _rightRotate(w[i - 15], 18) ^ (w[i - 15] >> 3);
+        final int s1 = _rightRotate(w[i - 2], 17) ^ _rightRotate(w[i - 2], 19) ^ (w[i - 2] >> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) & 0xffffffff;
+      }
+      int a = h[0];
+      int b = h[1];
+      int c = h[2];
+      int d = h[3];
+      int e = h[4];
+      int f = h[5];
+      int g = h[6];
+      int hVal = h[7];
+      for (int i = 0; i < 64; i++) {
+        final int s1 = _rightRotate(e, 6) ^ _rightRotate(e, 11) ^ _rightRotate(e, 25);
+        final int ch = (e & f) ^ (~e & g);
+        final int temp1 = (hVal + s1 + ch + k[i] + w[i]) & 0xffffffff;
+        final int s0 = _rightRotate(a, 2) ^ _rightRotate(a, 13) ^ _rightRotate(a, 22);
+        final int maj = (a & b) ^ (a & c) ^ (b & c);
+        final int temp2 = (s0 + maj) & 0xffffffff;
+        hVal = g;
+        g = f;
+        f = e;
+        e = (d + temp1) & 0xffffffff;
+        d = c;
+        c = b;
+        b = a;
+        a = (temp1 + temp2) & 0xffffffff;
+      }
+      h[0] = (h[0] + a) & 0xffffffff;
+      h[1] = (h[1] + b) & 0xffffffff;
+      h[2] = (h[2] + c) & 0xffffffff;
+      h[3] = (h[3] + d) & 0xffffffff;
+      h[4] = (h[4] + e) & 0xffffffff;
+      h[5] = (h[5] + f) & 0xffffffff;
+      h[6] = (h[6] + g) & 0xffffffff;
+      h[7] = (h[7] + hVal) & 0xffffffff;
+    }
+    final List<int> resultBytes = [];
+    for (int i = 0; i < 8; i++) {
+      resultBytes.add((h[i] >> 24) & 0xff);
+      resultBytes.add((h[i] >> 16) & 0xff);
+      resultBytes.add((h[i] >> 8) & 0xff);
+      resultBytes.add(h[i] & 0xff);
+    }
+    return resultBytes;
+  }
+
+  static int _rightRotate(int val, int amt) {
+    return ((val >> amt) | (val << (32 - amt))) & 0xffffffff;
   }
 }
 

@@ -1,0 +1,88 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && 
+        (request.auth.token.role == role || request.auth.token.userRole == role);
+    }
+
+    function isSuperAdmin() {
+      return hasRole('SUPER_ADMIN');
+    }
+
+    function isStaff() {
+      return isSuperAdmin() || hasRole('SALES_MANAGER') || hasRole('FINANCE') || hasRole('FACILITY_MANAGER');
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+
+    function isValidDocument() {
+      return (request.resource.contentType.matches('application/pdf') ||
+              request.resource.contentType.matches('image/.*')) &&
+             request.resource.size < 25 * 1024 * 1024; // 25MB limit
+    }
+
+    // Projects, Compounds & Marketing Assets (Public Read, Staff Write)
+    match /projects/{projectId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() && isValidImage();
+    }
+
+    match /compounds/{compoundId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() && isValidImage();
+    }
+
+    match /units/{unitId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() && (isValidImage() || isValidDocument());
+    }
+
+    // User KYC & Profile Documents
+    match /users/{userId}/kyc/{fileName} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isStaff());
+      allow write: if isAuthenticated() && (isOwner(userId) || isSuperAdmin()) && isValidDocument();
+    }
+
+    match /users/{userId}/avatar/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(userId) && isValidImage();
+    }
+
+    // Contracts & Legal PDF Files (Private & Read-only once written)
+    match /contracts/{contractId}/{fileName} {
+      allow read: if isAuthenticated() && isStaff();
+      allow write: if isStaff() && isValidDocument();
+    }
+
+    // Payment Receipts (Read-only for Payer or Finance)
+    match /receipts/{paymentId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() && isValidDocument();
+    }
+
+    // Maintenance Attachments
+    match /maintenance/{ticketId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isValidImage() || isValidDocument());
+    }
+
+    // Temporary Uploads (Auto-purged via Lifecycle Rule)
+    match /tmp/{userId}/{fileName} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+  }
+}

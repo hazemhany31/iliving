@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/unit_price_tick.dart';
 import '../services/auth_service.dart';
 import '../services/live_price_state.dart';
 import '../services/api_client.dart';
+import '../widgets/offline_state_manager.dart';
 
 enum SyncStatus { idle, syncing, live, degraded, offline }
 
@@ -13,7 +16,28 @@ class PriceSyncRepository {
 
   static final PriceSyncRepository instance = PriceSyncRepository._internal();
 
-  static const String _endpoint = 'https://new-build-egypt.com/api/v1/units/prices';
+  static const String _endpoint = 'https://new-build-egypt.com/api/v1/units/prices.json';
+
+  Uri get _syncUri {
+    if (kIsWeb) {
+      final baseUri = Uri.parse(Uri.base.toString());
+      if (baseUri.host == 'localhost' || baseUri.host == '127.0.0.1') {
+        return Uri.parse('http://localhost:8000/api/v1/units/prices.json');
+      } else {
+        return Uri(
+          scheme: baseUri.scheme,
+          host: baseUri.host,
+          port: baseUri.port,
+          path: '/api/v1/units/prices.json',
+        );
+      }
+    } else {
+      if (kDebugMode) {
+        return Uri.parse('http://localhost:8000/api/v1/units/prices.json');
+      }
+      return Uri.parse(_endpoint);
+    }
+  }
 
   final StreamController<List<UnitPriceTick>> _controller =
       StreamController<List<UnitPriceTick>>.broadcast();
@@ -65,18 +89,28 @@ class PriceSyncRepository {
     if (_controller.isClosed) return;
     statusNotifier.value = SyncStatus.syncing;
 
+    // When running on web localhost, skip the HTTP call entirely.
+    // The local server at port 8000 is rarely running in dev, causing repeated
+    // net::ERR_CONNECTION_REFUSED errors in Chrome. Go straight to Firestore.
+    final uri = _syncUri;
+    if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
+      await _fallbackToFirestoreOrSimulate();
+      return;
+    }
+
+    // Non-localhost path: attempt the real HTTP endpoint.
     try {
       final headers = <String, String>{
         'Accept': 'application/json',
         'X-Client-Platform': 'flutter-mobile',
       };
-      final bearer = AuthService.instance.bearerToken;
+      final bearer = await AuthService.instance.bearerToken;
       if (bearer != null && bearer.isNotEmpty) {
         headers['Authorization'] = 'Bearer $bearer';
       }
 
       final response = await ApiClient.instance.get(
-        Uri.parse(_endpoint),
+        uri,
         headers: headers,
         timeout: const Duration(seconds: 6),
       );
@@ -91,7 +125,61 @@ class PriceSyncRepository {
         statusNotifier.value = SyncStatus.live;
         return;
       }
-    } catch (_) {}
+    } catch (_) {
+      // HTTP failed — fall through to Firestore / simulation.
+    }
+
+    await _fallbackToFirestoreOrSimulate();
+  }
+
+  /// Attempts a Firestore fetch for live prices; falls back to simulation if
+  /// Firestore is unavailable or the collection is empty.
+  Future<void> _fallbackToFirestoreOrSimulate() async {
+    final isForcedOnline = OfflineStateManager.forceOnline.value;
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('units')
+          .limit(50)
+          .get()
+          .timeout(const Duration(seconds: 3));
+      if (snapshot.docs.isNotEmpty) {
+        final ticks = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return UnitPriceTick(
+            unitNumber: data['unitNumber'] ?? data['unit_number'] ?? doc.id,
+            compoundId: data['compoundId'] ?? data['compound_id'] ?? '',
+            priceEGP: (data['priceEGP'] ?? data['price_egp'] ?? data['price'] ?? 0.0).toDouble(),
+            pricePerSqFt: (data['pricePerSqFt'] ?? data['price_per_sq_ft'] ?? 0.0).toDouble(),
+            installmentLayout: data['installmentLayout'] ?? data['payment_plan'] ?? 'Quarterly',
+            assetDetail: data['unitType'] ?? data['assetDetail'] ?? 'Luxury Unit',
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+
+        if (_hasDeltas(ticks)) {
+          _lastSnapshot = ticks;
+          _push(ticks);
+        }
+        statusNotifier.value = SyncStatus.live;
+        return;
+      }
+    } catch (_) {
+      if (!isForcedOnline) {
+        if (!kIsWeb) {
+          try {
+            final result = await InternetAddress.lookup('google.com')
+                .timeout(const Duration(seconds: 3));
+            if (result.isEmpty || result.first.rawAddress.isEmpty) {
+              statusNotifier.value = SyncStatus.offline;
+              return;
+            }
+          } catch (_) {
+            statusNotifier.value = SyncStatus.offline;
+            return;
+          }
+        }
+      }
+    }
 
     _simulateUpdates();
   }

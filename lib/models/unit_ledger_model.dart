@@ -1,6 +1,3 @@
-import 'invoice_model.dart';
-import 'unit_model.dart';
-
 class DownPaymentRecord {
   final bool isPaid;
   final String status;
@@ -217,6 +214,8 @@ class UnitLedger {
   final String floorTier;
   final double areaSquareMeters;
 
+  String get id => unitId;
+
   const UnitLedger({
     required this.compoundId,
     required this.clientId,
@@ -265,14 +264,27 @@ class UnitLedger {
       clientId: json['clientId'] as String,
       unitId: unitId,
       unitType: json['unitType'] as String,
-      downPayment: DownPaymentRecord.fromJson(
-          json['downPayment'] as Map<String, dynamic>),
-      installments: (json['installments'] as List<dynamic>)
-          .map((e) =>
-              InstallmentRecord.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      maintenance: MaintenanceFundRecord.fromJson(
-          json['maintenance'] as Map<String, dynamic>),
+      downPayment: json['downPayment'] != null
+          ? DownPaymentRecord.fromJson(json['downPayment'] as Map<String, dynamic>)
+          : const DownPaymentRecord(
+              isPaid: false,
+              status: 'Unpaid',
+              percentageDue: 10.0,
+              amountEGP: 0.0,
+            ),
+      installments: (json['installments'] as List<dynamic>?)
+              ?.map((e) =>
+                  InstallmentRecord.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      maintenance: json['maintenance'] != null
+          ? MaintenanceFundRecord.fromJson(json['maintenance'] as Map<String, dynamic>)
+          : const MaintenanceFundRecord(
+              isPaid: false,
+              status: 'Active',
+              balanceEGP: 0.0,
+              annualFeeEGP: 0.0,
+            ),
       floorTier: floorTierStr,
       areaSquareMeters: areaSqM,
     );
@@ -317,4 +329,28 @@ class UnitLedger {
 
   List<InstallmentRecord> get paidInstallments =>
       installments.where((i) => i.isPaid).toList();
+
+  UnitLedger copyWith({
+    String? compoundId,
+    String? clientId,
+    String? unitId,
+    String? unitType,
+    DownPaymentRecord? downPayment,
+    List<InstallmentRecord>? installments,
+    MaintenanceFundRecord? maintenance,
+    String? floorTier,
+    double? areaSquareMeters,
+  }) {
+    return UnitLedger(
+      compoundId: compoundId ?? this.compoundId,
+      clientId: clientId ?? this.clientId,
+      unitId: unitId ?? this.unitId,
+      unitType: unitType ?? this.unitType,
+      downPayment: downPayment ?? this.downPayment,
+      installments: installments ?? this.installments,
+      maintenance: maintenance ?? this.maintenance,
+      floorTier: floorTier ?? this.floorTier,
+      areaSquareMeters: areaSquareMeters ?? this.areaSquareMeters,
+    );
+  }
 }

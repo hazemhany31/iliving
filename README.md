@@ -1,3 +1,3 @@
-# ihome
+# iLiving
 
 A new Flutter project.

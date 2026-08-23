@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/config/app_secrets.dart';
 import '../models/operation_ticket_model.dart';
 import '../models/unit_ledger_model.dart';
 import '../models/gate_utility_model.dart';
 import '../services/auth_service.dart';
 import 'operations_mock_data.dart';
 import '../models/invoice_model.dart';
+import '../services/notification_service.dart';
+import 'firestore/firestore_notification_repository.dart';
 
 
 class OperationsRepository {
@@ -13,7 +16,8 @@ class OperationsRepository {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('compounds').get().timeout(const Duration(seconds: 4));
       if (snapshot.docs.isNotEmpty) {
-        return snapshot.docs.map((doc) => doc.data()).toList();
+        final filtered = _filterAndDeduplicateCompounds(snapshot.docs.map((doc) => doc.data()).toList());
+        if (filtered.isNotEmpty) return filtered;
       }
     } catch (_) {}
     return _getFallbackOpsData();
@@ -25,7 +29,7 @@ class OperationsRepository {
       FirebaseFirestore.instance
           .collection('compounds')
           .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList())
+          .map((snapshot) => _filterAndDeduplicateCompounds(snapshot.docs.map((doc) => doc.data()).toList()))
           .listen(
             (data) {
               if (data.isNotEmpty) {
@@ -44,14 +48,79 @@ class OperationsRepository {
     return controller.stream;
   }
 
-  List<Map<String, dynamic>> _getFallbackOpsData() {
-    final user = AuthService.instance.currentProfile;
-    final ownedUnits = user?.ownedUnitIds ?? ['B01B202'];
-    final filtered = OperationsMockData.dummyOpsCompounds.where((c) => ownedUnits.contains(c['unit'])).toList();
-    if (filtered.isEmpty) {
-      return OperationsMockData.dummyOpsCompounds;
+  String _normalizeUnitId(String unitId, [String? clientId]) {
+    final effectiveClientId = clientId ?? AuthService.instance.currentProfile?.clientId ?? '';
+    final cleanClient = effectiveClientId.trim();
+    final cleanCode = cleanClient.replaceAll(RegExp(r'[^0-9]'), '');
+    const fictionalCodes = {'93', '100', '107', '109', '124', '150', '151', '154', '161', '167', '189', '197', '207'};
+    if (fictionalCodes.contains(cleanCode)) {
+      if (unitId == 'B203' || unitId == 'B404' || unitId == 'B409' || unitId == 'B202') {
+        return 'UNIT$cleanCode';
+      }
     }
-    return filtered;
+    return unitId;
+  }
+
+  List<Map<String, dynamic>> _filterAndDeduplicateCompounds(List<Map<String, dynamic>> rawList) {
+    final user = AuthService.instance.currentProfile;
+    if (user == null) {
+      return _deduplicateCompounds(rawList);
+    }
+
+    final clientId = user.clientId;
+    final ownedUnits = user.ownedUnitIds.map((u) => _normalizeUnitId(u, clientId)).toList();
+
+    List<Map<String, dynamic>> filtered = [];
+    if (ownedUnits.isNotEmpty) {
+      filtered = rawList.where((c) {
+        final unitStr = (c['unit'] ?? c['unitId'] ?? '').toString();
+        final normalizedUnit = _normalizeUnitId(unitStr, clientId);
+        final itemClientId = (c['clientId'] ?? c['clientCode'] ?? '').toString();
+        return ownedUnits.contains(unitStr) ||
+            ownedUnits.contains(normalizedUnit) ||
+            (itemClientId.isNotEmpty && itemClientId == clientId);
+      }).toList();
+    }
+
+    if (filtered.isEmpty && clientId.isNotEmpty) {
+      filtered = rawList.where((c) {
+        final itemClientId = (c['clientId'] ?? c['clientCode'] ?? '').toString();
+        return itemClientId == clientId;
+      }).toList();
+    }
+
+    if (filtered.isEmpty) {
+      if (rawList.isNotEmpty) {
+        final firstComp = Map<String, dynamic>.from(rawList.first);
+        if (ownedUnits.isNotEmpty) {
+          firstComp['unit'] = ownedUnits.first;
+        }
+        return [firstComp];
+      }
+      return [];
+    }
+
+    return _deduplicateCompounds(filtered);
+  }
+
+  List<Map<String, dynamic>> _deduplicateCompounds(List<Map<String, dynamic>> list) {
+    final seen = <String>{};
+    final result = <Map<String, dynamic>>[];
+    for (final item in list) {
+      final unit = (item['unit'] ?? item['unitId'] ?? '').toString();
+      final title = (item['title'] ?? '').toString();
+      final id = (item['id'] ?? '').toString();
+      final key = '${id}_${title}_$unit';
+      if (!seen.contains(key)) {
+        seen.add(key);
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  List<Map<String, dynamic>> _getFallbackOpsData() {
+    return _filterAndDeduplicateCompounds(OperationsMockData.dummyOpsCompounds);
   }
 
   Future<List<OperationTicketModel>> fetchTicketsForCompound(String compoundId) async {
@@ -87,7 +156,32 @@ class OperationsRepository {
     required String unitId,
     required String clientId,
   }) {
+    final targetUnitId = _normalizeUnitId(unitId, clientId);
     final controller = StreamController<UnitLedger>();
+
+    UnitLedger getFallback() {
+      try {
+        return OperationsMockData.dummyLedgers.firstWhere(
+          (l) => l.clientId == clientId && l.unitId == targetUnitId,
+          orElse: () => OperationsMockData.dummyLedgers.firstWhere(
+            (l) => l.clientId == clientId,
+            orElse: () => OperationsMockData.dummyLedgers.firstWhere(
+              (l) => l.unitId == targetUnitId,
+              orElse: () => OperationsMockData.dummyLedgers.first.copyWith(
+                clientId: clientId,
+                unitId: targetUnitId,
+              ),
+            ),
+          ),
+        );
+      } catch (_) {
+        return OperationsMockData.dummyLedgers.first.copyWith(
+          clientId: clientId,
+          unitId: targetUnitId,
+        );
+      }
+    }
+
     try {
       FirebaseFirestore.instance
           .doc('/ledger/$clientId/compounds/$compoundId')
@@ -100,25 +194,11 @@ class OperationsRepository {
           .listen(
             (ledger) => controller.add(ledger),
             onError: (_) {
-              try {
-                final fallback = OperationsMockData.dummyLedgers.firstWhere(
-                  (l) => l.unitId == unitId,
-                );
-                controller.add(fallback);
-              } catch (err) {
-                controller.addError(err);
-              }
+              controller.add(getFallback());
             },
           );
     } catch (_) {
-      try {
-        final fallback = OperationsMockData.dummyLedgers.firstWhere(
-          (l) => l.unitId == unitId,
-        );
-        controller.add(fallback);
-      } catch (err) {
-        controller.addError(err);
-      }
+      controller.add(getFallback());
     }
     return controller.stream;
   }
@@ -127,11 +207,12 @@ class OperationsRepository {
     required String compoundId,
     required String unitId,
   }) async {
+    final targetUnitId = _normalizeUnitId(unitId);
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('gateAccessCodes')
           .where('compoundId', isEqualTo: compoundId)
-          .where('unitId', isEqualTo: unitId)
+          .where('unitId', isEqualTo: targetUnitId)
           .get()
           .timeout(const Duration(seconds: 4));
       if (snapshot.docs.isNotEmpty) {
@@ -142,7 +223,7 @@ class OperationsRepository {
       }
     } catch (_) {}
     return OperationsMockData.dummyGateCodes
-        .where((c) => c.compoundId == compoundId && c.unitId == unitId && c.isActive)
+        .where((c) => c.compoundId == compoundId && c.unitId == targetUnitId && c.isActive)
         .toList();
   }
 
@@ -197,10 +278,21 @@ class OperationsRepository {
     String? cameraSnapshotUrl,
   }) async {
     final segments = qrPayloadString.split(':');
-    if (segments.length != 4 || segments[0] != 'IHOME-GATE') {
-      throw ArgumentError('Invalid QR payload format: $qrPayloadString');
+    if (segments.length != 5 || segments[0] != 'ILIVING-GATE') {
+      throw ArgumentError('Invalid QR payload format or missing signature');
     }
     final codeId = segments[1];
+    final compoundId = segments[2];
+    final epochMsStr = segments[3];
+    final signature = segments[4];
+    final message = 'ILIVING-GATE:$codeId:$compoundId:$epochMsStr';
+    final expectedSignature = GateAccessCode.hmacSha256(message, AppSecrets.instance.gateSigningKey);
+    if (signature != expectedSignature) {
+      throw StateError('Cryptographic signature verification failed');
+    }
+    final epochMs = int.tryParse(epochMsStr) ?? 0;
+    final now = DateTime.now().toUtc();
+    final expiration = DateTime.fromMillisecondsSinceEpoch(epochMs, isUtc: true);
     GateAccessCode? code;
     try {
       final snapshot = await FirebaseFirestore.instance.collection('gateAccessCodes').doc(codeId).get();
@@ -213,7 +305,10 @@ class OperationsRepository {
       if (index == -1) throw StateError('Gate code not found: $codeId');
       code = OperationsMockData.dummyGateCodes[index];
     }
-    final result = GateAccessLog.evaluateScan(code);
+    var result = GateAccessLog.evaluateScan(code);
+    if (result == GateScanResult.granted && now.isAfter(expiration)) {
+      result = GateScanResult.deniedExpired;
+    }
     final logEntry = GateAccessLog.recordScan(
       code: code,
       gateId: gateId,
@@ -293,12 +388,26 @@ class OperationsRepository {
   }
 
   Future<OperationTicketModel> submitTicket(OperationTicketModel ticket) async {
+    OperationTicketModel result = ticket;
     try {
       final ref = await FirebaseFirestore.instance.collection('tickets').add(ticket.toJson());
-      return ticket.copyWith(id: ref.id);
+      result = ticket.copyWith(id: ref.id);
+    } catch (_) {
+      OperationsMockData.dummyTickets.add(ticket);
+    }
+
+    try {
+      final notifService = NotificationService(notificationRepository: FirestoreNotificationRepository());
+      await notifService.notifyTicketCreated(
+        residentUserId: ticket.clientId,
+        unitId: ticket.unitId,
+        ticketNumber: ticket.id,
+        title: ticket.description,
+        urgency: ticket.priority.name,
+      );
     } catch (_) {}
-    OperationsMockData.dummyTickets.add(ticket);
-    return ticket;
+
+    return result;
   }
 
   Future<OperationTicketModel> updateTicketStatus({
@@ -308,30 +417,62 @@ class OperationsRepository {
     required String changedByRole,
     String? note,
   }) async {
+    OperationTicketModel updated;
     try {
       final docRef = FirebaseFirestore.instance.collection('tickets').doc(ticketId);
       final snapshot = await docRef.get();
       if (snapshot.exists) {
         final ticket = OperationTicketModel.fromJson(snapshot.data()!);
-        final updated = ticket.withStatusTransition(
+        updated = ticket.withStatusTransition(
           newStatus: newStatus,
           changedByName: changedByName,
           changedByRole: changedByRole,
           note: note,
         );
         await docRef.set(updated.toJson());
-        return updated;
+      } else {
+        final index = OperationsMockData.dummyTickets.indexWhere((t) => t.id == ticketId);
+        if (index == -1) throw StateError('Ticket not found: $ticketId');
+        updated = OperationsMockData.dummyTickets[index].withStatusTransition(
+          newStatus: newStatus,
+          changedByName: changedByName,
+          changedByRole: changedByRole,
+          note: note,
+        );
+        OperationsMockData.dummyTickets[index] = updated;
+      }
+    } catch (_) {
+      final index = OperationsMockData.dummyTickets.indexWhere((t) => t.id == ticketId);
+      if (index == -1) throw StateError('Ticket not found: $ticketId');
+      updated = OperationsMockData.dummyTickets[index].withStatusTransition(
+        newStatus: newStatus,
+        changedByName: changedByName,
+        changedByRole: changedByRole,
+        note: note,
+      );
+      OperationsMockData.dummyTickets[index] = updated;
+    }
+
+    try {
+      final notifService = NotificationService(notificationRepository: FirestoreNotificationRepository());
+      if (note != null && note.isNotEmpty) {
+        await notifService.notifyTicketCommentAdded(
+          targetUserId: updated.clientId,
+          ticketNumber: updated.id,
+          authorName: changedByName,
+          message: note,
+        );
+      } else {
+        await notifService.notifyTicketUpdated(
+          residentUserId: updated.clientId,
+          unitId: updated.unitId,
+          ticketNumber: updated.id,
+          title: updated.description,
+          status: newStatus.name,
+        );
       }
     } catch (_) {}
-    final index = OperationsMockData.dummyTickets.indexWhere((t) => t.id == ticketId);
-    if (index == -1) throw StateError('Ticket not found: $ticketId');
-    final updated = OperationsMockData.dummyTickets[index].withStatusTransition(
-      newStatus: newStatus,
-      changedByName: changedByName,
-      changedByRole: changedByRole,
-      note: note,
-    );
-    OperationsMockData.dummyTickets[index] = updated;
+
     return updated;
   }
 

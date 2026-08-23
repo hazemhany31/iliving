@@ -5,6 +5,8 @@ import '../models/compound_model.dart';
 import '../repositories/compound_repository.dart';
 import '../widgets/interactive_tap_bounce.dart';
 import '../widgets/luxury_shimmer.dart';
+import '../widgets/image_loader.dart';
+import '../l10n/app_localizations.dart';
 
 class EoiCaptureScreen extends StatefulWidget {
   const EoiCaptureScreen({super.key});
@@ -22,14 +24,13 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
 
   int _selectedDevelopmentIndex = 0;
   String _selectedUnitType = '2 BR';
-  String _selectedPaymentMethod = 'Bank Transfer';
   bool _isLoading = true;
+  bool _isSubmitting = false;
 
   final CompoundRepository _repository = CompoundRepository();
   List<CompoundModel> _compounds = [];
 
   final List<String> _unitTypes = ['1 BR', '2 BR', '3 BR', 'Penthouse', 'Duplex', 'Villa'];
-  final List<String> _paymentMethods = ['Bank Transfer', 'Credit Card (Stripe)', 'Crypto Escrow', 'Cheque Deposit'];
 
   @override
   void initState() {
@@ -58,25 +59,35 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final iconColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+
     return Scaffold(
-      backgroundColor: LuxuryTheme.backgroundBlack,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text(
-          'EXPRESSION OF INTEREST (EOI)',
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        title: Text(
+          l10n.eoiTitle.toUpperCase(),
           style: TextStyle(
-            color: LuxuryTheme.primaryGold,
+            fontFamily: AppTextStyles.fontFamily,
+            color: textColor,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
+            letterSpacing: 1.0,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: LuxuryTheme.primaryGold, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? _buildLoadingView()
+          ? _buildLoadingView(isDark)
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -85,13 +96,14 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'SELECT DEVELOPER PORTFOLIO',
+                      Text(
+                        l10n.selectDeveloperPortfolio.toUpperCase(),
                         style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontSize: 11,
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
+                          letterSpacing: 0.8,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -101,9 +113,9 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
                         itemCount: _compounds.length,
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 0.85,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 0.82,
                         ),
                         itemBuilder: (context, index) {
                           final compound = _compounds[index];
@@ -117,38 +129,39 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: LuxuryTheme.surfaceBrown,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.cardBrown,
-                                  width: 1.5,
-                                ),
+                                color: isSelected
+                                    ? (isDark ? AppColors.accent : AppColors.primary)
+                                    : cardBg,
+                                borderRadius: AppBorderRadius.medium,
+                                boxShadow: isSelected
+                                    ? (isDark ? AppShadows.darkElevated : AppShadows.elevated)
+                                    : (isDark ? AppShadows.darkSoft : AppShadows.soft),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(6),
-                                          topRight: Radius.circular(6),
-                                        ),
-                                        image: DecorationImage(
-                                          image: NetworkImage(compound.cardImageUrl),
-                                          fit: BoxFit.cover,
-                                          onError: (e, s) {},
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                      child: ImageLoader(
+                                        imageUrl: compound.cardImageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => Container(
+                                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
                                         ),
                                       ),
                                     ),
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.all(6.0),
+                                    padding: const EdgeInsets.all(8.0),
                                     child: Text(
                                       compound.title,
                                       style: TextStyle(
-                                        color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.textWhite,
-                                        fontSize: 8.5,
+                                        fontFamily: AppTextStyles.fontFamily,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : textColor,
+                                        fontSize: 9.5,
                                         fontWeight: FontWeight.bold,
                                       ),
                                       maxLines: 1,
@@ -162,28 +175,21 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
                         },
                       ),
                       const SizedBox(height: 24),
-                      const Text(
-                        'SELECT UNIT SPECIFICATION',
+                      Text(
+                        l10n.selectUnitSpecification.toUpperCase(),
                         style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontSize: 11,
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
+                          letterSpacing: 0.8,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _unitTypes.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 2.2,
-                        ),
-                        itemBuilder: (context, index) {
-                          final type = _unitTypes[index];
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _unitTypes.map((type) {
                           final isSelected = _selectedUnitType == type;
 
                           return InteractiveTapBounce(
@@ -193,93 +199,90 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
                               });
                             },
                             child: Container(
-                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isSelected ? LuxuryTheme.cardBrown : LuxuryTheme.surfaceBrown,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.cardBrown,
-                                  width: 1.5,
-                                ),
+                                color: isSelected
+                                    ? (isDark ? AppColors.accent : AppColors.primary)
+                                    : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                                borderRadius: AppBorderRadius.pill,
+                                boxShadow: isSelected
+                                    ? (isDark ? AppShadows.darkSoft : AppShadows.soft)
+                                    : null,
                               ),
                               child: Text(
                                 type,
                                 style: TextStyle(
-                                  color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.textWhite,
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : textColor,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           );
-                        },
+                        }).toList(),
                       ),
                       const SizedBox(height: 24),
-                      const Text(
-                        'PROSPECT CLIENT DOSSIER',
+                      Text(
+                        l10n.prospectClientDossier.toUpperCase(),
                         style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontSize: 11,
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
+                          letterSpacing: 0.8,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      _buildModernTextField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Client Legal Entity / Individual Name',
-                          prefixIcon: Icon(Icons.person_outline, color: LuxuryTheme.primaryGold),
-                        ),
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 13),
+                        label: l10n.clientLegalName,
+                        icon: Icons.person_outline_rounded,
+                        isDark: isDark,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Legal identifier is mandatory';
+                            return l10n.clientLegalName;
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      _buildModernTextField(
                         controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Client Secure Contact Email',
-                          prefixIcon: Icon(Icons.email_outlined, color: LuxuryTheme.primaryGold),
-                        ),
+                        label: l10n.clientEmail,
+                        icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 13),
+                        isDark: isDark,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Secure contact point is mandatory';
+                            return l10n.clientEmail;
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      _buildModernTextField(
                         controller: _phoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Verified Mobile (Including CC)',
-                          prefixIcon: Icon(Icons.phone_outlined, color: LuxuryTheme.primaryGold),
-                        ),
+                        label: l10n.verifiedMobile,
+                        icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 13),
+                        isDark: isDark,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Verification protocol number required';
+                            return l10n.verifiedMobile;
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      _buildModernTextField(
                         controller: _amountController,
-                        decoration: const InputDecoration(
-                          labelText: 'EOI Deposit Value (EGP)',
-                          prefixIcon: Icon(Icons.monetization_on_outlined, color: LuxuryTheme.primaryGold),
-                        ),
+                        label: 'EOI Deposit Value (EGP)',
+                        icon: Icons.monetization_on_outlined,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 13),
+                        isDark: isDark,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Financial allocation is mandatory';
@@ -291,159 +294,150 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'ESCROW FUNDING METHOD',
-                        style: TextStyle(
-                          color: LuxuryTheme.primaryGold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _paymentMethods.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 2.1,
-                        ),
-                        itemBuilder: (context, index) {
-                          final method = _paymentMethods[index];
-                          final isSelected = _selectedPaymentMethod == method;
-
-                          return InteractiveTapBounce(
-                            onTap: () {
-                              setState(() {
-                                _selectedPaymentMethod = method;
-                              });
-                            },
-                            child: Container(
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isSelected ? LuxuryTheme.cardBrown : LuxuryTheme.surfaceBrown,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.cardBrown,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Text(
-                                method,
-                                style: TextStyle(
-                                  color: isSelected ? LuxuryTheme.primaryGold : LuxuryTheme.textWhite,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                       const SizedBox(height: 32),
-                      InteractiveTapBounce(
-                        onTap: () {
-                          if (_formKey.currentState!.validate()) {
-                            final selectedCompound = _compounds[_selectedDevelopmentIndex];
-                            showGeneralDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              barrierColor: Colors.black.withAlpha(204),
-                              transitionDuration: const Duration(milliseconds: 500),
-                              pageBuilder: (context, anim1, anim2) {
-                                return Center(
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: Container(
-                                      margin: const EdgeInsets.all(24),
-                                      padding: const EdgeInsets.all(24),
-                                      decoration: BoxDecoration(
-                                        color: LuxuryTheme.surfaceBrown,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: LuxuryTheme.primaryGold, width: 2),
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.verified_sharp,
-                                            color: LuxuryTheme.primaryGold,
-                                            size: 50,
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    setState(() {
+                                      _isSubmitting = true;
+                                    });
+                                    final selectedCompound = _compounds[_selectedDevelopmentIndex];
+                                    try {
+                                      await _repository.submitEOI(
+                                        clientName: _nameController.text,
+                                        clientEmail: _emailController.text,
+                                        clientPhone: _phoneController.text,
+                                        amount: _amountController.text,
+                                        compoundId: selectedCompound.id,
+                                        compoundTitle: selectedCompound.title,
+                                        unitType: _selectedUnitType,
+                                      );
+                                    } catch (e) {
+                                      debugPrint("Error submitting EOI: $e");
+                                    } finally {
+                                      if (mounted) {
+                                        setState(() {
+                                          _isSubmitting = false;
+                                        });
+                                      }
+                                    }
+
+                                    if (!context.mounted) return;
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) {
+                                        final surfaceBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+                                        return Container(
+                                          padding: const EdgeInsets.all(28),
+                                          decoration: BoxDecoration(
+                                            color: surfaceBg,
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                                            boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
                                           ),
-                                          const SizedBox(height: 16),
-                                          const Text(
-                                            'EOI CAPTURED SUCCESSFULLY',
-                                            style: TextStyle(
-                                              color: LuxuryTheme.primaryGold,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.5,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Client ${_nameController.text} has been successfully locked for the ${selectedCompound.title} $_selectedUnitType allocation. EOI Certificate has been pushed to registration ledger.',
-                                            style: const TextStyle(color: LuxuryTheme.textSilver, fontSize: 11, height: 1.4),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          const SizedBox(height: 24),
-                                          InteractiveTapBounce(
-                                            onTap: () {
-                                              Navigator.pop(context);
-                                              Navigator.pop(context);
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                              decoration: BoxDecoration(
-                                                color: LuxuryTheme.primaryGold,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: const Text(
-                                                'CLOSE PROTOCOL',
-                                                style: TextStyle(
-                                                  color: LuxuryTheme.backgroundBlack,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(16),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.success.withAlpha(25),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.verified_rounded,
+                                                  color: AppColors.success,
+                                                  size: 44,
                                                 ),
                                               ),
-                                            ),
+                                              const SizedBox(height: 16),
+                                              Text(
+                                                'EOI CAPTURED SUCCESSFULLY',
+                                                style: TextStyle(
+                                                  fontFamily: AppTextStyles.fontFamily,
+                                                  color: textColor,
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Client ${_nameController.text} has been successfully locked for the ${selectedCompound.title} $_selectedUnitType allocation.',
+                                                style: TextStyle(
+                                                  fontFamily: AppTextStyles.fontFamily,
+                                                  color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted,
+                                                  fontSize: 12,
+                                                  height: 1.4,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                height: 48,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                    Navigator.pop(context);
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                                                    foregroundColor: Colors.white,
+                                                    elevation: 0,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: AppBorderRadius.pill,
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    'DONE',
+                                                    style: TextStyle(
+                                                      fontFamily: AppTextStyles.fontFamily,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 13,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
+                                        );
+                                      },
+                                    );
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppBorderRadius.pill,
+                            ),
+                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
                                   ),
-                                );
-                              },
-                            );
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                LuxuryTheme.deepGold,
-                                LuxuryTheme.primaryGold,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: LuxuryTheme.primaryGold, width: 1),
-                          ),
-                          child: const Text(
-                            'COMMIT SECURE EOI CAPTURE',
-                            style: TextStyle(
-                              color: LuxuryTheme.backgroundBlack,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
+                                )
+                              : Text(
+                                  l10n.commitEoi.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -455,7 +449,49 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
     );
   }
 
-  Widget _buildLoadingView() {
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: AppBorderRadius.medium,
+        boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: TextStyle(
+          fontFamily: AppTextStyles.fontFamily,
+          color: textColor,
+          fontSize: 13,
+        ),
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            fontFamily: AppTextStyles.fontFamily,
+            color: textMuted,
+            fontSize: 12,
+          ),
+          prefixIcon: Icon(icon, color: AppColors.accent, size: 18),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingView(bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -469,11 +505,17 @@ class _EoiCaptureScreenState extends State<EoiCaptureScreen> {
             itemCount: 3,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
               childAspectRatio: 0.85,
             ),
-            itemBuilder: (context, index) => const LuxuryShimmer(width: double.infinity, height: 100),
+            itemBuilder: (context, index) => Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                borderRadius: AppBorderRadius.medium,
+              ),
+              child: const LuxuryShimmer(width: double.infinity, height: 100),
+            ),
           ),
         ],
       ),

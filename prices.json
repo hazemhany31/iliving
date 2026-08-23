@@ -1,0 +1,490 @@
+{
+  "units": [
+    {
+      "unit_number": "A301B404",
+      "compound_id": "dev_1",
+      "price_egp": 5543216.0,
+      "price_per_sqft": 1154.12,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A301B404",
+      "compound_id": "dev_1",
+      "price_egp": 5543216.0,
+      "price_per_sqft": 1154.12,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A301B404",
+      "compound_id": "dev_1",
+      "price_egp": 5543216.0,
+      "price_per_sqft": 1154.12,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT93",
+      "compound_id": "dev_1",
+      "price_egp": 5443200.0,
+      "price_per_sqft": 1208.53,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B01-207",
+      "compound_id": "dev_1",
+      "price_egp": 3016000.0,
+      "price_per_sqft": 700.91,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Ground Floor Villa",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A103B208",
+      "compound_id": "dev_1",
+      "price_egp": 5248800.0,
+      "price_per_sqft": 1137.83,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "1st Floor Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A01-207",
+      "compound_id": "dev_1",
+      "price_egp": 3016000.0,
+      "price_per_sqft": 701.23,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2 BR Garden Apartment",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A01B208",
+      "compound_id": "dev_1",
+      "price_egp": 2915984.0,
+      "price_per_sqft": 633.63,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2 BR Garden Apartment",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B501B409",
+      "compound_id": "dev_1",
+      "price_egp": 5662000.0,
+      "price_per_sqft": 1196.28,
+      "installment_layout": "Quarterly",
+      "asset_detail": "5th Floor Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A01B203",
+      "compound_id": "dev_1",
+      "price_egp": 5231960.0,
+      "price_per_sqft": 1154.96,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "2 BR Garden Apartment",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A301B208",
+      "compound_id": "dev_1",
+      "price_egp": 2538000.0,
+      "price_per_sqft": 551.62,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B01B202",
+      "compound_id": "dev_1",
+      "price_egp": 4150000.0,
+      "price_per_sqft": 940.62,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Luxury Ground Villa",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C301B409",
+      "compound_id": "dev_1",
+      "price_egp": 3880000.0,
+      "price_per_sqft": 822.03,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A502B310",
+      "compound_id": "dev_1",
+      "price_egp": 3950200.0,
+      "price_per_sqft": 822.79,
+      "installment_layout": "Quarterly",
+      "asset_detail": "5th Floor Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C203B404",
+      "compound_id": "dev_1",
+      "price_egp": 2821616.0,
+      "price_per_sqft": 586.98,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C203B404",
+      "compound_id": "dev_1",
+      "price_egp": 2821616.0,
+      "price_per_sqft": 586.98,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A101B409",
+      "compound_id": "dev_1",
+      "price_egp": 5348800.0,
+      "price_per_sqft": 1129.39,
+      "installment_layout": "Quarterly",
+      "asset_detail": "1st Floor Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B102B409",
+      "compound_id": "dev_1",
+      "price_egp": 3936600.0,
+      "price_per_sqft": 836.51,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "1st Floor Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C201B409",
+      "compound_id": "dev_1",
+      "price_egp": 3330600.0,
+      "price_per_sqft": 702.95,
+      "installment_layout": "Installment",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B403B208",
+      "compound_id": "dev_1",
+      "price_egp": 3672000.0,
+      "price_per_sqft": 797.74,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "4th Floor Sky Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A201B409",
+      "compound_id": "dev_1",
+      "price_egp": 5248800.0,
+      "price_per_sqft": 1111.09,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A201B409",
+      "compound_id": "dev_1",
+      "price_egp": 5248800.0,
+      "price_per_sqft": 1111.09,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B02B409",
+      "compound_id": "dev_1",
+      "price_egp": 4449000.0,
+      "price_per_sqft": 944.59,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "Ground Floor Villa",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B01B409",
+      "compound_id": "dev_1",
+      "price_egp": 4528000.0,
+      "price_per_sqft": 955.48,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Ground Floor Villa",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A401B409",
+      "compound_id": "dev_1",
+      "price_egp": 2484000.0,
+      "price_per_sqft": 537.55,
+      "installment_layout": "Quarterly",
+      "asset_detail": "4th Floor Sky Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A401B409",
+      "compound_id": "dev_1",
+      "price_egp": 2484000.0,
+      "price_per_sqft": 537.55,
+      "installment_layout": "Quarterly",
+      "asset_detail": "4th Floor Sky Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B104B203",
+      "compound_id": "dev_1",
+      "price_egp": 2624400.0,
+      "price_per_sqft": 580.23,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C401B409",
+      "compound_id": "dev_1",
+      "price_egp": 3930000.0,
+      "price_per_sqft": 830.69,
+      "installment_layout": "Quarterly",
+      "asset_detail": "4th Floor Sky Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT150",
+      "compound_id": "dev_1",
+      "price_egp": 3875000.0,
+      "price_per_sqft": 820.8,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT154",
+      "compound_id": "dev_1",
+      "price_egp": 2821600.0,
+      "price_per_sqft": 597.42,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C203B409",
+      "compound_id": "dev_1",
+      "price_egp": 2624400.0,
+      "price_per_sqft": 557.55,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C203B409",
+      "compound_id": "dev_1",
+      "price_egp": 2624400.0,
+      "price_per_sqft": 557.55,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT167",
+      "compound_id": "dev_1",
+      "price_egp": 2789200.0,
+      "price_per_sqft": 589.06,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B302B208",
+      "compound_id": "dev_1",
+      "price_egp": 3353400.0,
+      "price_per_sqft": 724.59,
+      "installment_layout": "Annual",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A201B404",
+      "compound_id": "dev_1",
+      "price_egp": 5543216.0,
+      "price_per_sqft": 1153.39,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C303B409",
+      "compound_id": "dev_1",
+      "price_egp": 2475568.0,
+      "price_per_sqft": 524.71,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A01B409",
+      "compound_id": "dev_1",
+      "price_egp": 3070000.0,
+      "price_per_sqft": 649.6,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2 BR Garden Apartment",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "A201B409",
+      "compound_id": "dev_1",
+      "price_egp": 5248800.0,
+      "price_per_sqft": 1111.09,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C103B409",
+      "compound_id": "dev_1",
+      "price_egp": 2918800.0,
+      "price_per_sqft": 616.17,
+      "installment_layout": "Quarterly",
+      "asset_detail": "1st Floor Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B303B208",
+      "compound_id": "dev_1",
+      "price_egp": 3672000.0,
+      "price_per_sqft": 797.39,
+      "installment_layout": "Quarterly",
+      "asset_detail": "3rd Floor Sky Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B101B409",
+      "compound_id": "dev_1",
+      "price_egp": 3936600.0,
+      "price_per_sqft": 836.86,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "1st Floor Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B402B409",
+      "compound_id": "dev_1",
+      "price_egp": 3342600.0,
+      "price_per_sqft": 708.93,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "4th Floor Sky Penthouse",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "C102B409",
+      "compound_id": "dev_1",
+      "price_egp": 2624400.0,
+      "price_per_sqft": 557.79,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "1st Floor Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT113",
+      "compound_id": "dev_1",
+      "price_egp": 2675800.0,
+      "price_per_sqft": 581.19,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT189",
+      "compound_id": "dev_1",
+      "price_egp": 2664960.0,
+      "price_per_sqft": 603.07,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT151",
+      "compound_id": "dev_1",
+      "price_egp": 3880000.0,
+      "price_per_sqft": 821.69,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT109",
+      "compound_id": "dev_1",
+      "price_egp": 3896102.0,
+      "price_per_sqft": 862.54,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT124",
+      "compound_id": "dev_1",
+      "price_egp": 3342600.0,
+      "price_per_sqft": 709.08,
+      "installment_layout": "Semi-Annual",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT107",
+      "compound_id": "dev_1",
+      "price_egp": 4860000.0,
+      "price_per_sqft": 1076.41,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT161",
+      "compound_id": "dev_1",
+      "price_egp": 2635200.0,
+      "price_per_sqft": 582.36,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT207",
+      "compound_id": "dev_1",
+      "price_egp": 4015000.0,
+      "price_per_sqft": 907.34,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT100",
+      "compound_id": "dev_1",
+      "price_egp": 6561000.0,
+      "price_per_sqft": 1366.31,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "B101B202",
+      "compound_id": "dev_1",
+      "price_egp": 4015000.0,
+      "price_per_sqft": 908.99,
+      "installment_layout": "Quarterly",
+      "asset_detail": "2nd Floor Luxury Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    },
+    {
+      "unit_number": "UNIT197",
+      "compound_id": "dev_1",
+      "price_egp": 5054400.0,
+      "price_per_sqft": 1142.75,
+      "installment_layout": "Quarterly",
+      "asset_detail": "Premium Suite",
+      "updated_at": "2026-07-08T17:32:49Z"
+    }
+  ]
+}

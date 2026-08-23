@@ -6,6 +6,7 @@ import '../repositories/compound_repository.dart';
 import '../widgets/interactive_tap_bounce.dart';
 import '../widgets/luxury_shimmer.dart';
 import 'document_viewer_screen.dart';
+import '../l10n/app_localizations.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
@@ -61,47 +62,88 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final iconColor = isDark ? AppColors.textLight : AppColors.textDark;
+
     return Scaffold(
-      backgroundColor: LuxuryTheme.backgroundBlack,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text(
-          'BOOKING & LEAD CONSOLE',
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        title: Text(
+          l10n.bookingLeadConsole.toUpperCase(),
           style: TextStyle(
-            color: LuxuryTheme.primaryGold,
+            fontFamily: AppTextStyles.fontFamily,
+            color: textColor,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
+            letterSpacing: 1.0,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: LuxuryTheme.primaryGold, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: iconColor, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: LuxuryTheme.primaryGold,
-          labelColor: LuxuryTheme.primaryGold,
-          unselectedLabelColor: LuxuryTheme.textMuted,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.0),
-          tabs: const [
-            Tab(text: 'LIVE LEADS'),
-            Tab(text: 'BOOKING TRANSACTIONS'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            height: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+              borderRadius: AppBorderRadius.pill,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: isDark ? AppColors.accent : AppColors.primary,
+                borderRadius: AppBorderRadius.pill,
+                boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted,
+              labelStyle: const TextStyle(
+                fontFamily: AppTextStyles.fontFamily,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
+              tabs: [
+                Tab(text: l10n.liveLeads.toUpperCase()),
+                Tab(text: l10n.bookingTransactions.toUpperCase()),
+              ],
+            ),
+          ),
         ),
       ),
       body: _isLoading
-          ? _buildLoadingView()
+          ? _buildLoadingView(isDark)
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildLeadsTab(),
-                _buildTransactionsTab(),
+                _buildLeadsTab(l10n, isDark),
+                _buildTransactionsTab(isDark),
               ],
             ),
     );
   }
 
-  Widget _buildLoadingView() {
+  Widget _buildLoadingView(bool isDark) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth < 600
+        ? 2
+        : (screenWidth < 900 ? 3 : (screenWidth < 1200 ? 4 : 5));
+    final double gridWidth = screenWidth - 32;
+    final double cardWidth = (gridWidth - (8 * (crossAxisCount - 1))) / crossAxisCount;
+    final double targetHeight = screenWidth < 600 ? 140.0 : 160.0;
+    final double childAspectRatio = cardWidth / targetHeight;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -112,34 +154,54 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 3,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.7,
+            itemCount: 4,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: childAspectRatio,
             ),
-            itemBuilder: (context, index) => const LuxuryShimmer(width: double.infinity, height: 120),
+            itemBuilder: (context, index) => Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                borderRadius: AppBorderRadius.medium,
+              ),
+              child: const LuxuryShimmer(width: double.infinity, height: 120),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLeadsTab() {
+  Widget _buildLeadsTab(AppLocalizations l10n, bool isDark) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth < 600
+        ? 2
+        : (screenWidth < 900 ? 3 : (screenWidth < 1200 ? 4 : 5));
+    final double gridWidth = screenWidth - 32;
+    final double cardWidth = (gridWidth - (10 * (crossAxisCount - 1))) / crossAxisCount;
+    final double targetHeight = screenWidth < 600 ? 150.0 : 170.0;
+    final double childAspectRatio = cardWidth / targetHeight;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'ACTIVE CLIENT LEADS PIPELINE',
+            Text(
+              l10n.activeLeadsPipeline.toUpperCase(),
               style: TextStyle(
-                color: LuxuryTheme.primaryGold,
-                fontSize: 11,
+                fontFamily: AppTextStyles.fontFamily,
+                color: textColor,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(height: 12),
@@ -147,11 +209,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _leads.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.60,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: childAspectRatio,
               ),
               itemBuilder: (context, index) {
                 final lead = _leads[index];
@@ -160,65 +222,86 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                 Color statusColor;
                 switch (lead.status) {
                   case LeadStatus.newLead:
-                    statusLabel = 'NEW';
-                    statusColor = Colors.blue;
+                    statusLabel = l10n.statusNew.toUpperCase();
+                    statusColor = AppColors.accent;
                     break;
                   case LeadStatus.contacted:
-                    statusLabel = 'CONTACTED';
-                    statusColor = Colors.orange;
+                    statusLabel = l10n.active.toUpperCase();
+                    statusColor = AppColors.warning;
                     break;
                   case LeadStatus.meetingScheduled:
-                    statusLabel = 'MEETING';
-                    statusColor = LuxuryTheme.primaryGold;
+                    statusLabel = l10n.statusMeeting.toUpperCase();
+                    statusColor = AppColors.primary;
                     break;
                   case LeadStatus.proposalSent:
-                    statusLabel = 'PROPOSAL';
-                    statusColor = Colors.green;
+                    statusLabel = l10n.statusProposal.toUpperCase();
+                    statusColor = AppColors.success;
                     break;
                   case LeadStatus.closed:
-                    statusLabel = 'CLOSED';
-                    statusColor = Colors.green;
+                    statusLabel = l10n.completed.toUpperCase();
+                    statusColor = AppColors.success;
                     break;
                 }
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: LuxuryTheme.surfaceBrown,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
+                    color: cardBg,
+                    borderRadius: AppBorderRadius.medium,
+                    boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
                   ),
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.person, color: LuxuryTheme.primaryGold, size: 18),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: statusColor.withAlpha(40),
-                              borderRadius: BorderRadius.circular(3),
+                              color: AppColors.accent.withAlpha(isDark ? 35 : 18),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.person_rounded, color: AppColors.accent, size: 14),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withAlpha(25),
+                              borderRadius: AppBorderRadius.pill,
                             ),
                             child: Text(
                               statusLabel,
-                              style: TextStyle(color: statusColor, fontSize: 7, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: statusColor,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         lead.clientName,
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         lead.email,
-                        style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 8),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textMuted,
+                          fontSize: 8.5,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -227,23 +310,27 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Initiating secure protocol for ${lead.clientName}'),
-                              backgroundColor: LuxuryTheme.primaryGold,
+                              content: Text('${l10n.info}: ${lead.clientName}'),
+                              backgroundColor: AppColors.primary,
                             ),
                           );
                         },
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
                           decoration: BoxDecoration(
-                            color: LuxuryTheme.cardBrown,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: LuxuryTheme.primaryGold.withAlpha(80)),
+                            color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                            borderRadius: AppBorderRadius.pill,
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'CONTACT NOW',
-                              style: TextStyle(color: LuxuryTheme.primaryGold, fontSize: 7.5, fontWeight: FontWeight.bold),
+                              l10n.contactNow.toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: textColor,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -259,20 +346,34 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
     );
   }
 
-  Widget _buildTransactionsTab() {
+  Widget _buildTransactionsTab(bool isDark) {
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth < 600
+        ? 2
+        : (screenWidth < 900 ? 3 : (screenWidth < 1200 ? 4 : 5));
+    final double gridWidth = screenWidth - 32;
+    final double cardWidth = (gridWidth - (10 * (crossAxisCount - 1))) / crossAxisCount;
+    final double targetHeight = screenWidth < 600 ? 155.0 : 175.0;
+    final double childAspectRatio = cardWidth / targetHeight;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'VERIFIED ESCROW TRANSACTIONS',
               style: TextStyle(
-                color: LuxuryTheme.primaryGold,
-                fontSize: 11,
+                fontFamily: AppTextStyles.fontFamily,
+                color: textColor,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(height: 12),
@@ -280,11 +381,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _transactions.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.55,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: childAspectRatio,
               ),
               itemBuilder: (context, index) {
                 final tx = _transactions[index];
@@ -294,25 +395,25 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                 switch (tx.status) {
                   case BookingStatus.spaExecuted:
                     statusLabel = 'SPA EXECUTED';
-                    statusColor = Colors.green;
+                    statusColor = AppColors.success;
                     break;
                   case BookingStatus.pendingApproval:
                     statusLabel = 'PENDING';
-                    statusColor = LuxuryTheme.primaryGold;
+                    statusColor = AppColors.warning;
                     break;
                   case BookingStatus.rejected:
                     statusLabel = 'REJECTED';
-                    statusColor = Colors.red;
+                    statusColor = AppColors.error;
                     break;
                 }
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: LuxuryTheme.surfaceBrown,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: LuxuryTheme.cardBrown, width: 1.5),
+                    color: cardBg,
+                    borderRadius: AppBorderRadius.medium,
+                    boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
                   ),
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -321,17 +422,27 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                         children: [
                           Text(
                             tx.transactionId,
-                            style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 8, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontFamily: AppTextStyles.fontFamily,
+                              color: AppColors.accent,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: statusColor.withAlpha(40),
-                              borderRadius: BorderRadius.circular(3),
+                              color: statusColor.withAlpha(25),
+                              borderRadius: AppBorderRadius.pill,
                             ),
                             child: Text(
                               statusLabel,
-                              style: TextStyle(color: statusColor, fontSize: 6, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: statusColor,
+                                fontSize: 6.5,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -339,15 +450,33 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                       const SizedBox(height: 6),
                       Text(
                         tx.buyerName,
-                        style: const TextStyle(color: LuxuryTheme.textWhite, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Text('Unit: ${tx.unitId}', style: const TextStyle(color: LuxuryTheme.textMuted, fontSize: 8)),
+                      Text(
+                        'Unit: ${tx.unitId}',
+                        style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textMuted,
+                          fontSize: 8.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
                       Text(
                         '${(tx.contractedPriceEGP / 1000000).toStringAsFixed(1)}M EGP',
-                        style: const TextStyle(color: LuxuryTheme.primaryGold, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: AppColors.accent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const Spacer(),
                       InteractiveTapBounce(
@@ -356,14 +485,18 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 5),
                           decoration: BoxDecoration(
-                            color: LuxuryTheme.cardBrown,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: LuxuryTheme.primaryGold.withAlpha(80)),
+                            color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                            borderRadius: AppBorderRadius.pill,
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               'VIEW INVOICE',
-                              style: TextStyle(color: LuxuryTheme.primaryGold, fontSize: 7.5, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                color: textColor,
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),

@@ -7,6 +7,8 @@ class OfflineStateManager extends StatefulWidget {
   final Widget child;
   final void Function(bool isOffline)? onConnectivityChanged;
 
+  static final ValueNotifier<bool> forceOnline = ValueNotifier(true);
+
   const OfflineStateManager({
     super.key,
     required this.child,
@@ -39,6 +41,11 @@ class _OfflineStateManagerState extends State<OfflineStateManager>
       curve: Curves.fastOutSlowIn,
     ));
     _startMonitoring();
+    OfflineStateManager.forceOnline.addListener(_onForceOnlineChanged);
+  }
+
+  void _onForceOnlineChanged() {
+    _checkConnectivity();
   }
 
   void _startMonitoring() {
@@ -49,14 +56,25 @@ class _OfflineStateManagerState extends State<OfflineStateManager>
   }
 
   Future<void> _checkConnectivity() async {
-    try {
-      final result = await InternetAddress.lookup('gateway.ihome.com.eg')
-          .timeout(const Duration(seconds: 4));
-      final connected = result.isNotEmpty && result.first.rawAddress.isNotEmpty;
-      _updateState(!connected);
-    } catch (_) {
-      _updateState(true);
+    if (OfflineStateManager.forceOnline.value) {
+      _updateState(false);
+      return;
     }
+    // Primary check: use a reliable public host to verify actual internet
+    for (final host in ['google.com', '1.1.1.1', 'gateway.iliving.com.eg']) {
+      try {
+        final result = await InternetAddress.lookup(host)
+            .timeout(const Duration(seconds: 3));
+        if (result.isNotEmpty && result.first.rawAddress.isNotEmpty) {
+          _updateState(false); // We're online
+          return;
+        }
+      } catch (_) {
+        // Try next host
+      }
+    }
+    // All hosts failed — truly offline
+    _updateState(true);
   }
 
   void _updateState(bool isOffline) {
@@ -75,6 +93,7 @@ class _OfflineStateManagerState extends State<OfflineStateManager>
 
   @override
   void dispose() {
+    OfflineStateManager.forceOnline.removeListener(_onForceOnlineChanged);
     _connectivityTimer?.cancel();
     _bannerController.dispose();
     super.dispose();
@@ -214,7 +233,7 @@ class OfflineAwareWrapper extends StatefulWidget {
   const OfflineAwareWrapper({
     super.key,
     required this.builder,
-    this.checkHost = 'gateway.ihome.com.eg',
+    this.checkHost = 'gateway.iliving.com.eg',
   });
 
   @override
@@ -230,23 +249,38 @@ class _OfflineAwareWrapperState extends State<OfflineAwareWrapper> {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) => _check());
     _check();
+    OfflineStateManager.forceOnline.addListener(_onForceOnlineChanged);
+  }
+
+  void _onForceOnlineChanged() {
+    _check();
   }
 
   Future<void> _check() async {
-    try {
-      final r = await InternetAddress.lookup(widget.checkHost)
-          .timeout(const Duration(seconds: 4));
-      final ok = r.isNotEmpty && r.first.rawAddress.isNotEmpty;
-      if (mounted && ok == _isOffline) {
-        setState(() => _isOffline = !ok);
-      }
-    } catch (_) {
-      if (mounted && !_isOffline) setState(() => _isOffline = true);
+    if (OfflineStateManager.forceOnline.value) {
+      if (mounted && _isOffline) setState(() => _isOffline = false);
+      return;
     }
+    for (final host in ['google.com', '1.1.1.1', widget.checkHost]) {
+      try {
+        final r = await InternetAddress.lookup(host)
+            .timeout(const Duration(seconds: 3));
+        final ok = r.isNotEmpty && r.first.rawAddress.isNotEmpty;
+        if (ok) {
+          if (mounted && _isOffline) setState(() => _isOffline = false);
+          return;
+        }
+      } catch (_) {
+        // Try next host
+      }
+    }
+    // All hosts failed — truly offline
+    if (mounted && !_isOffline) setState(() => _isOffline = true);
   }
 
   @override
   void dispose() {
+    OfflineStateManager.forceOnline.removeListener(_onForceOnlineChanged);
     _timer?.cancel();
     super.dispose();
   }

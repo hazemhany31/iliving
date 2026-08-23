@@ -1,4 +1,4 @@
-package com.example.ihome
+package com.hazemhany.iliving
 
 import io.flutter.embedding.android.FlutterActivity
 

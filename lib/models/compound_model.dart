@@ -208,4 +208,12 @@ class CompoundModel {
       brochures: brochures ?? this.brochures,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CompoundModel && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
