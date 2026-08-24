@@ -8,21 +8,15 @@ import '../models/property_model.dart';
 import '../services/live_price_state.dart';
 
 class CompoundRepository {
-  static const Duration _simulatedDelay = Duration(milliseconds: 800);
-
   Future<List<CompoundModel>> fetchCompounds() async {
-    await Future.delayed(_simulatedDelay);
     return _dummyCompounds;
   }
 
   Future<CompoundModel> fetchCompoundById(String id) async {
-    await Future.delayed(_simulatedDelay);
     return _dummyCompounds.firstWhere((c) => c.id == id);
   }
 
   Future<List<UnitModel>> fetchUnitsForCompound(String compoundId) async {
-    await Future.delayed(_simulatedDelay);
-    
     // Start with the standard mock units for this compound
     final list = _dummyUnits.where((u) => u.parentCompoundId == compoundId).toList();
     
@@ -75,17 +69,14 @@ class CompoundRepository {
   }
 
   Future<List<Lead>> fetchLeads() async {
-    await Future.delayed(_simulatedDelay);
     return _dummyLeads;
   }
 
   Future<List<BookingTransaction>> fetchTransactions() async {
-    await Future.delayed(_simulatedDelay);
     return _dummyTransactions;
   }
 
   Future<List<Map<String, dynamic>>> fetchFractionalBlocks() async {
-    await Future.delayed(_simulatedDelay);
     return _dummyFractionalBlocks;
   }
 
@@ -98,7 +89,6 @@ class CompoundRepository {
   }
 
   Future<List<Map<String, String>>> fetchRegionalAverages() async {
-    await Future.delayed(_simulatedDelay);
     return _dummyRegionalAverages;
   }
 

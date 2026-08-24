@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'l10n/app_localizations.dart';
 import 'services/locale_service.dart';
 import 'firebase_options.dart';
@@ -51,7 +52,13 @@ void main() async {
     );
     // Guard: crash early if release build ships with placeholder keys.
     DefaultFirebaseOptions.assertRealCredentials();
-    debugPrint("[Firebase] Core platform initialization successful.");
+
+    // Configure sensible bounded Firestore cache (100MB) with offline persistence.
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: 100 * 1024 * 1024,
+    );
+    debugPrint("[Firebase] Core platform initialized with bounded 100MB cache & persistence.");
   } catch (e) {
     debugPrint("[Firebase] Core platform initialization bypassed or failed (missing files): $e");
   }
@@ -97,9 +104,13 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
           _initialized = true;
         });
         AuthService.instance.stateNotifier.addListener(_onAuthChanged);
-        // Run seeder lazily after the first frame is rendered.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           FirestoreSeederService.ensureSeeded();
+          if (mounted) {
+            precacheImage(const AssetImage('images/skyhills/ski-hills.jpg'), context).catchError((_) {});
+            precacheImage(const AssetImage('images/lamar/lamar-1.jpg'), context).catchError((_) {});
+            precacheImage(const AssetImage('images/zayed_lagoons/zayed-lahogons1.jpg'), context).catchError((_) {});
+          }
         });
       }
     }
