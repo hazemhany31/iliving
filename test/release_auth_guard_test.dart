@@ -87,24 +87,24 @@ void main() {
       );
 
       // Attempting to login with admin@ or demo@ in release mode WITHOUT real Firebase throws:
-      expect(
-        () => releaseAuthService.signInWithEmailAndPassword(
+      await expectLater(
+        releaseAuthService.signInWithEmailAndPassword(
           email: 'admin@iliving.com.eg',
           password: 'anyPassword',
         ),
         throwsA(isA<Exception>()),
       );
 
-      expect(
-        () => releaseAuthService.signInWithEmailAndPassword(
+      await expectLater(
+        releaseAuthService.signInWithEmailAndPassword(
           email: 'sterling@iliving.com.eg',
           password: 'anyPassword',
         ),
         throwsA(isA<Exception>()),
       );
 
-      expect(
-        () => releaseAuthService.signInWithEmailAndPassword(
+      await expectLater(
+        releaseAuthService.signInWithEmailAndPassword(
           email: 'demo@iliving.com.eg',
           password: 'anyPassword',
         ),
@@ -121,8 +121,8 @@ void main() {
         allowMock: true,
       );
 
-      expect(
-        () => demoAuthService.signInWithEmailAndPassword(
+      await expectLater(
+        demoAuthService.signInWithEmailAndPassword(
           email: 'ahmed.shazly.abdelgawad@new-build-egypt.com',
           password: 'wrongpassword',
         ),
@@ -139,8 +139,8 @@ void main() {
         allowMock: true,
       );
 
-      expect(
-        () => demoAuthService.signInWithEmailAndPassword(
+      await expectLater(
+        demoAuthService.signInWithEmailAndPassword(
           email: 'nonexistent_user@nowhere.com',
           password: 'somePassword',
         ),
