@@ -4,19 +4,12 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Flutter tools need access to connect to the Dart VM Service for debugging and hot reload.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_dartobservatory._tcp</string>
-		<string>_dartvmService._tcp</string>
-	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to upload payment proofs and unit images.</string>
+	<string>iLiving requires access to your photo library to select payment transfer receipts, unit attachments, and profile photos.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take photos of payment proofs and scan QR codes.</string>
+	<string>iLiving requires camera access to capture payment transfer receipts, KYC identity documents, and scan property gate QR codes.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We need access to save images to your photo library.</string>
+	<string>iLiving requires access to save downloaded payment receipts and QR gate access passes to your photo library.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -80,6 +73,11 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
 	</array>
 </dict>
 </plist>
