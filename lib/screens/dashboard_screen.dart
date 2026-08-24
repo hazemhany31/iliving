@@ -22,9 +22,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> with TickerProviderStateMixin {
+  static List<CompoundModel>? _cachedCompounds;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _pageController;
-  double _pageOffset = 0.0;
   bool _isLoading = true;
 
   final CompoundRepository _repository = CompoundRepository();
@@ -34,16 +34,16 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.92);
-    _pageController.addListener(() {
-      setState(() {
-        _pageOffset = _pageController.page ?? 0.0;
-      });
-    });
+    if (_cachedCompounds != null && _cachedCompounds!.isNotEmpty) {
+      _compounds = _cachedCompounds!;
+      _isLoading = false;
+    }
     _loadData();
   }
 
   Future<void> _loadData() async {
     final compounds = await _repository.fetchCompounds();
+    _cachedCompounds = compounds;
     if (mounted) {
       setState(() {
         _compounds = compounds;
@@ -208,167 +208,173 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   Widget _buildHeroSlider(bool isDark) {
     if (_compounds.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 240,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: _compounds.length,
-            itemBuilder: (context, index) {
-              final compound = _compounds[index];
-              double offset = 0.0;
-              if (_pageController.position.haveDimensions) {
-                offset = _pageOffset - index;
-              }
-              double translationBg = offset * 30.0;
-              double textOpacity = (1.0 - offset.abs().clamp(0.0, 1.0));
+    return AnimatedBuilder(
+      animation: _pageController,
+      builder: (context, _) {
+        final double currentPage = _pageController.hasClients && _pageController.position.haveDimensions
+            ? (_pageController.page ?? 0.0)
+            : 0.0;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UnitDetailsScreen(compound: compound),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: AppBorderRadius.large,
-                      boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: AppBorderRadius.large,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Transform.translate(
-                            offset: Offset(translationBg, 0),
-                            child: ImageLoader(
-                              imageUrl: compound.heroImageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
-                              ),
-                            ),
+        return Column(
+          children: [
+            SizedBox(
+              height: 240,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _compounds.length,
+                itemBuilder: (context, index) {
+                  final compound = _compounds[index];
+                  final double offset = currentPage - index;
+                  final double translationBg = offset * 30.0;
+                  final double textOpacity = (1.0 - offset.abs().clamp(0.0, 1.0));
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UnitDetailsScreen(compound: compound),
                           ),
-                          Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                stops: [0.0, 0.45, 1.0],
-                                colors: [
-                                  Color(0xCC1A1A2E),
-                                  Color(0x551A1A2E),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 14,
-                            left: 16,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(225),
-                                borderRadius: AppBorderRadius.pill,
-                              ),
-                              child: const Text(
-                                'FEATURED COMPOUND',
-                                style: TextStyle(
-                                  fontFamily: AppTextStyles.fontFamily,
-                                  color: AppColors.textDark,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: AppBorderRadius.large,
+                          boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: AppBorderRadius.large,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Transform.translate(
+                                offset: Offset(translationBg, 0),
+                                child: ImageLoader(
+                                  imageUrl: compound.heroImageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 16,
-                            left: 16,
-                            right: 16,
-                            child: Opacity(
-                              opacity: textOpacity,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    compound.title,
-                                    style: const TextStyle(
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    stops: [0.0, 0.45, 1.0],
+                                    colors: [
+                                      Color(0xCC1A1A2E),
+                                      Color(0x551A1A2E),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 14,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha(225),
+                                    borderRadius: AppBorderRadius.pill,
+                                  ),
+                                  child: const Text(
+                                    'FEATURED COMPOUND',
+                                    style: TextStyle(
                                       fontFamily: AppTextStyles.fontFamily,
-                                      color: Colors.white,
-                                      fontSize: 19,
+                                      color: AppColors.textDark,
+                                      fontSize: 9,
                                       fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.2,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
-                                  const SizedBox(height: 3),
-                                  Row(
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 16,
+                                left: 16,
+                                right: 16,
+                                child: Opacity(
+                                  opacity: textOpacity,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.location_on_outlined, color: Colors.white70, size: 13),
-                                      const SizedBox(width: 4),
                                       Text(
-                                        compound.location,
-                                        style: const TextStyle(
-                                          fontFamily: AppTextStyles.fontFamily,
-                                          color: Colors.white70,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        '${(compound.basePriceEGP / 1000000).toStringAsFixed(1)}M EGP',
+                                        compound.title,
                                         style: const TextStyle(
                                           fontFamily: AppTextStyles.fontFamily,
                                           color: Colors.white,
-                                          fontSize: 14,
+                                          fontSize: 19,
                                           fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.2,
                                         ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on_outlined, color: Colors.white70, size: 13),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            compound.location,
+                                            style: const TextStyle(
+                                              fontFamily: AppTextStyles.fontFamily,
+                                              color: Colors.white70,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            '${(compound.basePriceEGP / 1000000).toStringAsFixed(1)}M EGP',
+                                            style: const TextStyle(
+                                              fontFamily: AppTextStyles.fontFamily,
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(_compounds.length, (index) {
-            double currentActive = (_pageOffset - index).abs();
-            double width = lerpDouble(6.0, 20.0, (1.0 - currentActive).clamp(0.0, 1.0)) ?? 6.0;
-
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: width,
-              height: 5,
-              margin: const EdgeInsets.symmetric(horizontal: 2.5),
-              decoration: BoxDecoration(
-                color: currentActive < 0.5
-                    ? AppColors.primary
-                    : (isDark ? AppColors.textLightMuted.withAlpha(80) : AppColors.textDarkMuted.withAlpha(80)),
-                borderRadius: AppBorderRadius.pill,
+                  );
+                },
               ),
-            );
-          }),
-        ),
-      ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_compounds.length, (index) {
+                final double currentActive = (currentPage - index).abs();
+                final double width = lerpDouble(6.0, 20.0, (1.0 - currentActive).clamp(0.0, 1.0)) ?? 6.0;
+
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: width,
+                  height: 5,
+                  margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                  decoration: BoxDecoration(
+                    color: currentActive < 0.5
+                        ? AppColors.primary
+                        : (isDark ? AppColors.textLightMuted.withAlpha(80) : AppColors.textDarkMuted.withAlpha(80)),
+                    borderRadius: AppBorderRadius.pill,
+                  ),
+                );
+              }),
+            ),
+          ],
+        );
+      },
     );
   }
 

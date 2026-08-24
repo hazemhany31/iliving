@@ -25,6 +25,7 @@ class ExecutiveDashboardScreen extends StatefulWidget {
 }
 
 class _ExecutiveDashboardScreenState extends State<ExecutiveDashboardScreen> {
+  static ExecutiveDashboardMetrics? _cachedMetrics;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final FirestoreExecutiveDashboardRepository _repository = FirestoreExecutiveDashboardRepository();
 
@@ -42,6 +43,10 @@ class _ExecutiveDashboardScreenState extends State<ExecutiveDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    if (_cachedMetrics != null) {
+      _metrics = _cachedMetrics!;
+      _isLoading = false;
+    }
     _subscribeToMetrics();
     _startDynamicTicker();
   }
@@ -78,9 +83,11 @@ class _ExecutiveDashboardScreenState extends State<ExecutiveDashboardScreen> {
 
   void _subscribeToMetrics() {
     _metricsSubscription?.cancel();
-    setState(() {
-      _isLoading = true;
-    });
+    if (_cachedMetrics == null) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     _metricsSubscription = _repository
         .streamExecutiveDashboardMetrics(
@@ -89,6 +96,7 @@ class _ExecutiveDashboardScreenState extends State<ExecutiveDashboardScreen> {
         )
         .listen(
       (data) {
+        _cachedMetrics = data;
         if (mounted) {
           setState(() {
             _metrics = data;
