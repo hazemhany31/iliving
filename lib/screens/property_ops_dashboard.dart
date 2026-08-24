@@ -78,6 +78,13 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
   UserProfile? _assignedCustomer;
   Contract? _assignedContract;
 
+  // Static cache for instant navigation without loading flicker
+  static List<Project>? _cachedProjects;
+  static List<CompoundModel>? _cachedCompounds;
+  static List<Building>? _cachedBuildings;
+  static List<Unit>? _cachedUnits;
+  static List<UserProfile>? _cachedUsers;
+
   // Master collections
   List<Project> _allProjects = [];
   List<CompoundModel> _allCompounds = [];
@@ -113,6 +120,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
   @override
   void initState() {
     super.initState();
+    if (_cachedUnits != null && _cachedUnits!.isNotEmpty) {
+      _allProjects = _cachedProjects ?? [];
+      _allCompounds = _cachedCompounds ?? [];
+      _allBuildings = _cachedBuildings ?? [];
+      _allUnits = _cachedUnits!;
+      _allUsers = _cachedUsers ?? [];
+      _isLoadingMasterData = false;
+    }
     _loadMasterCollections();
   }
 
@@ -460,10 +475,12 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
 
   void _loadMasterCollections() {
-    setState(() {
-      _isLoadingMasterData = true;
-      _masterDataError = null;
-    });
+    if (_cachedUnits == null || _cachedUnits!.isEmpty) {
+      setState(() {
+        _isLoadingMasterData = true;
+        _masterDataError = null;
+      });
+    }
 
     final initialAvailable = _userAccessibleUnits;
     if (initialAvailable.isNotEmpty && _selectedUnit == null) {
@@ -473,6 +490,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     try {
       _projectsSub = _projectRepo.streamAllProjects().listen(
         (projects) {
+          _cachedProjects = projects;
           if (mounted) setState(() => _allProjects = projects);
         },
         onError: (e) {
@@ -482,6 +500,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
       _compoundsSub = _compoundRepo.streamAllCompounds().listen(
         (compounds) {
+          _cachedCompounds = compounds;
           if (mounted) setState(() => _allCompounds = compounds);
         },
         onError: (e) {
@@ -491,6 +510,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
       _unitsSub = _unitRepo.streamAllUnits().listen(
         (units) {
+          _cachedUnits = units;
           if (mounted) {
             setState(() {
               _allUnits = units;
@@ -520,6 +540,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
       _usersSub = _userRepo.streamAllUsers().listen(
         (users) {
+          _cachedUsers = users;
           if (mounted) setState(() => _allUsers = users);
         },
         onError: (e) {

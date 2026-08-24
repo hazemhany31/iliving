@@ -1745,9 +1745,13 @@ class _MainNavigationShellState extends State<MainNavigationShell>
       ),
       body: Stack(
         children: [
-          _isOpsMode
-              ? const PropertyOpsDashboard()
-              : _buildAdminView(isDark: isDark, isAr: isAr),
+          IndexedStack(
+            index: _isOpsMode ? 0 : 1,
+            children: [
+              const PropertyOpsDashboard(),
+              _buildAdminView(isDark: isDark, isAr: isAr),
+            ],
+          ),
           _buildNotificationSheetGrid3Column(),
         ],
       ),
