@@ -14,15 +14,17 @@ class FirestoreProjectRepository implements ProjectRepository {
   @override
   Future<Project?> getProjectById(String id) async {
     final doc = await _projectsRef.doc(id).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return Project.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return Project.fromJson(data);
   }
 
   @override
   Stream<Project?> streamProject(String id) {
     return _projectsRef.doc(id).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return Project.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return Project.fromJson(data);
     });
   }
 

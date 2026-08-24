@@ -14,15 +14,17 @@ class FirestoreContractRepository implements ContractRepository {
   @override
   Future<Contract?> getContractById(String id) async {
     final doc = await _contractsRef.doc(id).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return Contract.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return Contract.fromJson(data);
   }
 
   @override
   Stream<Contract?> streamContract(String id) {
     return _contractsRef.doc(id).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return Contract.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return Contract.fromJson(data);
     });
   }
 

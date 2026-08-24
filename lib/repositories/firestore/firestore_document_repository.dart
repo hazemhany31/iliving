@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/document.dart';
 import '../../models/notification.dart';
+import '../../services/push_notification_service.dart';
 import '../interfaces/document_repository.dart';
 import 'firestore_notification_repository.dart';
 
@@ -16,15 +17,17 @@ class FirestoreDocumentRepository implements DocumentRepository {
   @override
   Future<DocumentItem?> getDocumentById(String documentId) async {
     final doc = await _documentsRef.doc(documentId).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return DocumentItem.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return DocumentItem.fromJson(data);
   }
 
   @override
   Stream<DocumentItem?> streamDocument(String documentId) {
     return _documentsRef.doc(documentId).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return DocumentItem.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return DocumentItem.fromJson(data);
     });
   }
 
@@ -111,6 +114,13 @@ class FirestoreDocumentRepository implements DocumentRepository {
         createdAt: DateTime.now(),
       );
       await FirestoreNotificationRepository(firestore: _firestore).sendNotification(notif);
+
+      // ─── Trigger mobile push notification ───
+      await PushNotificationService.instance.showLocalNotification(
+        title: notif.title,
+        body: notif.body,
+        payload: '/documents',
+      );
     } catch (_) {}
   }
 

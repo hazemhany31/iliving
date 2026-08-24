@@ -21,15 +21,17 @@ class FirestoreMaintenanceRepository implements MaintenanceRepository {
   @override
   Future<MaintenanceRequest?> getTicketById(String ticketId) async {
     final doc = await _ticketsRef.doc(ticketId).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return MaintenanceRequest.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return MaintenanceRequest.fromJson(data);
   }
 
   @override
   Stream<MaintenanceRequest?> streamTicket(String ticketId) {
     return _ticketsRef.doc(ticketId).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return MaintenanceRequest.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return MaintenanceRequest.fromJson(data);
     });
   }
 

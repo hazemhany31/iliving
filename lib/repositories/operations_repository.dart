@@ -296,8 +296,9 @@ class OperationsRepository {
     GateAccessCode? code;
     try {
       final snapshot = await FirebaseFirestore.instance.collection('gateAccessCodes').doc(codeId).get();
-      if (snapshot.exists) {
-        code = GateAccessCode.fromJson(snapshot.data()!);
+      final data = snapshot.data();
+      if (snapshot.exists && data != null) {
+        code = GateAccessCode.fromJson(data);
       }
     } catch (_) {}
     if (code == null) {
@@ -339,8 +340,9 @@ class OperationsRepository {
     try {
       final docRef = FirebaseFirestore.instance.collection('gateAccessCodes').doc(codeId);
       final snapshot = await docRef.get();
-      if (snapshot.exists) {
-        final code = GateAccessCode.fromJson(snapshot.data()!);
+      final data = snapshot.data();
+      if (snapshot.exists && data != null) {
+        final code = GateAccessCode.fromJson(data);
         final updated = code.copyWith(
           isRevoked: true,
           revokedAtIso: now,
@@ -421,8 +423,9 @@ class OperationsRepository {
     try {
       final docRef = FirebaseFirestore.instance.collection('tickets').doc(ticketId);
       final snapshot = await docRef.get();
-      if (snapshot.exists) {
-        final ticket = OperationTicketModel.fromJson(snapshot.data()!);
+      final data = snapshot.data();
+      if (snapshot.exists && data != null) {
+        final ticket = OperationTicketModel.fromJson(data);
         updated = ticket.withStatusTransition(
           newStatus: newStatus,
           changedByName: changedByName,

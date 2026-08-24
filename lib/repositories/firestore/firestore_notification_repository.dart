@@ -98,15 +98,17 @@ class FirestoreNotificationRepository implements NotificationRepository {
   @override
   Future<AppNotification?> getNotificationById(String id) async {
     final doc = await _notificationsRef.doc(id).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return AppNotification.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return AppNotification.fromJson(data);
   }
 
   @override
   Stream<AppNotification?> streamNotification(String id) {
     return _notificationsRef.doc(id).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return AppNotification.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return AppNotification.fromJson(data);
     });
   }
 
@@ -204,5 +206,28 @@ class FirestoreNotificationRepository implements NotificationRepository {
     }
     await batch.commit();
   }
-}
 
+  /// Save an FCM device token for a user so they can receive push notifications.
+  Future<void> saveFcmToken(String userId, String token) async {
+    try {
+      await _firestore.collection('user_fcm_tokens').doc(userId).set({
+        'tokens': FieldValue.arrayUnion([token]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('[FirestoreNotificationRepository] saveFcmToken error: $e');
+    }
+  }
+
+  /// Remove an FCM device token for a user (e.g., on logout).
+  Future<void> removeFcmToken(String userId, String token) async {
+    try {
+      await _firestore.collection('user_fcm_tokens').doc(userId).update({
+        'tokens': FieldValue.arrayRemove([token]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('[FirestoreNotificationRepository] removeFcmToken error: $e');
+    }
+  }
+}

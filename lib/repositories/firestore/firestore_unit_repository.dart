@@ -14,15 +14,17 @@ class FirestoreUnitRepository implements UnitRepository {
   @override
   Future<Unit?> getUnitById(String id) async {
     final doc = await _unitsRef.doc(id).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return Unit.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return Unit.fromJson(data);
   }
 
   @override
   Stream<Unit?> streamUnit(String id) {
     return _unitsRef.doc(id).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return Unit.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return Unit.fromJson(data);
     });
   }
 
@@ -122,7 +124,19 @@ class FirestoreUnitRepository implements UnitRepository {
 
   @override
   Future<void> deleteUnit(String id) async {
-    await _unitsRef.doc(id).delete();
+    final doc = _unitsRef.doc(id);
+    final snap = await doc.get();
+    if (snap.exists) {
+      await doc.delete();
+      return;
+    }
+    final querySnap = await _unitsRef.where('unitNumber', isEqualTo: id).get();
+    for (final d in querySnap.docs) {
+      await d.reference.delete();
+    }
+    if (querySnap.docs.isEmpty) {
+      await doc.delete();
+    }
   }
 
   @override
@@ -140,11 +154,11 @@ class FirestoreUnitRepository implements UnitRepository {
     return _firestore.runTransaction((transaction) async {
       final docRef = _unitsRef.doc(unitId);
       final snapshot = await transaction.get(docRef);
-      if (!snapshot.exists || snapshot.data() == null) {
+      final currentData = snapshot.data();
+      if (!snapshot.exists || currentData == null) {
         throw Exception('Unit $unitId does not exist');
       }
 
-      final currentData = snapshot.data()!;
       final oldPricePerSqm = (currentData['basePricePerSqm'] as num?)?.toDouble() ?? 0.0;
       final netArea = (currentData['netAreaSqm'] as num?)?.toDouble() ?? 100.0;
       final newTotalPrice = newPricePerSqm * netArea;

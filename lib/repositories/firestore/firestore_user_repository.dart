@@ -15,8 +15,9 @@ class FirestoreUserRepository implements UserRepository {
   Future<UserProfile?> getUserById(String uid) async {
     try {
       final doc = await _usersRef.doc(uid).get();
-      if (doc.exists && doc.data() != null) {
-        return UserProfile.fromJson(doc.data()!);
+      final data = doc.data();
+      if (doc.exists && data != null) {
+        return UserProfile.fromJson(data);
       }
       final querySnap = await _usersRef.where('uid', isEqualTo: uid).limit(1).get();
       if (querySnap.docs.isNotEmpty && querySnap.docs.first.data().isNotEmpty) {
@@ -42,8 +43,9 @@ class FirestoreUserRepository implements UserRepository {
   @override
   Stream<UserProfile?> streamUser(String uid) {
     return _usersRef.doc(uid).snapshots().map((snapshot) {
-      if (!snapshot.exists || snapshot.data() == null) return null;
-      return UserProfile.fromJson(snapshot.data()!);
+      final data = snapshot.data();
+      if (!snapshot.exists || data == null) return null;
+      return UserProfile.fromJson(data);
     });
   }
 
@@ -118,7 +120,15 @@ class FirestoreUserRepository implements UserRepository {
 
   @override
   Future<void> deleteUser(String uid) async {
-    await _usersRef.doc(uid).delete();
+    try {
+      await _usersRef.doc(uid).delete();
+    } catch (_) {}
+    try {
+      final snap = await _usersRef.where('uid', isEqualTo: uid).get();
+      for (final doc in snap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (_) {}
   }
 
   @override

@@ -194,12 +194,25 @@ class FirestoreLedgerRepository implements LedgerRepository {
 
   @override
   Future<void> deleteInstallment(String contractId, String installmentId) async {
-    await _firestore
-        .collection('contracts')
-        .doc(contractId)
-        .collection('installments')
-        .doc(installmentId)
-        .delete();
+    try {
+      if (contractId.isNotEmpty) {
+        await _firestore
+            .collection('contracts')
+            .doc(contractId)
+            .collection('installments')
+            .doc(installmentId)
+            .delete();
+      }
+    } catch (_) {}
+    try {
+      final snap = await _firestore
+          .collectionGroup('installments')
+          .where('id', isEqualTo: installmentId)
+          .get();
+      for (final doc in snap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (_) {}
   }
 
   @override

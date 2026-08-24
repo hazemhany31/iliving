@@ -14,15 +14,17 @@ class FirestoreCompoundRepository implements CompoundRepository {
   @override
   Future<CompoundModel?> getCompoundById(String id) async {
     final doc = await _compoundsRef.doc(id).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return CompoundModel.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return CompoundModel.fromJson(data);
   }
 
   @override
   Stream<CompoundModel?> streamCompound(String id) {
     return _compoundsRef.doc(id).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return CompoundModel.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return CompoundModel.fromJson(data);
     });
   }
 

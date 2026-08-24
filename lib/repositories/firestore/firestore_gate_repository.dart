@@ -14,15 +14,17 @@ class FirestoreGateRepository implements GateRepository {
   @override
   Future<GatePass?> getPassById(String passId) async {
     final doc = await _passesRef.doc(passId).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return GatePass.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return GatePass.fromJson(data);
   }
 
   @override
   Stream<GatePass?> streamPass(String passId) {
     return _passesRef.doc(passId).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return GatePass.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return GatePass.fromJson(data);
     });
   }
 

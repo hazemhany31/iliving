@@ -16,15 +16,17 @@ class FirestorePaymentRepository implements PaymentRepository {
   @override
   Future<Payment?> getPaymentById(String id) async {
     final doc = await _paymentsRef.doc(id).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return Payment.fromJson(doc.data()!);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return Payment.fromJson(data);
   }
 
   @override
   Stream<Payment?> streamPayment(String id) {
     return _paymentsRef.doc(id).snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return Payment.fromJson(doc.data()!);
+      final data = doc.data();
+      if (!doc.exists || data == null) return null;
+      return Payment.fromJson(data);
     });
   }
 

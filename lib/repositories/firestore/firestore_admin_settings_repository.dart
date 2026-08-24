@@ -17,8 +17,9 @@ class FirestoreAdminSettingsRepository implements AdminSettingsRepository {
   Future<InstallmentReminderSettings> getInstallmentReminderSettings() async {
     try {
       final doc = await _settingsDoc.get().timeout(const Duration(seconds: 4));
-      if (doc.exists && doc.data() != null) {
-        final settings = InstallmentReminderSettings.fromJson(doc.data()!);
+      final data = doc.data();
+      if (doc.exists && data != null) {
+        final settings = InstallmentReminderSettings.fromJson(data);
         _fallbackSettings = settings;
         return settings;
       }
@@ -31,8 +32,9 @@ class FirestoreAdminSettingsRepository implements AdminSettingsRepository {
     final controller = StreamController<InstallmentReminderSettings>();
     try {
       _settingsDoc.snapshots().listen((snap) {
-        if (snap.exists && snap.data() != null) {
-          final settings = InstallmentReminderSettings.fromJson(snap.data()!);
+        final data = snap.data();
+        if (snap.exists && data != null) {
+          final settings = InstallmentReminderSettings.fromJson(data);
           _fallbackSettings = settings;
           controller.add(settings);
         } else {
