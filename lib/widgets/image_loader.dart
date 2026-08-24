@@ -10,6 +10,8 @@ class ImageLoader extends StatelessWidget {
   final BoxFit fit;
   final double? width;
   final double? height;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
   final BorderRadius? borderRadius;
   final Widget Function(BuildContext, Object, StackTrace?)? errorBuilder;
 
@@ -19,6 +21,8 @@ class ImageLoader extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.width,
     this.height,
+    this.memCacheWidth,
+    this.memCacheHeight,
     this.borderRadius,
     this.errorBuilder,
   });
@@ -39,10 +43,28 @@ class ImageLoader extends StatelessWidget {
     }
   }
 
+  int? _resolveMemCacheWidth() {
+    if (memCacheWidth != null) return memCacheWidth;
+    if (width != null && width!.isFinite && width! > 0) {
+      return (width! * 2.5).clamp(64, 2048).round();
+    }
+    return null;
+  }
+
+  int? _resolveMemCacheHeight() {
+    if (memCacheHeight != null) return memCacheHeight;
+    if (height != null && height!.isFinite && height! > 0) {
+      return (height! * 2.5).clamp(64, 2048).round();
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fallbackColor = isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt;
+    final int? effectiveCacheW = _resolveMemCacheWidth();
+    final int? effectiveCacheH = _resolveMemCacheHeight();
 
     Widget buildErrorWidget() {
       return Container(
@@ -71,6 +93,10 @@ class ImageLoader extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
+        memCacheWidth: effectiveCacheW,
+        memCacheHeight: effectiveCacheH,
+        maxWidthDiskCache: effectiveCacheW != null ? effectiveCacheW * 2 : 1200,
+        maxHeightDiskCache: effectiveCacheH != null ? effectiveCacheH * 2 : 1200,
         placeholder: (context, url) => LuxuryShimmer(
           width: width ?? double.infinity,
           height: height ?? double.infinity,
@@ -91,6 +117,8 @@ class ImageLoader extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
+        cacheWidth: effectiveCacheW,
+        cacheHeight: effectiveCacheH,
         errorBuilder: (context, error, stackTrace) {
           if (errorBuilder != null) {
             return errorBuilder!(context, error, stackTrace);

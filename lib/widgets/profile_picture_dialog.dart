@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../l10n/app_localizations.dart';
 import 'user_avatar.dart';
+import 'image_loader.dart';
 
 class ProfilePictureDialog extends StatefulWidget {
   const ProfilePictureDialog({super.key});
@@ -325,9 +326,11 @@ class _ProfilePictureDialogState extends State<ProfilePictureDialog> {
                         ),
                       ),
                       child: ClipOval(
-                        child: Image.network(
-                          url,
+                        child: ImageLoader(
+                          imageUrl: url,
                           fit: BoxFit.cover,
+                          width: 44,
+                          height: 44,
                           errorBuilder: (context, error, stackTrace) =>
                               Container(color: isDark ? AppColors.darkCard : AppColors.lightCardAlt),
                         ),

@@ -9,6 +9,7 @@ import '../repositories/firestore/firestore_ledger_repository.dart';
 import '../repositories/firestore/firestore_payment_repository.dart';
 import '../services/storage_service.dart';
 import '../theme/luxury_theme.dart';
+import 'image_loader.dart';
 
 /// Modal sheets for submitting and reviewing payment transfer screenshots.
 class PaymentProofModal {
@@ -49,8 +50,8 @@ class PaymentProofModal {
         );
       } catch (_) {}
     }
-    return Image.network(
-      src,
+    return ImageLoader(
+      imageUrl: src,
       fit: fit,
       width: width,
       height: height,
