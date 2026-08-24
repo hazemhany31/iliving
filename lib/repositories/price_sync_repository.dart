@@ -32,9 +32,6 @@ class PriceSyncRepository {
         );
       }
     } else {
-      if (kDebugMode) {
-        return Uri.parse('http://localhost:8000/api/v1/units/prices.json');
-      }
       return Uri.parse(_endpoint);
     }
   }

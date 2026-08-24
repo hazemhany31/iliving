@@ -227,11 +227,27 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
   final FirestoreLedgerRepository _ledgerRepo = FirestoreLedgerRepository();
   final FirestorePaymentRepository _paymentRepo = FirestorePaymentRepository();
 
+  late final Stream<List<UserProfile>> _usersStream;
+  late final Stream<List<Unit>> _unitsStream;
+  late final Stream<List<Contract>> _contractsStream;
+  late final Stream<List<Installment>> _installmentsStream;
+  late final Stream<List<Payment>> _paymentsStream;
+
   UserRole? _selectedRole;
   KycStatus? _selectedKyc;
   String? _selectedPaymentStatus;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _usersStream = _userRepo.streamAllUsers();
+    _unitsStream = _unitRepo.streamAllUnits();
+    _contractsStream = _contractRepo.streamAllContracts();
+    _installmentsStream = _ledgerRepo.streamAllInstallments();
+    _paymentsStream = _paymentRepo.streamAllPayments();
+  }
 
   @override
   void dispose() {
@@ -244,19 +260,19 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<List<UserProfile>>(
-      stream: _userRepo.streamAllUsers(),
+      stream: _usersStream,
       builder: (context, userSnap) {
         return StreamBuilder<List<Unit>>(
-          stream: _unitRepo.streamAllUnits(),
+          stream: _unitsStream,
           builder: (context, unitSnap) {
             return StreamBuilder<List<Contract>>(
-              stream: _contractRepo.streamAllContracts(),
+              stream: _contractsStream,
               builder: (context, contractSnap) {
                 return StreamBuilder<List<Installment>>(
-                  stream: _ledgerRepo.streamAllInstallments(),
+                  stream: _installmentsStream,
                   builder: (context, instSnap) {
                     return StreamBuilder<List<Payment>>(
-                      stream: _paymentRepo.streamAllPayments(),
+                      stream: _paymentsStream,
                       builder: (context, paySnap) {
 
                         final isLoading =

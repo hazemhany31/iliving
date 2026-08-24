@@ -18,6 +18,12 @@ import 'profile_picture_dialog.dart';
 class LuxurySidebar extends StatelessWidget {
   const LuxurySidebar({super.key});
 
+  static Stream<QuerySnapshot?>? _cachedEoisStream;
+  static Stream<QuerySnapshot?> get _eoisStream =>
+      _cachedEoisStream ??= (Firebase.apps.isNotEmpty
+          ? FirebaseFirestore.instance.collection('eois').snapshots().asBroadcastStream()
+          : const Stream.empty());
+
   String _getUserRole(BuildContext context) {
     final profile = AuthService.instance.currentProfile;
     if (profile == null) return '';
@@ -299,9 +305,7 @@ class LuxurySidebar extends StatelessWidget {
                   _buildSectionTitle(l10n.eoiTitle.toUpperCase()),
                   const SizedBox(height: 8),
                   StreamBuilder<QuerySnapshot?>(
-                    stream: Firebase.apps.isNotEmpty
-                        ? FirebaseFirestore.instance.collection('eois').snapshots()
-                        : const Stream.empty(),
+                    stream: _eoisStream,
                     builder: (context, snapshot) {
                       List<Map<String, dynamic>> leaderboardItems = [];
 

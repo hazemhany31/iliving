@@ -16,8 +16,15 @@ class CompoundsModuleScreen extends StatefulWidget {
 
 class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
   final FirestoreCompoundRepository _repository = FirestoreCompoundRepository();
+  late final Stream<List<CompoundModel>> _compoundsStream;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _compoundsStream = _repository.streamAllCompounds();
+  }
 
   @override
   void dispose() {
@@ -33,7 +40,7 @@ class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
     final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return StreamBuilder<List<CompoundModel>>(
-      stream: _repository.streamAllCompounds(),
+      stream: _compoundsStream,
       builder: (context, snapshot) {
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
         final compounds = snapshot.data ?? [];

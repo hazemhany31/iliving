@@ -14,9 +14,16 @@ class ContractsModuleScreen extends StatefulWidget {
 
 class _ContractsModuleScreenState extends State<ContractsModuleScreen> {
   final FirestoreContractRepository _repository = FirestoreContractRepository();
+  late final Stream<List<Contract>> _contractsStream;
   String _searchQuery = '';
   SignatureStatus? _selectedStatus;
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _contractsStream = _repository.streamAllContracts();
+  }
 
   @override
   void dispose() {
@@ -32,7 +39,7 @@ class _ContractsModuleScreenState extends State<ContractsModuleScreen> {
     final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return StreamBuilder<List<Contract>>(
-      stream: _repository.streamAllContracts(),
+      stream: _contractsStream,
       builder: (context, snapshot) {
         final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
         final contracts = snapshot.data ?? [];

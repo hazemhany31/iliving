@@ -8,7 +8,7 @@ import '../../theme/luxury_theme.dart';
 import '../payment_proof_modal.dart';
 
 /// Displays a real-time payment history panel for a single customer.
-class CustomerPaymentHistoryPanel extends StatelessWidget {
+class CustomerPaymentHistoryPanel extends StatefulWidget {
   final UserProfile customer;
   final String contractId;
   final String contractNumber;
@@ -44,15 +44,34 @@ class CustomerPaymentHistoryPanel extends StatelessWidget {
   }
 
   @override
+  State<CustomerPaymentHistoryPanel> createState() => _CustomerPaymentHistoryPanelState();
+}
+
+class _CustomerPaymentHistoryPanelState extends State<CustomerPaymentHistoryPanel> {
+  final FirestoreLedgerRepository _ledgerRepo = FirestoreLedgerRepository();
+  final FirestorePaymentRepository _paymentRepo = FirestorePaymentRepository();
+  late final Stream<List<Installment>> _installmentsStream;
+  late final Stream<List<Payment>> _paymentsStream;
+
+  UserProfile get customer => widget.customer;
+  String get contractId => widget.contractId;
+  String get contractNumber => widget.contractNumber;
+  String get unitNumber => widget.unitNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    _installmentsStream = _ledgerRepo.streamInstallmentsForContract(widget.contractId);
+    _paymentsStream = _paymentRepo.streamPaymentsForUser(widget.customer.uid);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final Color border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final Color textPrimary = isDark ? AppColors.textLight : AppColors.textDark;
     final Color textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
-
-    final ledgerRepo = FirestoreLedgerRepository();
-    final paymentRepo = FirestorePaymentRepository();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -121,9 +140,36 @@ class CustomerPaymentHistoryPanel extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            'Unit $unitNumber  •  Contract $contractNumber',
-                            style: TextStyle(fontFamily: AppTextStyles.fontFamily, color: textMuted, fontSize: 12),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Unit $unitNumber',
+                                  style: const TextStyle(
+                                    fontFamily: AppTextStyles.fontFamily,
+                                    color: AppColors.accent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Contract: $contractNumber',
+                                style: TextStyle(
+                                  fontFamily: AppTextStyles.fontFamily,
+                                  color: textMuted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -141,8 +187,7 @@ class CustomerPaymentHistoryPanel extends StatelessWidget {
               // ── Installment Timeline ────────────────────────────────────
               Expanded(
                 child: StreamBuilder<List<Installment>>(
-                  stream: ledgerRepo
-                      .streamInstallmentsForContract(contractId),
+                  stream: _installmentsStream,
                   builder: (context, instSnap) {
                     if (instSnap.connectionState ==
                             ConnectionState.waiting &&
@@ -192,8 +237,7 @@ class CustomerPaymentHistoryPanel extends StatelessWidget {
                         .firstOrNull;
 
                     return StreamBuilder<List<Payment>>(
-                      stream: paymentRepo.streamPaymentsForUser(
-                          customer.uid),
+                      stream: _paymentsStream,
                       builder: (ctx2, paySnap) {
                         final allPayments = paySnap.data ?? [];
 

@@ -13,9 +13,16 @@ class PaymentsModuleScreen extends StatefulWidget {
 
 class _PaymentsModuleScreenState extends State<PaymentsModuleScreen> {
   final FirestorePaymentRepository _repository = FirestorePaymentRepository();
+  late final Stream<List<Payment>> _paymentsStream;
   String _searchQuery = '';
   PaymentStatus? _selectedStatus;
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentsStream = _repository.streamAllPayments();
+  }
 
   @override
   void dispose() {
@@ -30,7 +37,7 @@ class _PaymentsModuleScreenState extends State<PaymentsModuleScreen> {
     final Color textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return StreamBuilder<List<Payment>>(
-      stream: _repository.streamAllPayments(),
+      stream: _paymentsStream,
       builder: (context, snapshot) {
         final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
         final payments = snapshot.data ?? [];

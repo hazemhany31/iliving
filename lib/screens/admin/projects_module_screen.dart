@@ -16,8 +16,15 @@ class ProjectsModuleScreen extends StatefulWidget {
 
 class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
   final FirestoreProjectRepository _repository = FirestoreProjectRepository();
+  late final Stream<List<Project>> _projectsStream;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _projectsStream = _repository.streamAllProjects();
+  }
 
   @override
   void dispose() {
@@ -33,7 +40,7 @@ class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
     final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return StreamBuilder<List<Project>>(
-      stream: _repository.streamAllProjects(),
+      stream: _projectsStream,
       builder: (context, snapshot) {
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
         final projects = snapshot.data ?? [];

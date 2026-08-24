@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import '../models/auth_model.dart';
 import '../models/unit_price_tick.dart';
@@ -5,10 +6,12 @@ import '../repositories/price_sync_repository.dart';
 import 'auth_service.dart';
 
 class SyncStateManager extends ChangeNotifier {
+  StreamSubscription<List<UnitPriceTick>>? _priceSub;
+
   SyncStateManager() {
     AuthService.instance.stateNotifier.addListener(_onAuthStateChanged);
     PriceSyncRepository.instance.statusNotifier.addListener(_onSyncStatusChanged);
-    PriceSyncRepository.instance.priceFeed.listen(_onPriceUpdate);
+    _priceSub = PriceSyncRepository.instance.priceFeed.listen(_onPriceUpdate);
   }
 
   AuthState get authState => AuthService.instance.currentState;
@@ -68,6 +71,7 @@ class SyncStateManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    _priceSub?.cancel();
     AuthService.instance.stateNotifier.removeListener(_onAuthStateChanged);
     PriceSyncRepository.instance.statusNotifier.removeListener(_onSyncStatusChanged);
     super.dispose();
