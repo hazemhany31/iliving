@@ -2,17 +2,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/installment.dart';
 import '../../models/maintenance_request.dart';
+import '../../repositories/interfaces/maintenance_repository.dart';
+import '../../repositories/interfaces/ledger_repository.dart';
 import '../../repositories/firestore/firestore_contract_repository.dart';
 import '../../repositories/firestore/firestore_ledger_repository.dart';
 import '../../repositories/firestore/firestore_maintenance_repository.dart';
 import '../../theme/luxury_theme.dart';
+import '../../utils/maintenance_validator.dart';
 import '../../widgets/admin/shared/admin_data_table.dart';
 import '../../widgets/admin/shared/admin_form_dialog.dart';
 import '../../widgets/admin/shared/admin_status_badge.dart';
+import '../../repositories/interfaces/contract_repository.dart';
 import '../../widgets/interactive_tap_bounce.dart';
 
 class MaintenanceModuleScreen extends StatefulWidget {
-  const MaintenanceModuleScreen({super.key});
+  final MaintenanceRepository? maintRepo;
+  final LedgerRepository? ledgerRepo;
+  final ContractRepository? contractRepo;
+  const MaintenanceModuleScreen({super.key, this.maintRepo, this.ledgerRepo, this.contractRepo});
 
   @override
   State<MaintenanceModuleScreen> createState() => _MaintenanceModuleScreenState();
@@ -20,9 +27,9 @@ class MaintenanceModuleScreen extends StatefulWidget {
 
 class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
     with SingleTickerProviderStateMixin {
-  final _maintRepo = FirestoreMaintenanceRepository();
-  final _ledgerRepo = FirestoreLedgerRepository();
-  final _contractRepo = FirestoreContractRepository();
+  late final MaintenanceRepository _maintRepo;
+  late final LedgerRepository _ledgerRepo;
+  late final ContractRepository _contractRepo;
 
   late final TabController _tabController;
 
@@ -40,6 +47,9 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
   @override
   void initState() {
     super.initState();
+    _maintRepo = widget.maintRepo ?? FirestoreMaintenanceRepository();
+    _ledgerRepo = widget.ledgerRepo ?? FirestoreLedgerRepository();
+    _contractRepo = widget.contractRepo ?? FirestoreContractRepository();
     _tabController = TabController(length: 2, vsync: this);
     _startStreams();
   }
@@ -54,11 +64,16 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
       },
     );
 
-    _installmentsSub = _ledgerRepo.streamAllInstallmentsLimited(limit: 1000).listen(
+    final repo = _ledgerRepo;
+    final stream = repo is FirestoreLedgerRepository
+        ? repo.streamAllInstallmentsLimited(limit: 1000)
+        : repo.streamAllInstallments();
+    _installmentsSub = stream.listen(
       (allInst) {
         final mntInst = allInst.where((i) => i.installmentType == InstallmentType.maintenanceFund).toList();
         if (mounted) setState(() => _maintenanceInstallments = mntInst);
       },
+      onError: (e) {},
     );
   }
 
@@ -704,7 +719,12 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
       ),
       onSubmit: () async {
         final messenger = ScaffoldMessenger.of(context);
-        if (titleController.text.trim().isEmpty) throw Exception('العنوان مطلوب');
+        final titleErr = MaintenanceValidator.validateTitle(titleController.text, isAr: true);
+        if (titleErr != null) throw Exception(titleErr);
+
+        final descErr = MaintenanceValidator.validateDescription(descController.text, isAr: true);
+        if (descErr != null) throw Exception(descErr);
+
         final ticketId = 'ticket_${DateTime.now().millisecondsSinceEpoch}';
         final ticketNo = 'TKT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
@@ -712,7 +732,7 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
           id: ticketId,
           ticketNumber: ticketNo,
           compoundId: 'zayed_lagoons',
-          unitId: unitController.text.trim(),
+          unitId: unitController.text.trim().isNotEmpty ? unitController.text.trim() : 'B01B202',
           residentUserId: 'CLI-202',
           category: category,
           urgency: urgency,

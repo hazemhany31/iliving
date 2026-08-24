@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sky Hills Layout Blueprint</name>
+    <description>Sky Hills premium residential compound — full compound map including gates, zones, and facilities.</description>
+
+    <!-- GATES -->
+    <Placemark>
+      <name>Main Entrance Security Gate</name>
+      <description>Security checkpoint 1 with RFID and smart camera verification. 24/7 manned post.</description>
+      <Point>
+        <coordinates>30.98100,29.98010,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>East Service Gate</name>
+      <description>Secondary gate for service vehicles and deliveries. Requires advance registration.</description>
+      <Point>
+        <coordinates>30.98520,29.98180,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- FACILITIES -->
+    <Placemark>
+      <name>Highline Sky Clubhouse</name>
+      <description>Premium community clubhouse featuring sky lounge, infinity pool, and wellness center.</description>
+      <Point>
+        <coordinates>30.98350,29.98250,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Sky Hills Sports Center</name>
+      <description>Olympic-sized swimming pool, tennis courts, and padel courts.</description>
+      <Point>
+        <coordinates>30.98150,29.98380,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Retail Promenade</name>
+      <description>Boutique shops, cafes, and a premium supermarket.</description>
+      <Point>
+        <coordinates>30.98220,29.98060,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- ZONES (Polygons) -->
+    <Placemark>
+      <name>Villa Zone Alpha</name>
+      <description>Zone containing premium detached high-altitude villas with private pools.</description>
+      <fillColor>#40ECC56C</fillColor>
+      <strokeColor>#ECC56C</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.98000,29.98100,0
+              30.98200,29.98100,0
+              30.98250,29.98300,0
+              30.98050,29.98300,0
+              30.98000,29.98100,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Sky Suites Towers (Block B)</name>
+      <description>High-rise luxury apartment block with custom Versace interior fittings and concierge service.</description>
+      <fillColor>#40D4AF37</fillColor>
+      <strokeColor>#D4AF37</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.98300,29.98050,0
+              30.98500,29.98050,0
+              30.98500,29.98200,0
+              30.98300,29.98200,0
+              30.98300,29.98050,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Garden Residences (Block C)</name>
+      <description>Ground-level garden apartments with private garden plots.</description>
+      <fillColor>#403CB371</fillColor>
+      <strokeColor>#3CB371</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.98060,29.98310,0
+              30.98250,29.98310,0
+              30.98250,29.98480,0
+              30.98060,29.98480,0
+              30.98060,29.98310,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- PATHS (LineStrings) -->
+    <Placemark>
+      <name>Sky Hills Central Promenade</name>
+      <description>Main pedestrian green pathway connecting all compound facilities.</description>
+      <LineString>
+        <coordinates>
+          30.98100,29.98010,0
+          30.98250,29.98150,0
+          30.98350,29.98250,0
+          30.98150,29.98380,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Perimeter Road</name>
+      <description>Internal perimeter road connecting all compound gates and zones.</description>
+      <LineString>
+        <coordinates>
+          30.98100,29.98010,0
+          30.98520,29.98060,0
+          30.98520,29.98480,0
+          30.98060,29.98480,0
+          30.98000,29.98100,0
+          30.98100,29.98010,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

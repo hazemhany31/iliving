@@ -105,7 +105,7 @@ void main() {
       );
     }
 
-    testWidgets('1. Empty/invalid submission: triggers validation for Title (<3 chars) and Description (<5 chars)', (tester) async {
+    testWidgets('1. Empty/invalid submission: triggers validation for Title (<4 chars, symbols) and Description (<10 chars, garbage like \\\\\\\\)', (tester) async {
       await tester.pumpWidget(buildTestModal());
       await tester.pumpAndSettle();
 
@@ -114,20 +114,35 @@ void main() {
 
       // 1.1 Test empty Title
       await tester.enterText(textFields.at(0), ''); // clear title
-      await tester.enterText(textFields.at(1), 'Proper description for ticket');
+      await tester.enterText(textFields.at(1), 'Proper description for ticket with sufficient length');
       await tester.tap(find.text('FILE SERVICE REQUEST'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Ticket title is required (min 3 characters)'), findsOneWidget);
+      expect(find.text('Ticket title is required'), findsOneWidget);
       expect(mockRepo.createCallsCount, 0); // No ticket created
 
-      // 1.2 Test empty / short Description
+      // 1.2 Test garbage Title (e.g. \\\\\\\\ or aaaaaa)
+      await tester.enterText(textFields.at(0), r'\\\\\\\\');
+      await tester.tap(find.text('FILE SERVICE REQUEST'));
+      await tester.pumpAndSettle();
+      expect(find.text('Please enter a meaningful title (avoid repeated characters/symbols)'), findsOneWidget);
+      expect(mockRepo.createCallsCount, 0);
+
+      // 1.3 Test garbage Description (e.g. \\\\\\\\\\\\)
       await tester.enterText(textFields.at(0), 'Main Water Pipe Leak');
-      await tester.enterText(textFields.at(1), 'bad'); // only 3 chars (< 5)
+      await tester.enterText(textFields.at(1), r'\\\\\\\\\\\\'); // garbage
       await tester.tap(find.text('FILE SERVICE REQUEST'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Verification requirement: minimum 5 characters details'), findsOneWidget);
+      expect(find.text('Meaningless text. Please describe the required service clearly'), findsOneWidget);
+      expect(mockRepo.createCallsCount, 0); // Still blocked
+
+      // 1.4 Test short Description (<10 chars)
+      await tester.enterText(textFields.at(1), 'leak now'); // 8 chars (<10)
+      await tester.tap(find.text('FILE SERVICE REQUEST'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Please provide clear details (min 10 characters)'), findsOneWidget);
       expect(mockRepo.createCallsCount, 0); // Still blocked
     });
 

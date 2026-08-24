@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Lamar Compound Masterplan</name>
+    <description>Lamar premium residential compound — full compound map including gates, parklands, and retail.</description>
+
+    <!-- GATES -->
+    <Placemark>
+      <name>Zayed North Security Gate</name>
+      <description>Main vehicle security entrance with biometric verification system and guardhouse.</description>
+      <Point>
+        <coordinates>30.80100,30.01000,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>South Pedestrian Gate</name>
+      <description>Residents-only pedestrian gate with NFC fob and QR code access.</description>
+      <Point>
+        <coordinates>30.80500,30.01600,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>West Service &amp; Delivery Gate</name>
+      <description>Controlled-access service gate for maintenance and supplier vehicles.</description>
+      <Point>
+        <coordinates>30.80050,30.01350,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- FACILITIES -->
+    <Placemark>
+      <name>Lamar Clubhouse &amp; Spa</name>
+      <description>World-class clubhouse featuring indoor Olympic pool, spa, and fitness center.</description>
+      <Point>
+        <coordinates>30.80350,30.01250,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>International School Building</name>
+      <description>On-compound international school (K-12) affiliated with the British curriculum.</description>
+      <Point>
+        <coordinates>30.80650,30.01500,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- ZONES (Polygons) -->
+    <Placemark>
+      <name>Lamar Central Park</name>
+      <description>Large central green area with artificial lakes, jogging tracks, and open-air amphitheatre.</description>
+      <fillColor>#402E7D32</fillColor>
+      <strokeColor>#2E7D32</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.80200,30.01100,0
+              30.80500,30.01100,0
+              30.80500,30.01400,0
+              30.80200,30.01400,0
+              30.80200,30.01100,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Lamar Plaza &amp; Retail Strip</name>
+      <description>Commercial area with boutiques, restaurants, a medical center, and a pharmacy.</description>
+      <fillColor>#40AA7C11</fillColor>
+      <strokeColor>#AA7C11</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.80600,30.01000,0
+              30.80800,30.01000,0
+              30.80800,30.01200,0
+              30.80600,30.01200,0
+              30.80600,30.01000,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Courtyard Villas (North Cluster)</name>
+      <description>Standalone courtyard villas with private pools and garden landscaping.</description>
+      <fillColor>#40ECC56C</fillColor>
+      <strokeColor>#ECC56C</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.80100,30.01050,0
+              30.80190,30.01050,0
+              30.80190,30.01380,0
+              30.80100,30.01380,0
+              30.80100,30.01050,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Apartments Towers (East Block)</name>
+      <description>Three towers of luxury apartments with rooftop infinity pools and concierge.</description>
+      <fillColor>#40D4AF37</fillColor>
+      <strokeColor>#D4AF37</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.80810,30.01200,0
+              30.81000,30.01200,0
+              30.81000,30.01500,0
+              30.80810,30.01500,0
+              30.80810,30.01200,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- PATHS -->
+    <Placemark>
+      <name>Main Boulevard</name>
+      <description>Primary tree-lined boulevard from north gate through the compound center.</description>
+      <LineString>
+        <coordinates>
+          30.80100,30.01000,0
+          30.80350,30.01250,0
+          30.80500,30.01400,0
+          30.80500,30.01600,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

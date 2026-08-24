@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Zayed Lagoons Marina Blueprint</name>
+    <description>Zayed Lagoons — waterfront luxury compound with private marina, lagoon villas, and yacht club.</description>
+
+    <!-- GATES -->
+    <Placemark>
+      <name>Marina Entry Gate</name>
+      <description>Secure gate checkpoint for residents and pre-registered yacht guests. Biometric verification required.</description>
+      <Point>
+        <coordinates>30.77100,29.99000,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>East Residential Gate</name>
+      <description>Main resident vehicle gate with RFID boom barrier and live surveillance.</description>
+      <Point>
+        <coordinates>30.78100,29.99050,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>North Pedestrian Gate</name>
+      <description>Pedestrian access gate connecting to the waterfront promenade.</description>
+      <Point>
+        <coordinates>30.77600,29.99500,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- FACILITIES -->
+    <Placemark>
+      <name>West Yacht Club &amp; Marina</name>
+      <description>Exclusive marina harbor with 80-berth yacht docking, fuel station, and maritime services.</description>
+      <fillColor>#400288D1</fillColor>
+      <strokeColor>#0288D1</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.77200,29.99100,0
+              30.77600,29.99100,0
+              30.77600,29.99400,0
+              30.77200,29.99400,0
+              30.77200,29.99100,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Lagoons Clubhouse &amp; Beach Club</name>
+      <description>Waterfront beach club with private beach, crystal lagoon swim area, and sky bar.</description>
+      <Point>
+        <coordinates>30.77500,29.99450,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Lagoons Commercial Boardwalk</name>
+      <description>Seaside dining and retail promenade with international restaurants.</description>
+      <Point>
+        <coordinates>30.77850,29.99200,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- RESIDENTIAL ZONES -->
+    <Placemark>
+      <name>Waterfront Lagoon Villas</name>
+      <description>Ultra-premium lagoon-front villas with private pontoon access and infinity pools.</description>
+      <fillColor>#40D4AF37</fillColor>
+      <strokeColor>#D4AF37</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.77700,29.99000,0
+              30.78000,29.99000,0
+              30.78000,29.99300,0
+              30.77700,29.99300,0
+              30.77700,29.99000,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Lagoon Apartments (North Tower)</name>
+      <description>Signature tower with panoramic lagoon views, sky pool on floor 28, and serviced residences.</description>
+      <fillColor>#40ECC56C</fillColor>
+      <strokeColor>#ECC56C</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.77620,29.99420,0
+              30.77800,29.99420,0
+              30.77800,29.99540,0
+              30.77620,29.99540,0
+              30.77620,29.99420,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Island Chalets</name>
+      <description>Exclusive floating chalets on man-made island — private water taxi access only.</description>
+      <fillColor>#405C6BC1</fillColor>
+      <strokeColor>#5C6BC1</strokeColor>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              30.77300,29.99400,0
+              30.77500,29.99400,0
+              30.77500,29.99530,0
+              30.77300,29.99530,0
+              30.77300,29.99400,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- PATHS -->
+    <Placemark>
+      <name>Waterfront Promenade</name>
+      <description>3km waterfront walking and cycling promenade along the entire lagoon edge.</description>
+      <LineString>
+        <coordinates>
+          30.77100,29.99000,0
+          30.77300,29.99250,0
+          30.77500,29.99450,0
+          30.77600,29.99500,0
+          30.77850,29.99480,0
+          30.78100,29.99400,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Internal Road Network</name>
+      <description>Main internal road connecting all gates and residential clusters.</description>
+      <LineString>
+        <coordinates>
+          30.77100,29.99000,0
+          30.77800,29.99050,0
+          30.78100,29.99050,0
+          30.78100,29.99400,0
+          30.77600,29.99500,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

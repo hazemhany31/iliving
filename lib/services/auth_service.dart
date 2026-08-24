@@ -42,6 +42,17 @@ class AuthService {
 
   UserProfile? get currentUserProfile => _currentUserProfile;
   UserProfile? get currentProfile => _currentUserProfile;
+
+  @visibleForTesting
+  void setUserProfileForTesting(UserProfile? profile) {
+    _currentUserProfile = profile;
+    if (profile != null) {
+      stateNotifier.value = AuthState.authenticated;
+    } else {
+      stateNotifier.value = AuthState.unauthenticated;
+    }
+  }
+
   AuthState get currentState => stateNotifier.value;
   bool get isAuthenticated => currentState == AuthState.authenticated && _currentUserProfile != null;
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/sync_state.dart';
@@ -573,50 +572,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-              ),
-            ],
-
-            // Debug Demo User Quick Selectors
-            if (kDebugMode) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      key: const Key('demo_user_a_btn'),
-                      onPressed: () {
-                        setState(() {
-                          _emailController.text = 'ahmed.shazly.abdelgawad@new-build-egypt.com';
-                          _passwordController.text = 'iliving2026';
-                          _errorMessage = null;
-                        });
-                      },
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                      ),
-                      child: const Text('User A (Ahmed)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      key: const Key('demo_user_b_btn'),
-                      onPressed: () {
-                        setState(() {
-                          _emailController.text = 'mahmoud.ghanem.ibrahim@new-build-egypt.com';
-                          _passwordController.text = 'iliving2026';
-                          _errorMessage = null;
-                        });
-                      },
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                      ),
-                      child: const Text('User B (Mahmoud)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
               ),
             ],
 

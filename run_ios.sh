@@ -40,19 +40,8 @@ echo -e "${GREEN}[3/5] Syncing build to APFS storage (/tmp/Runner.app)...${NC}"
 rm -rf /tmp/Runner.app
 cp -R build/ios/iphonesimulator/Runner.app /tmp/Runner.app
 
-# 4. Install and Launch app
-echo -e "${GREEN}[4/5] Installing app on Simulator...${NC}"
+# 4. Install, Launch and Attach debugger directly with Flutter
+echo -e "${GREEN}[4/4] Launching app on Simulator with Hot Reload...${NC}"
 xcrun simctl terminate "$SIM_ID" com.hazemhany.iliving 2>/dev/null || true
-xcrun simctl uninstall "$SIM_ID" com.hazemhany.iliving 2>/dev/null || true
-xcrun simctl install "$SIM_ID" /tmp/Runner.app
+flutter run --use-application-binary=/tmp/Runner.app -d "$SIM_ID"
 
-echo -e "${GREEN}[4/5] Launching app...${NC}"
-xcrun simctl launch "$SIM_ID" com.hazemhany.iliving
-
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}✓ App launched successfully on Simulator!${NC}"
-echo -e "${GREEN}========================================${NC}"
-
-# 5. Attach Flutter debugger
-echo -e "${GREEN}[5/5] Attaching Flutter debugger (press 'r' for Hot Reload, 'R' for Restart, 'q' to quit)...${NC}"
-flutter attach -d "$SIM_ID" --app-id com.hazemhany.iliving

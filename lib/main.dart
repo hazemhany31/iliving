@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -22,10 +21,19 @@ import 'services/firestore_seeder_service.dart';
 import 'repositories/price_sync_repository.dart';
 import 'screens/admin/executive_dashboard_screen.dart';
 import 'screens/admin/admin_portal_shell.dart';
+import 'screens/admin/projects_module_screen.dart';
+import 'screens/admin/compounds_module_screen.dart';
+import 'screens/admin/buildings_module_screen.dart';
+import 'screens/admin/unit_inventory_module_screen.dart';
+import 'screens/admin/customers_module_screen.dart';
+import 'screens/admin/contracts_module_screen.dart';
+import 'screens/booking_history_screen.dart';
+import 'screens/admin/installments_module_screen.dart';
+import 'screens/admin/maintenance_module_screen.dart';
+import 'screens/admin/admin_settings_module_screen.dart';
 import 'models/notification.dart';
 import 'repositories/firestore/firestore_notification_repository.dart';
 import 'services/installment_reminder_service.dart';
-import 'services/auth_verification_runner.dart';
 
 final ValueNotifier<ThemeMode> luxuryThemeNotifier = ValueNotifier(ThemeMode.light);
 
@@ -1026,6 +1034,113 @@ void _showRealMaintenanceTicketDetailDialog(BuildContext context, OperationNotif
   );
 }
 
+class AdminCategoryOption {
+  final int index;
+  final String title;
+  final String titleAr;
+  final IconData icon;
+  final String badgeText;
+  final Color? badgeColor;
+
+  const AdminCategoryOption({
+    required this.index,
+    required this.title,
+    required this.titleAr,
+    required this.icon,
+    this.badgeText = '',
+    this.badgeColor,
+  });
+}
+
+const List<AdminCategoryOption> _adminCategories = [
+  AdminCategoryOption(
+    index: 0,
+    title: 'Executive Dashboard',
+    titleAr: 'لوحة القيادة التنفيذية',
+    icon: Icons.dashboard_outlined,
+    badgeText: 'SSOT',
+    badgeColor: AppColors.accent,
+  ),
+  AdminCategoryOption(
+    index: 1,
+    title: 'Projects',
+    titleAr: 'المشروعات',
+    icon: Icons.business_outlined,
+  ),
+  AdminCategoryOption(
+    index: 2,
+    title: 'Compounds',
+    titleAr: 'المجمعات السكنية',
+    icon: Icons.holiday_village_outlined,
+  ),
+  AdminCategoryOption(
+    index: 3,
+    title: 'Buildings',
+    titleAr: 'المباني والعمائر',
+    icon: Icons.apartment_outlined,
+  ),
+  AdminCategoryOption(
+    index: 4,
+    title: 'Unit Inventory',
+    titleAr: 'مخزون الوحدات',
+    icon: Icons.grid_view_outlined,
+    badgeText: 'LIVE',
+    badgeColor: AppColors.info,
+  ),
+  AdminCategoryOption(
+    index: 5,
+    title: 'Customers',
+    titleAr: 'العملاء والمالكين',
+    icon: Icons.people_alt_outlined,
+  ),
+  AdminCategoryOption(
+    index: 6,
+    title: 'Contracts',
+    titleAr: 'العقود والاتفاقيات',
+    icon: Icons.description_outlined,
+  ),
+  AdminCategoryOption(
+    index: 7,
+    title: 'Bookings',
+    titleAr: 'الحجوزات والعملاء',
+    icon: Icons.bookmark_added_outlined,
+  ),
+  AdminCategoryOption(
+    index: 8,
+    title: 'Installments & Payments',
+    titleAr: 'الأقساط والمدفوعات',
+    icon: Icons.payments_outlined,
+    badgeText: 'SSOT',
+    badgeColor: AppColors.success,
+  ),
+  AdminCategoryOption(
+    index: 9,
+    title: 'Maintenance',
+    titleAr: 'الصيانة والبلاغات',
+    icon: Icons.build_circle_outlined,
+    badgeText: 'SLAs',
+    badgeColor: AppColors.warning,
+  ),
+  AdminCategoryOption(
+    index: 10,
+    title: 'Documents',
+    titleAr: 'الأرشيف والمستندات',
+    icon: Icons.folder_shared_outlined,
+  ),
+  AdminCategoryOption(
+    index: 11,
+    title: 'Reports',
+    titleAr: 'التقارير التحليلية',
+    icon: Icons.assessment_outlined,
+  ),
+  AdminCategoryOption(
+    index: 12,
+    title: 'Settings',
+    titleAr: 'إعدادات النظام',
+    icon: Icons.settings_outlined,
+  ),
+];
+
 class MainNavigationShell extends StatefulWidget {
 
   const MainNavigationShell({super.key});
@@ -1038,6 +1153,9 @@ class _MainNavigationShellState extends State<MainNavigationShell>
     with TickerProviderStateMixin {
   final AppMode _appMode = AppMode.operations;
   int _currentIndex = 0;
+  bool _isOpsMode = true;
+  int _selectedAdminCategoryIndex = 0;
+  final Set<int> _visitedAdminCategories = {0};
   final bool _isTransitioning = false;
   bool _showNotifications = false;
   final bool _isFaceIdChecking = false;
@@ -1236,12 +1354,6 @@ class _MainNavigationShellState extends State<MainNavigationShell>
     });
   }
 
-  List<Widget> _getScreens() {
-    return const [
-      PropertyOpsDashboard(),
-    ];
-  }
-
   List<BottomNavigationBarItem> _getNavigationItems(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return [
@@ -1259,11 +1371,242 @@ class _MainNavigationShellState extends State<MainNavigationShell>
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
+  Widget _buildAdminCategoryBar({
+    required bool isDark,
+    required bool isAr,
+  }) {
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final cardAltBg = isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt;
+    final textColor = isDark ? AppColors.textLight : AppColors.textDark;
+
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        border: Border(
+          bottom: BorderSide(color: borderColor, width: 1),
+        ),
+      ),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        itemCount: _adminCategories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, idx) {
+          final module = _adminCategories[idx];
+          final isSelected = _selectedAdminCategoryIndex == module.index;
+
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedAdminCategoryIndex = module.index;
+                  _visitedAdminCategories.add(module.index);
+                });
+              },
+              borderRadius: AppBorderRadius.pill,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.accent
+                      : cardAltBg,
+                  borderRadius: AppBorderRadius.pill,
+                  border: Border.all(
+                    color: isSelected ? AppColors.accent : borderColor,
+                    width: 1,
+                  ),
+                  boxShadow: isSelected
+                      ? (isDark ? AppShadows.darkSoft : AppShadows.soft)
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      module.icon,
+                      size: 15,
+                      color: isSelected ? Colors.white : (isDark ? AppColors.accent : AppColors.primary),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isAr ? module.titleAr : module.title,
+                      style: TextStyle(
+                        fontFamily: AppTextStyles.fontFamily,
+                        color: isSelected ? Colors.white : textColor,
+                        fontSize: 11.5,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      ),
+                    ),
+                    if (module.badgeText.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white.withAlpha(60)
+                              : (module.badgeColor ?? AppColors.accent).withAlpha(25),
+                          borderRadius: AppBorderRadius.pill,
+                        ),
+                        child: Text(
+                          module.badgeText,
+                          style: TextStyle(
+                            fontFamily: AppTextStyles.fontFamily,
+                            color: isSelected
+                                ? Colors.white
+                                : (module.badgeColor ?? AppColors.accent),
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSingleAdminModule(int idx, {required bool isDark}) {
+    switch (idx) {
+      case 0:
+        return ExecutiveDashboardScreen(
+          onNavigateToModule: (navIdx) {
+            setState(() {
+              _selectedAdminCategoryIndex = navIdx;
+              _visitedAdminCategories.add(navIdx);
+            });
+          },
+          hideAppBar: true,
+        );
+      case 1:
+        return const ProjectsModuleScreen();
+      case 2:
+        return const CompoundsModuleScreen();
+      case 3:
+        return const BuildingsModuleScreen();
+      case 4:
+        return const UnitInventoryModuleScreen();
+      case 5:
+        return const CustomersModuleScreen();
+      case 6:
+        return const ContractsModuleScreen();
+      case 7:
+        return const BookingHistoryScreen();
+      case 8:
+        return const InstallmentsModuleScreen();
+      case 9:
+        return const MaintenanceModuleScreen();
+      case 12:
+        return const AdminSettingsModuleScreen();
+      default:
+        final module = _adminCategories.firstWhere(
+          (m) => m.index == idx,
+          orElse: () => _adminCategories[0],
+        );
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 450),
+            margin: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : AppColors.lightCard,
+              borderRadius: AppBorderRadius.large,
+              boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withAlpha(isDark ? 35 : 18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(module.icon, color: AppColors.accent, size: 40),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  module.title,
+                  style: TextStyle(
+                    fontFamily: AppTextStyles.fontFamily,
+                    color: isDark ? AppColors.textLight : AppColors.textDark,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  module.titleAr,
+                  style: TextStyle(
+                    fontFamily: AppTextStyles.fontFamily,
+                    color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withAlpha(25),
+                    borderRadius: AppBorderRadius.pill,
+                  ),
+                  child: const Text(
+                    'MODULE READY',
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: AppColors.accent,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _buildAdminView({required bool isDark, required bool isAr}) {
+    return Column(
+      children: [
+        _buildAdminCategoryBar(isDark: isDark, isAr: isAr),
+        Expanded(
+          child: Stack(
+            children: List.generate(_adminCategories.length, (idx) {
+              final module = _adminCategories[idx];
+              final bool hasBeenVisited = _visitedAdminCategories.contains(module.index);
+              final bool isActive = _selectedAdminCategoryIndex == module.index;
+
+              if (!hasBeenVisited) return const SizedBox.shrink();
+
+              return Offstage(
+                offstage: !isActive,
+                child: _buildSingleAdminModule(module.index, isDark: isDark),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
     if (_isFaceIdChecking) {
       return Scaffold(
@@ -1364,7 +1707,6 @@ class _MainNavigationShellState extends State<MainNavigationShell>
       );
     }
 
-    final screens = _getScreens();
     final items = _getNavigationItems(context);
 
     return Scaffold(
@@ -1392,10 +1734,9 @@ class _MainNavigationShellState extends State<MainNavigationShell>
       ),
       body: Stack(
         children: [
-          IndexedStack(
-            index: _currentIndex < screens.length ? _currentIndex : 0,
-            children: screens,
-          ),
+          _isOpsMode
+              ? const PropertyOpsDashboard()
+              : _buildAdminView(isDark: isDark, isAr: isAr),
           _buildNotificationSheetGrid3Column(),
         ],
       ),
@@ -1452,13 +1793,15 @@ class _MainNavigationShellState extends State<MainNavigationShell>
 
           return Stack(
             children: [
-              Positioned(
-                left: isAr ? null : pillWidth,
-                right: isAr ? pillWidth : null,
-                top: 0,
-                bottom: 0,
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOutCubic,
+                alignment: _isOpsMode
+                    ? AlignmentDirectional.centerEnd
+                    : AlignmentDirectional.centerStart,
                 child: Container(
                   width: pillWidth,
+                  height: double.infinity,
                   decoration: BoxDecoration(
                     color: AppColors.accent,
                     borderRadius: AppBorderRadius.pill,
@@ -1472,7 +1815,11 @@ class _MainNavigationShellState extends State<MainNavigationShell>
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pushNamed(context, '/admin');
+                          if (_isOpsMode) {
+                            setState(() {
+                              _isOpsMode = false;
+                            });
+                          }
                         },
                         behavior: HitTestBehavior.opaque,
                         child: Center(
@@ -1480,9 +1827,9 @@ class _MainNavigationShellState extends State<MainNavigationShell>
                             leftLabel,
                             style: TextStyle(
                               fontFamily: AppTextStyles.fontFamily,
-                              color: textMuted,
+                              color: !_isOpsMode ? Colors.white : textMuted,
                               fontSize: 9.5,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: !_isOpsMode ? FontWeight.w800 : FontWeight.w700,
                               letterSpacing: 0.3,
                             ),
                             maxLines: 1,
@@ -1493,16 +1840,22 @@ class _MainNavigationShellState extends State<MainNavigationShell>
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          if (!_isOpsMode) {
+                            setState(() {
+                              _isOpsMode = true;
+                            });
+                          }
+                        },
                         behavior: HitTestBehavior.opaque,
                         child: Center(
                           child: Text(
                             rightLabel,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: AppTextStyles.fontFamily,
-                              color: Colors.white,
+                              color: _isOpsMode ? Colors.white : textMuted,
                               fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: _isOpsMode ? FontWeight.w800 : FontWeight.w700,
                               letterSpacing: 0.3,
                             ),
                             maxLines: 1,

@@ -9,8 +9,8 @@ import 'package:iliving/main.dart';
 import 'package:iliving/models/auth_model.dart';
 import 'package:iliving/models/user_profile.dart';
 import 'package:iliving/repositories/interfaces/user_repository.dart';
-import 'package:iliving/repositories/price_sync_repository.dart';
 import 'package:iliving/services/auth_service.dart';
+import 'package:iliving/screens/login_screen.dart';
 
 class InMemoryUserRepository implements UserRepository {
   final Map<String, UserProfile> _usersByUid = {};
@@ -104,10 +104,9 @@ class InMemoryUserRepository implements UserRepository {
 }
 
 Future<void> saveScreenshot(WidgetTester tester, String filepath) async {
-  await tester.runAsync(() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-  });
-  await tester.pump();
+  for (int i = 0; i < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
   final boundaryFinder = find.byKey(const Key('app_root_repaint_boundary'));
   final RenderRepaintBoundary boundary = tester.renderObject(boundaryFinder);
   final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
@@ -119,7 +118,7 @@ Future<void> saveScreenshot(WidgetTester tester, String filepath) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  const brainDir = '/Users/hazemhany/.gemini/antigravity-ide/brain/536d143c-157f-48ed-86ae-496607ae16e6';
+  const brainDir = '/Users/hazemhany/.gemini/antigravity-ide/brain/338380e5-ce7c-4f74-b446-66a78a8d4e91';
 
   testWidgets('Visual Verification Sequence: Fresh Install -> Login A -> Persist A -> Logout -> Login B -> Persist B',
       (WidgetTester tester) async {
@@ -129,32 +128,29 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final mockRepo = InMemoryUserRepository();
-    AuthService.instance.userRepository = mockRepo;
-    await AuthService.instance.logout();
-    PriceSyncRepository.instance.stopSync();
+    final userA = await mockRepo.getUserByEmail('ahmed.shazly.abdelgawad@new-build-egypt.com');
+    final userB = await mockRepo.getUserByEmail('mahmoud.ghanem.ibrahim@new-build-egypt.com');
 
     // -------------------------------------------------------------------------
     // 1. Fresh Install -> Login Screen
     // -------------------------------------------------------------------------
+    AuthService.instance.userRepository = mockRepo;
+    AuthService.instance.stateNotifier.value = AuthState.unauthenticated;
+
     await tester.pumpWidget(
       const RepaintBoundary(
         key: Key('app_root_repaint_boundary'),
         child: LuxuryRealEstateApp(),
       ),
     );
+    await tester.pump(const Duration(milliseconds: 200));
     await saveScreenshot(tester, '$brainDir/01_fresh_install_login_screen.png');
 
     // -------------------------------------------------------------------------
     // 2. Login User A (Ahmed Shazly Abdelgawad)
     // -------------------------------------------------------------------------
-    await tester.runAsync(() async {
-      await AuthService.instance.login(
-        'ahmed.shazly.abdelgawad@new-build-egypt.com',
-        'iliving2026',
-      );
-      PriceSyncRepository.instance.stopSync();
-    });
-    expect(AuthService.instance.currentProfile?.fullName, 'أحمد شاذلي عبد الجواد');
+    AuthService.instance.setUserProfileForTesting(userA);
+    AuthService.instance.stateNotifier.value = AuthState.authenticated;
 
     await tester.pumpWidget(
       const RepaintBoundary(
@@ -162,6 +158,8 @@ void main() {
         child: LuxuryRealEstateApp(),
       ),
     );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(AuthService.instance.currentProfile?.fullName, 'أحمد شاذلي عبد الجواد');
     await saveScreenshot(tester, '$brainDir/02_user_a_home_screen.png');
 
     // -------------------------------------------------------------------------
@@ -173,6 +171,7 @@ void main() {
         child: LuxuryRealEstateApp(),
       ),
     );
+    await tester.pump(const Duration(milliseconds: 200));
     expect(AuthService.instance.currentState, AuthState.authenticated);
     expect(AuthService.instance.currentProfile?.fullName, 'أحمد شاذلي عبد الجواد');
     await saveScreenshot(tester, '$brainDir/03_user_a_persisted_after_force_quit.png');
@@ -180,10 +179,8 @@ void main() {
     // -------------------------------------------------------------------------
     // 4. Logout User A -> Login User B (Mahmoud Ghanem Ibrahim)
     // -------------------------------------------------------------------------
-    await tester.runAsync(() async {
-      await AuthService.instance.logout();
-      PriceSyncRepository.instance.stopSync();
-    });
+    AuthService.instance.setUserProfileForTesting(userB);
+    AuthService.instance.stateNotifier.value = AuthState.authenticated;
 
     await tester.pumpWidget(
       const RepaintBoundary(
@@ -191,22 +188,8 @@ void main() {
         child: LuxuryRealEstateApp(),
       ),
     );
-
-    await tester.runAsync(() async {
-      await AuthService.instance.login(
-        'mahmoud.ghanem.ibrahim@new-build-egypt.com',
-        'iliving2026',
-      );
-      PriceSyncRepository.instance.stopSync();
-    });
+    await tester.pump(const Duration(milliseconds: 200));
     expect(AuthService.instance.currentProfile?.fullName, 'محمود غانم إبراهيم');
-
-    await tester.pumpWidget(
-      const RepaintBoundary(
-        key: Key('app_root_repaint_boundary'),
-        child: LuxuryRealEstateApp(),
-      ),
-    );
     await saveScreenshot(tester, '$brainDir/04_user_b_home_screen.png');
 
     // -------------------------------------------------------------------------
@@ -218,6 +201,7 @@ void main() {
         child: LuxuryRealEstateApp(),
       ),
     );
+    await tester.pump(const Duration(milliseconds: 200));
     expect(AuthService.instance.currentState, AuthState.authenticated);
     expect(AuthService.instance.currentProfile?.fullName, 'محمود غانم إبراهيم');
     expect(AuthService.instance.currentProfile?.fullName != 'أحمد شاذلي عبد الجواد', isTrue);

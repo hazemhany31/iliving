@@ -43,18 +43,6 @@ class AdminPortalShell extends StatefulWidget {
   final int initialModuleIndex;
   const AdminPortalShell({super.key, this.initialModuleIndex = 0});
 
-  @override
-  State<AdminPortalShell> createState() => _AdminPortalShellState();
-}
-
-class _AdminPortalShellState extends State<AdminPortalShell> {
-  late int _selectedIndex;
-  final Set<int> _visitedModules = {};
-  bool _isSidebarCollapsed = false;
-  bool _isOnline = true;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  StreamSubscription? _connectionSubscription;
-
   static const List<AdminModuleItem> modules = [
     AdminModuleItem(
       index: 0,
@@ -143,6 +131,20 @@ class _AdminPortalShellState extends State<AdminPortalShell> {
       icon: Icons.settings_outlined,
     ),
   ];
+
+  @override
+  State<AdminPortalShell> createState() => _AdminPortalShellState();
+}
+
+class _AdminPortalShellState extends State<AdminPortalShell> {
+  late int _selectedIndex;
+  final Set<int> _visitedModules = {};
+  bool _isSidebarCollapsed = false;
+  bool _isOnline = true;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  StreamSubscription? _connectionSubscription;
+
+  List<AdminModuleItem> get modules => AdminPortalShell.modules;
 
   @override
   void initState() {

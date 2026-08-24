@@ -31,8 +31,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    // Select User A
-    await tester.tap(find.byKey(const Key('demo_user_a_btn')));
+    // Enter User A Credentials
+    final emailFieldA = find.byType(TextFormField).first;
+    final passFieldA = find.byType(TextFormField).last;
+    await tester.enterText(emailFieldA, 'ahmed.shazly.abdelgawad@new-build-egypt.com');
+    await tester.enterText(passFieldA, 'iliving2026');
     for (int i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -80,8 +83,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    // Select User B
-    await tester.tap(find.byKey(const Key('demo_user_b_btn')));
+    // Enter User B Credentials
+    final emailFieldB = find.byType(TextFormField).first;
+    final passFieldB = find.byType(TextFormField).last;
+    await tester.enterText(emailFieldB, 'mahmoud.ghanem.ibrahim@new-build-egypt.com');
+    await tester.enterText(passFieldB, 'iliving2026');
     for (int i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

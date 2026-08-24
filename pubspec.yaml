@@ -27,6 +27,7 @@ dependencies:
   path_provider: ^2.1.6
   pdf: ^3.12.0
   printing: ^5.13.1
+  google_generative_ai: ^0.4.6
 
 dev_dependencies:
   flutter_test:

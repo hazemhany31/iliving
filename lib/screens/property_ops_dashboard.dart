@@ -4295,7 +4295,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 class _AnimatedShakeField extends StatefulWidget {
   final Widget child;
 
-  const _AnimatedShakeField({super.key, required this.child});
+  const _AnimatedShakeField({required this.child});
 
   @override
   State<_AnimatedShakeField> createState() => _AnimatedShakeFieldState();

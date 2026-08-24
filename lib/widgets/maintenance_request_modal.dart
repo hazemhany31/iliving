@@ -6,6 +6,7 @@ import '../repositories/interfaces/maintenance_repository.dart';
 import '../repositories/firestore/firestore_maintenance_repository.dart';
 import '../theme/luxury_theme.dart';
 import '../l10n/app_localizations.dart';
+import '../utils/maintenance_validator.dart';
 import 'interactive_tap_bounce.dart';
 
 class MaintenanceRequestModal extends StatefulWidget {
@@ -86,12 +87,16 @@ class MaintenanceRequestModalState extends State<MaintenanceRequestModal> {
   Future<void> submit() async {
     if (_isSubmitting) return;
 
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final titleErr = MaintenanceValidator.validateTitle(titleController.text, isAr: isAr);
+    final descErr = MaintenanceValidator.validateDescription(descController.text, isAr: isAr);
+
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
-      if (titleController.text.trim().length < 3) {
+    if (!isValid || titleErr != null || descErr != null) {
+      if (titleErr != null) {
         _titleShakeKey.currentState?.shake();
       }
-      if (descController.text.trim().length < 5) {
+      if (descErr != null) {
         _descShakeKey.currentState?.shake();
       }
       return;
@@ -253,12 +258,7 @@ class MaintenanceRequestModalState extends State<MaintenanceRequestModal> {
                       borderSide: const BorderSide(color: AppColors.error, width: 1.5),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().length < 3) {
-                      return isAr ? 'عنوان التذكرة مطلوب (3 أحرف على الأقل)' : 'Ticket title is required (min 3 characters)';
-                    }
-                    return null;
-                  },
+                  validator: (value) => MaintenanceValidator.validateTitle(value, isAr: isAr),
                 ),
               ),
               const SizedBox(height: 12),
@@ -289,12 +289,7 @@ class MaintenanceRequestModalState extends State<MaintenanceRequestModal> {
                       borderSide: const BorderSide(color: AppColors.error, width: 1.5),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().length < 5) {
-                      return l10n.verifMin5Chars;
-                    }
-                    return null;
-                  },
+                  validator: (value) => MaintenanceValidator.validateDescription(value, isAr: isAr),
                 ),
               ),
               const SizedBox(height: 16),

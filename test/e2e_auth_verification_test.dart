@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iliving/main.dart';
-import 'package:iliving/screens/login_screen.dart';
 import 'package:iliving/services/auth_service.dart';
-import 'package:iliving/services/sync_state.dart';
 
 void main() {
   testWidgets('E2E Auth Flow: Login A -> Persist -> Logout -> Login B -> Persist', (WidgetTester tester) async {
