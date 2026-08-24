@@ -1,3 +1,5 @@
+import '../utils/date_time_util.dart';
+
 enum PriceSyncStatus { live, stale, error }
 
 class UnitPriceTick {
@@ -23,15 +25,13 @@ class UnitPriceTick {
 
   factory UnitPriceTick.fromJson(Map<String, dynamic> json) {
     return UnitPriceTick(
-      unitNumber: json['unit_number'] as String? ?? json['unitNumber'] as String,
-      compoundId: json['compound_id'] as String? ?? json['compoundId'] as String,
-      priceEGP: (json['price_egp'] as num?)?.toDouble() ?? (json['priceEGP'] as num).toDouble(),
-      pricePerSqFt: (json['price_per_sqft'] as num?)?.toDouble() ?? (json['pricePerSqFt'] as num? ?? 0).toDouble(),
+      unitNumber: json['unit_number'] as String? ?? json['unitNumber'] as String? ?? '',
+      compoundId: json['compound_id'] as String? ?? json['compoundId'] as String? ?? '',
+      priceEGP: (json['price_egp'] as num?)?.toDouble() ?? (json['priceEGP'] as num?)?.toDouble() ?? 0.0,
+      pricePerSqFt: (json['price_per_sqft'] as num?)?.toDouble() ?? (json['pricePerSqFt'] as num?)?.toDouble() ?? 0.0,
       installmentLayout: json['installment_layout'] as String? ?? json['installmentLayout'] as String? ?? '',
       assetDetail: json['asset_detail'] as String? ?? json['assetDetail'] as String? ?? '',
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'] as String) ?? DateTime.now()
-          : DateTime.now(),
+      updatedAt: DateTimeUtil.parse(json['updated_at'] ?? json['updatedAt']),
       status: PriceSyncStatus.live,
     );
   }

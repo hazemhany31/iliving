@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum AnnouncementAudience {
   all,
@@ -54,9 +55,7 @@ class Announcement {
       authorUserId: json['authorUserId'] as String? ?? '',
       imageUrl: json['imageUrl'] as String?,
       isPinned: json['isPinned'] as bool? ?? false,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
     );
   }
 

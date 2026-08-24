@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum PassType {
   oneTime,
@@ -73,23 +74,20 @@ class GatePass {
         (e) => e.name == json['passType'],
         orElse: () => PassType.oneTime,
       ),
-      validFrom: json['validFrom'] != null
-          ? DateTime.parse(json['validFrom'] as String)
-          : DateTime.now(),
-      validUntil: json['validUntil'] != null
-          ? DateTime.parse(json['validUntil'] as String)
-          : DateTime.now().add(const Duration(hours: 24)),
-      maxUsageCount: json['maxUsageCount'] as int? ?? 1,
-      currentUsageCount: json['currentUsageCount'] as int? ?? 0,
+      validFrom: DateTimeUtil.parse(json['validFrom']),
+      validUntil: DateTimeUtil.parse(
+        json['validUntil'],
+        fallback: DateTime.now().add(const Duration(hours: 24)),
+      ),
+      maxUsageCount: (json['maxUsageCount'] as num?)?.toInt() ?? 1,
+      currentUsageCount: (json['currentUsageCount'] as num?)?.toInt() ?? 0,
       totpSecret: json['totpSecret'] as String? ?? '',
       qrPayloadSigned: json['qrPayloadSigned'] as String? ?? '',
       status: PassStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => PassStatus.active,
       ),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
     );
   }
 

@@ -9,8 +9,8 @@ class MediaAsset {
 
   factory MediaAsset.fromJson(Map<String, dynamic> json) {
     return MediaAsset(
-      title: json['title'] as String,
-      url: json['url'] as String,
+      title: json['title'] as String? ?? '',
+      url: json['url'] as String? ?? '',
     );
   }
 
@@ -35,8 +35,8 @@ class WalkthroughAsset {
 
   factory WalkthroughAsset.fromJson(Map<String, dynamic> json) {
     return WalkthroughAsset(
-      title: json['title'] as String,
-      room: json['room'] as String,
+      title: json['title'] as String? ?? '',
+      room: json['room'] as String? ?? '',
       url: json['url'] as String?,
     );
   }
@@ -61,8 +61,8 @@ class BrochureAsset {
 
   factory BrochureAsset.fromJson(Map<String, dynamic> json) {
     return BrochureAsset(
-      title: json['title'] as String,
-      url: json['url'] as String,
+      title: json['title'] as String? ?? '',
+      url: json['url'] as String? ?? '',
     );
   }
 
@@ -115,33 +115,37 @@ class CompoundModel {
 
   factory CompoundModel.fromJson(Map<String, dynamic> json) {
     return CompoundModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      location: json['location'] as String,
-      category: json['category'] as String,
-      description: json['description'] as String,
-      basePriceEGP: (json['basePriceEGP'] as num).toDouble(),
-      areaSqFt: (json['areaSqFt'] as num).toDouble(),
-      completionPercentage: (json['completionPercentage'] as num).toDouble(),
-      heroImageUrl: json['heroImageUrl'] as String,
-      cardImageUrl: json['cardImageUrl'] as String,
-      primaryView: json['primaryView'] as String,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      location: json['location'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      basePriceEGP: (json['basePriceEGP'] as num?)?.toDouble() ?? 0.0,
+      areaSqFt: (json['areaSqFt'] as num?)?.toDouble() ?? 0.0,
+      completionPercentage: (json['completionPercentage'] as num?)?.toDouble() ?? 0.0,
+      heroImageUrl: json['heroImageUrl'] as String? ?? '',
+      cardImageUrl: json['cardImageUrl'] as String? ?? '',
+      primaryView: json['primaryView'] as String? ?? '',
       droneVideoUrl: json['droneVideoUrl'] as String?,
       walkthrough3DUrl: json['walkthrough3DUrl'] as String?,
       galleryPhotos: (json['galleryPhotos'] as List<dynamic>?)
-              ?.map((e) => MediaAsset.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) => MediaAsset.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       droneClips: (json['droneClips'] as List<dynamic>?)
-              ?.map((e) => MediaAsset.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) => MediaAsset.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       walkthroughs: (json['walkthroughs'] as List<dynamic>?)
-              ?.map((e) => WalkthroughAsset.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) => WalkthroughAsset.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       brochures: (json['brochures'] as List<dynamic>?)
-              ?.map((e) => BrochureAsset.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) => BrochureAsset.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum UserRole {
   superAdmin,
@@ -110,7 +111,7 @@ class UserProfile {
       role == UserRole.facilityManager ||
       role == UserRole.security;
   bool get isOwner =>
-      role == UserRole.customer && associatedUnitIds.isNotEmpty;
+      role == UserRole.customer || associatedUnitIds.isNotEmpty;
   String get id => uid;
   String get clientId => clientCode ?? uid;
   String get displayName => fullName;
@@ -131,11 +132,11 @@ class UserProfile {
         orElse: () => KycStatus.pending,
       ),
       associatedUnitIds: (json['associatedUnitIds'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
       fcmTokens: (json['fcmTokens'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
       preferredLanguage: json['preferredLanguage'] as String? ?? 'ar',
@@ -143,12 +144,8 @@ class UserProfile {
         (e) => e.name == json['accountStatus'],
         orElse: () => AccountStatus.active,
       ),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      lastLoginAt: json['lastLoginAt'] != null
-          ? DateTime.parse(json['lastLoginAt'] as String)
-          : null,
+      createdAt: DateTimeUtil.parse(json['createdAt']),
+      lastLoginAt: DateTimeUtil.tryParse(json['lastLoginAt']),
       avatarUrl: json['avatarUrl'] as String? ?? json['avatar_url'] as String?,
     );
   }

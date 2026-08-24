@@ -79,27 +79,27 @@ class GateAccessCode {
 
   factory GateAccessCode.fromJson(Map<String, dynamic> json) {
     return GateAccessCode(
-      codeId: json['codeId'] as String,
-      compoundId: json['compoundId'] as String,
-      unitId: json['unitId'] as String,
-      issuedByClientId: json['issuedByClientId'] as String,
-      guestName: json['guestName'] as String,
-      guestPhone: json['guestPhone'] as String,
+      codeId: json['codeId'] as String? ?? '',
+      compoundId: json['compoundId'] as String? ?? '',
+      unitId: json['unitId'] as String? ?? '',
+      issuedByClientId: json['issuedByClientId'] as String? ?? '',
+      guestName: json['guestName'] as String? ?? '',
+      guestPhone: json['guestPhone'] as String? ?? '',
       guestNationalId: json['guestNationalId'] as String?,
       vehiclePlate: json['vehiclePlate'] as String?,
       accessType: GateAccessType.values.firstWhere(
         (e) => e.name == json['accessType'],
         orElse: () => GateAccessType.pedestrian,
       ),
-      validFromIso: json['validFromIso'] as String,
-      validUntilIso: json['validUntilIso'] as String,
-      maxScans: json['maxScans'] as int,
-      scanCount: json['scanCount'] as int,
-      isRevoked: json['isRevoked'] as bool,
+      validFromIso: json['validFromIso'] as String? ?? DateTime.now().toIso8601String(),
+      validUntilIso: json['validUntilIso'] as String? ?? DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+      maxScans: (json['maxScans'] as num?)?.toInt() ?? 1,
+      scanCount: (json['scanCount'] as num?)?.toInt() ?? 0,
+      isRevoked: json['isRevoked'] as bool? ?? false,
       revokedAtIso: json['revokedAtIso'] as String?,
       revokedByClientId: json['revokedByClientId'] as String?,
-      createdAtIso: json['createdAtIso'] as String,
-      qrPayloadString: json['qrPayloadString'] as String,
+      createdAtIso: json['createdAtIso'] as String? ?? DateTime.now().toIso8601String(),
+      qrPayloadString: json['qrPayloadString'] as String? ?? '',
       notes: json['notes'] as String?,
     );
   }
@@ -406,13 +406,13 @@ class GateAccessLog {
 
   factory GateAccessLog.fromJson(Map<String, dynamic> json) {
     return GateAccessLog(
-      logId: json['logId'] as String,
-      codeId: json['codeId'] as String,
-      compoundId: json['compoundId'] as String,
-      unitId: json['unitId'] as String,
-      guestName: json['guestName'] as String,
-      gateId: json['gateId'] as String,
-      scanTimestampIso: json['scanTimestampIso'] as String,
+      logId: json['logId'] as String? ?? '',
+      codeId: json['codeId'] as String? ?? '',
+      compoundId: json['compoundId'] as String? ?? '',
+      unitId: json['unitId'] as String? ?? '',
+      guestName: json['guestName'] as String? ?? '',
+      gateId: json['gateId'] as String? ?? '',
+      scanTimestampIso: json['scanTimestampIso'] as String? ?? DateTime.now().toIso8601String(),
       scanResult: GateScanResult.values.firstWhere(
         (e) => e.name == json['scanResult'],
         orElse: () => GateScanResult.deniedExpired,

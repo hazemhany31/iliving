@@ -1,3 +1,5 @@
+import '../utils/date_time_util.dart';
+
 class Development {
   final String id;
   final String title;
@@ -25,16 +27,16 @@ class Development {
 
   factory Development.fromJson(Map<String, dynamic> json) {
     return Development(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      imageUrl: json['imageUrl'] as String,
-      location: json['location'] as String,
-      areaSqFt: (json['areaSqFt'] as num).toDouble(),
-      basePriceEGP: (json['basePriceEGP'] as num).toDouble(),
-      primaryView: json['primaryView'] as String,
-      completionPercentage: (json['completionPercentage'] as num).toDouble(),
-      category: json['category'] as String,
-      description: json['description'] as String,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      imageUrl: json['imageUrl'] as String? ?? '',
+      location: json['location'] as String? ?? '',
+      areaSqFt: (json['areaSqFt'] as num?)?.toDouble() ?? 0.0,
+      basePriceEGP: (json['basePriceEGP'] as num?)?.toDouble() ?? 0.0,
+      primaryView: json['primaryView'] as String? ?? '',
+      completionPercentage: (json['completionPercentage'] as num?)?.toDouble() ?? 0.0,
+      category: json['category'] as String? ?? '',
+      description: json['description'] as String? ?? '',
     );
   }
 
@@ -81,16 +83,16 @@ class PropertyUnit {
 
   factory PropertyUnit.fromJson(Map<String, dynamic> json) {
     return PropertyUnit(
-      unitNumber: json['unitNumber'] as String,
-      configuration: json['configuration'] as String,
-      areaSqFt: (json['areaSqFt'] as num).toDouble(),
-      priceEGP: (json['priceEGP'] as num).toDouble(),
-      isVacant: json['isVacant'] as bool,
-      assetClass: json['assetClass'] as String,
-      furnishingStatus: json['furnishingStatus'] as String,
-      pricePerSqFt: (json['pricePerSqFt'] as num).toDouble(),
-      parkingSpaces: json['parkingSpaces'] as int,
-      constructionPhase: json['constructionPhase'] as String,
+      unitNumber: json['unitNumber'] as String? ?? '',
+      configuration: json['configuration'] as String? ?? '',
+      areaSqFt: (json['areaSqFt'] as num?)?.toDouble() ?? 0.0,
+      priceEGP: (json['priceEGP'] as num?)?.toDouble() ?? 0.0,
+      isVacant: json['isVacant'] as bool? ?? true,
+      assetClass: json['assetClass'] as String? ?? '',
+      furnishingStatus: json['furnishingStatus'] as String? ?? '',
+      pricePerSqFt: (json['pricePerSqFt'] as num?)?.toDouble() ?? 0.0,
+      parkingSpaces: (json['parkingSpaces'] as num?)?.toInt() ?? 0,
+      constructionPhase: json['constructionPhase'] as String? ?? '',
     );
   }
 
@@ -137,15 +139,15 @@ class Lead {
 
   factory Lead.fromJson(Map<String, dynamic> json) {
     return Lead(
-      id: json['id'] as String,
-      clientName: json['clientName'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
+      id: json['id'] as String? ?? '',
+      clientName: json['clientName'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
       status: LeadStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => LeadStatus.newLead,
       ),
-      registeredAt: DateTime.parse(json['registeredAt'] as String),
+      registeredAt: DateTimeUtil.parse(json['registeredAt']),
     );
   }
 
@@ -194,19 +196,19 @@ class BookingTransaction {
 
   factory BookingTransaction.fromJson(Map<String, dynamic> json) {
     return BookingTransaction(
-      transactionId: json['transactionId'] as String,
-      buyerName: json['buyerName'] as String,
-      unitId: json['unitId'] as String,
-      isDownPaymentPaid: json['isDownPaymentPaid'] as bool,
+      transactionId: json['transactionId'] as String? ?? '',
+      buyerName: json['buyerName'] as String? ?? '',
+      unitId: json['unitId'] as String? ?? '',
+      isDownPaymentPaid: json['isDownPaymentPaid'] as bool? ?? false,
       status: BookingStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => BookingStatus.pendingApproval,
       ),
-      contractedPriceEGP: (json['contractedPriceEGP'] as num).toDouble(),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      relationshipManager: json['relationshipManager'] as String,
-      buyerRegistryInfo: json['buyerRegistryInfo'] as String,
-      invoiceUrl: json['invoiceUrl'] as String,
+      contractedPriceEGP: (json['contractedPriceEGP'] as num?)?.toDouble() ?? 0.0,
+      timestamp: DateTimeUtil.parse(json['timestamp']),
+      relationshipManager: json['relationshipManager'] as String? ?? '',
+      buyerRegistryInfo: json['buyerRegistryInfo'] as String? ?? '',
+      invoiceUrl: json['invoiceUrl'] as String? ?? '',
     );
   }
 

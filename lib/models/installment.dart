@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum InstallmentType {
   downPayment,
@@ -108,27 +109,26 @@ class Installment {
       contractId: json['contractId'] as String? ?? '',
       unitId: json['unitId'] as String? ?? '',
       buyerUserId: json['buyerUserId'] as String? ?? '',
-      sequenceNumber: json['sequenceNumber'] as int? ?? 1,
+      sequenceNumber: (json['sequenceNumber'] as num?)?.toInt() ?? 1,
       installmentType: InstallmentType.values.firstWhere(
         (e) => e.name == json['installmentType'],
         orElse: () => InstallmentType.regularQuarterly,
       ),
-      dueDate: json['dueDate'] != null
-          ? DateTime.parse(json['dueDate'] as String)
-          : DateTime.now(),
-      gracePeriodEndDate: json['gracePeriodEndDate'] != null
-          ? DateTime.parse(json['gracePeriodEndDate'] as String)
-          : DateTime.now().add(const Duration(days: 14)),
+      dueDate: DateTimeUtil.parse(json['dueDate']),
+      gracePeriodEndDate: DateTimeUtil.parse(
+        json['gracePeriodEndDate'],
+        fallback: DateTimeUtil.parse(json['dueDate']).add(const Duration(days: 14)),
+      ),
       principalAmount: (json['principalAmount'] as num?)?.toDouble() ?? 0.0,
       penaltyFeeAmount: (json['penaltyFeeAmount'] as num?)?.toDouble() ?? 0.0,
       paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0.0,
       currency: json['currency'] as String? ?? 'EGP',
       status: InstallmentStatusX.fromString(json['status'] as String?),
-      paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt'] as String) : null,
+      paidAt: DateTimeUtil.tryParse(json['paidAt']),
       paymentMethodLastUsed: json['paymentMethodLastUsed'] as String?,
       receiptNumber: json['receiptNumber'] as String?,
       proofScreenshotUrl: json['proofScreenshotUrl'] as String?,
-      submittedAt: json['submittedAt'] != null ? DateTime.parse(json['submittedAt'] as String) : null,
+      submittedAt: DateTimeUtil.tryParse(json['submittedAt']),
       submissionNotes: json['submissionNotes'] as String?,
     );
   }

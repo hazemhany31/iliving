@@ -19,10 +19,10 @@ class DownPaymentRecord {
 
   factory DownPaymentRecord.fromJson(Map<String, dynamic> json) {
     return DownPaymentRecord(
-      isPaid: json['isPaid'] as bool,
-      status: json['status'] as String,
-      percentageDue: (json['percentageDue'] as num).toDouble(),
-      amountEGP: (json['amountEGP'] as num).toDouble(),
+      isPaid: json['isPaid'] as bool? ?? false,
+      status: json['status'] as String? ?? 'Unpaid',
+      percentageDue: (json['percentageDue'] as num?)?.toDouble() ?? 10.0,
+      amountEGP: (json['amountEGP'] as num?)?.toDouble() ?? 0.0,
       paidTimestamp: json['paidTimestamp'] as String?,
       receiptUrl: json['receiptUrl'] as String?,
       transactionRef: json['transactionRef'] as String?,
@@ -87,12 +87,12 @@ class InstallmentRecord {
 
   factory InstallmentRecord.fromJson(Map<String, dynamic> json) {
     return InstallmentRecord(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      isPaid: json['isPaid'] as bool,
-      amountEGP: (json['amountEGP'] as num).toDouble(),
-      dueDateIso: json['dueDateIso'] as String,
-      dueDateLabel: json['dueDateLabel'] as String,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      isPaid: json['isPaid'] as bool? ?? false,
+      amountEGP: (json['amountEGP'] as num?)?.toDouble() ?? 0.0,
+      dueDateIso: json['dueDateIso'] as String? ?? '',
+      dueDateLabel: json['dueDateLabel'] as String? ?? '',
       paidTimestamp: json['paidTimestamp'] as String?,
       receiptUrl: json['receiptUrl'] as String?,
       milestoneTag: json['milestoneTag'] as String?,
@@ -159,10 +159,10 @@ class MaintenanceFundRecord {
 
   factory MaintenanceFundRecord.fromJson(Map<String, dynamic> json) {
     return MaintenanceFundRecord(
-      isPaid: json['isPaid'] as bool,
-      status: json['status'] as String,
-      balanceEGP: (json['balanceEGP'] as num).toDouble(),
-      annualFeeEGP: (json['annualFeeEGP'] as num).toDouble(),
+      isPaid: json['isPaid'] as bool? ?? false,
+      status: json['status'] as String? ?? 'Active',
+      balanceEGP: (json['balanceEGP'] as num?)?.toDouble() ?? 0.0,
+      annualFeeEGP: (json['annualFeeEGP'] as num?)?.toDouble() ?? 0.0,
       lastPaidTimestamp: json['lastPaidTimestamp'] as String?,
       nextDueDateIso: json['nextDueDateIso'] as String?,
       escrowAccountRef: json['escrowAccountRef'] as String?,
@@ -202,7 +202,6 @@ class MaintenanceFundRecord {
   }
 }
 
-
 class UnitLedger {
   final String compoundId;
   final String clientId;
@@ -229,7 +228,7 @@ class UnitLedger {
   });
 
   factory UnitLedger.fromJson(Map<String, dynamic> json) {
-    final String unitId = json['unitId'] as String;
+    final String unitId = json['unitId'] as String? ?? '';
     final match = RegExp(r'\d').firstMatch(unitId);
     String floorTierStr = 'Ground Floor';
     if (match != null) {
@@ -257,15 +256,15 @@ class UnitLedger {
     }
     final cleanDigits = unitId.replaceAll(RegExp(r'[^0-9]'), '');
     final int val = int.tryParse(cleanDigits) ?? 150;
-    final double areaSqM = 120.0 + (val % 131);
+    final double areaSqM = (json['areaSquareMeters'] as num?)?.toDouble() ?? (120.0 + (val % 131));
 
     return UnitLedger(
-      compoundId: json['compoundId'] as String,
-      clientId: json['clientId'] as String,
+      compoundId: json['compoundId'] as String? ?? '',
+      clientId: json['clientId'] as String? ?? '',
       unitId: unitId,
-      unitType: json['unitType'] as String,
-      downPayment: json['downPayment'] != null
-          ? DownPaymentRecord.fromJson(json['downPayment'] as Map<String, dynamic>)
+      unitType: json['unitType'] as String? ?? '',
+      downPayment: json['downPayment'] is Map
+          ? DownPaymentRecord.fromJson(Map<String, dynamic>.from(json['downPayment'] as Map))
           : const DownPaymentRecord(
               isPaid: false,
               status: 'Unpaid',
@@ -273,12 +272,13 @@ class UnitLedger {
               amountEGP: 0.0,
             ),
       installments: (json['installments'] as List<dynamic>?)
-              ?.map((e) =>
-                  InstallmentRecord.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) =>
+                  InstallmentRecord.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
-      maintenance: json['maintenance'] != null
-          ? MaintenanceFundRecord.fromJson(json['maintenance'] as Map<String, dynamic>)
+      maintenance: json['maintenance'] is Map
+          ? MaintenanceFundRecord.fromJson(Map<String, dynamic>.from(json['maintenance'] as Map))
           : const MaintenanceFundRecord(
               isPaid: false,
               status: 'Active',

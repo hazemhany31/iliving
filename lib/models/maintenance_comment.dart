@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 @immutable
 class MaintenanceComment {
@@ -31,12 +32,10 @@ class MaintenanceComment {
       authorRole: json['authorRole'] as String? ?? '',
       commentText: json['commentText'] as String? ?? '',
       attachments: (json['attachments'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
     );
   }
 

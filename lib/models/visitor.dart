@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 @immutable
 class Visitor {
@@ -25,9 +26,7 @@ class Visitor {
       phoneNumber: json['phoneNumber'] as String? ?? '',
       nationalIdOrPassport: json['nationalIdOrPassport'] as String? ?? '',
       vehiclePlateNumber: json['vehiclePlateNumber'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
     );
   }
 

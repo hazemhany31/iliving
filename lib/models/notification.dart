@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum NotificationPriority {
   normal,
@@ -71,15 +72,13 @@ class AppNotification {
       ),
       deepLinkRoute: json['deepLinkRoute'] as String?,
       isRead: json['isRead'] as bool? ?? false,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
       type: json['type'] as String?,
       installmentId: json['installmentId'] as String?,
       unitId: json['unitId'] as String?,
       contractId: json['contractId'] as String?,
       installmentAmount: (json['installmentAmount'] as num?)?.toDouble(),
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate'] as String) : null,
+      dueDate: DateTimeUtil.tryParse(json['dueDate']),
       installmentName: json['installmentName'] as String?,
       installmentNameAr: json['installmentNameAr'] as String?,
       unitInfo: json['unitInfo'] as String?,

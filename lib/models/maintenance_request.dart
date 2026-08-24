@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum MaintenanceCategory {
   plumbing,
@@ -86,24 +87,18 @@ class MaintenanceRequest {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       attachments: (json['attachments'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
-      preferredScheduleSlot: json['preferredScheduleSlot'] != null
-          ? DateTime.parse(json['preferredScheduleSlot'] as String)
-          : null,
+      preferredScheduleSlot: DateTimeUtil.tryParse(json['preferredScheduleSlot']),
       status: MaintenanceStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => MaintenanceStatus.submitted,
       ),
       rating: (json['rating'] as num?)?.toDouble(),
       residentFeedback: json['residentFeedback'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
+      updatedAt: DateTimeUtil.parse(json['updatedAt']),
     );
   }
 

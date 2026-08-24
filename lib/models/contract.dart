@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum SignatureStatus {
   draft,
@@ -74,34 +75,20 @@ class Contract {
       maintenanceDepositAmount: (json['maintenanceDepositAmount'] as num?)?.toDouble() ?? 0.0,
       handoverPaymentAmount: (json['handoverPaymentAmount'] as num?)?.toDouble(),
       clientCode: json['clientCode'] as String?,
-      installmentDurationYears: json['installmentDurationYears'] as int? ?? 1,
-      totalInstallmentsCount: json['totalInstallmentsCount'] as int? ?? 4,
-      startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'] as String)
-          : DateTime.now(),
-      endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
-          : DateTime.now(),
-      deliveryDateExpected: json['deliveryDateExpected'] != null
-          ? DateTime.parse(json['deliveryDateExpected'] as String)
-          : DateTime.now(),
+      installmentDurationYears: (json['installmentDurationYears'] as num?)?.toInt() ?? 1,
+      totalInstallmentsCount: (json['totalInstallmentsCount'] as num?)?.toInt() ?? 4,
+      startDate: DateTimeUtil.parse(json['startDate']),
+      endDate: DateTimeUtil.parse(json['endDate']),
+      deliveryDateExpected: DateTimeUtil.parse(json['deliveryDateExpected']),
       pdfContractUrl: json['pdfContractUrl'] as String? ?? '',
       signatureStatus: SignatureStatus.values.firstWhere(
         (e) => e.name == json['signatureStatus'],
         orElse: () => SignatureStatus.draft,
       ),
-      signedByCustomerAt: json['signedByCustomerAt'] != null
-          ? DateTime.parse(json['signedByCustomerAt'] as String)
-          : null,
-      signedByDeveloperAt: json['signedByDeveloperAt'] != null
-          ? DateTime.parse(json['signedByDeveloperAt'] as String)
-          : null,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
+      signedByCustomerAt: DateTimeUtil.tryParse(json['signedByCustomerAt']),
+      signedByDeveloperAt: DateTimeUtil.tryParse(json['signedByDeveloperAt']),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
+      updatedAt: DateTimeUtil.parse(json['updatedAt']),
     );
   }
 

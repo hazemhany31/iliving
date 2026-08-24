@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 @immutable
 class InstallmentReminderSettings {
@@ -28,19 +29,15 @@ class InstallmentReminderSettings {
   factory InstallmentReminderSettings.fromJson(Map<String, dynamic> json) {
     final rawDays = json['reminderDays'] as List<dynamic>?;
     final parsedDays = rawDays != null
-        ? rawDays.map((e) => (e as num).toInt()).toList()
+        ? rawDays.whereType<num>().map((e) => e.toInt()).toList()
         : const [7, 3];
     parsedDays.sort((a, b) => b.compareTo(a));
 
     return InstallmentReminderSettings(
       reminderDays: parsedDays.isEmpty ? const [7, 3] : parsedDays,
       autoRemindersEnabled: json['autoRemindersEnabled'] as bool? ?? true,
-      lastRunTimestamp: json['lastRunTimestamp'] != null
-          ? DateTime.parse(json['lastRunTimestamp'] as String)
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
+      lastRunTimestamp: DateTimeUtil.tryParse(json['lastRunTimestamp']),
+      updatedAt: DateTimeUtil.parse(json['updatedAt']),
       updatedBy: json['updatedBy'] as String? ?? 'Admin',
     );
   }

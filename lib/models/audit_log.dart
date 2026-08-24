@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 @immutable
 class AuditLog {
@@ -34,12 +35,12 @@ class AuditLog {
       actionType: json['actionType'] as String? ?? '',
       targetCollection: json['targetCollection'] as String? ?? '',
       targetDocumentId: json['targetDocumentId'] as String? ?? '',
-      payloadDelta: (json['payloadDelta'] as Map<String, dynamic>?) ?? {},
+      payloadDelta: json['payloadDelta'] is Map
+          ? Map<String, dynamic>.from(json['payloadDelta'] as Map)
+          : {},
       ipAddress: json['ipAddress'] as String?,
       userAgent: json['userAgent'] as String?,
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'] as String)
-          : DateTime.now(),
+      timestamp: DateTimeUtil.parse(json['timestamp']),
     );
   }
 

@@ -1,3 +1,5 @@
+import '../utils/date_time_util.dart';
+
 enum AuthState {
   unauthenticated,
   authenticating,
@@ -25,12 +27,12 @@ class AuthResult {
 
   factory AuthResult.fromJson(Map<String, dynamic> json) {
     return AuthResult(
-      accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String,
-      clientId: json['client_id'] as String,
-      displayName: json['display_name'] as String,
+      accessToken: json['access_token'] as String? ?? '',
+      refreshToken: json['refresh_token'] as String? ?? '',
+      clientId: json['client_id'] as String? ?? '',
+      displayName: json['display_name'] as String? ?? '',
       avatarUrl: json['avatar_url'] as String?,
-      expiresAt: DateTime.parse(json['expires_at'] as String),
+      expiresAt: DateTimeUtil.parse(json['expires_at']),
     );
   }
 
@@ -56,12 +58,12 @@ class ClientProfile {
 
   factory ClientProfile.fromJson(Map<String, dynamic> json) {
     return ClientProfile(
-      clientId: json['client_id'] as String,
-      displayName: json['display_name'] as String,
-      email: json['email'] as String,
+      clientId: json['client_id'] as String? ?? '',
+      displayName: json['display_name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
       avatarUrl: json['avatar_url'] as String?,
       ownedUnitIds: (json['owned_unit_ids'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
       assignedLedgerId: json['assigned_ledger_id'] as String?,

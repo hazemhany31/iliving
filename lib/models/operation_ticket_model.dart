@@ -21,10 +21,10 @@ class TicketStatusEntry {
 
   factory TicketStatusEntry.fromJson(Map<String, dynamic> json) {
     return TicketStatusEntry(
-      status: json['status'] as String,
-      changedByName: json['changedByName'] as String,
-      changedByRole: json['changedByRole'] as String,
-      timestampIso: json['timestampIso'] as String,
+      status: json['status'] as String? ?? 'requested',
+      changedByName: json['changedByName'] as String? ?? '',
+      changedByRole: json['changedByRole'] as String? ?? '',
+      timestampIso: json['timestampIso'] as String? ?? DateTime.now().toIso8601String(),
       note: json['note'] as String?,
     );
   }
@@ -122,12 +122,12 @@ class OperationTicketModel {
 
   factory OperationTicketModel.fromJson(Map<String, dynamic> json) {
     return OperationTicketModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       trade: TicketTrade.values.firstWhere(
         (e) => e.name == json['trade'],
         orElse: () => TicketTrade.plumbing,
       ),
-      description: json['description'] as String,
+      description: json['description'] as String? ?? '',
       status: TicketStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => TicketStatus.requested,
@@ -136,8 +136,8 @@ class OperationTicketModel {
         (e) => e.name == (json['priority'] as String? ?? 'medium').toLowerCase(),
         orElse: () => TicketPriority.medium,
       ),
-      compoundId: json['compoundId'] as String,
-      unitId: json['unitId'] as String,
+      compoundId: json['compoundId'] as String? ?? '',
+      unitId: json['unitId'] as String? ?? '',
       clientId: json['clientId'] as String? ?? '',
       assignedTechnicianId: json['assignedTechnicianId'] as String?,
       assignedTechnicianName: json['assignedTechnicianName'] as String?,
@@ -150,12 +150,13 @@ class OperationTicketModel {
       resolvedAtIso: json['resolvedAtIso'] as String?,
       scheduledVisitIso: json['scheduledVisitIso'] as String?,
       statusLog: (json['statusLog'] as List<dynamic>?)
-              ?.map((e) =>
-                  TicketStatusEntry.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) =>
+                  TicketStatusEntry.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       photoUrls: (json['photoUrls'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
       resolutionNotes: json['resolutionNotes'] as String?,

@@ -34,18 +34,18 @@ class InvoiceModel {
 
   factory InvoiceModel.fromJson(Map<String, dynamic> json) {
     return InvoiceModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       type: InvoiceType.values.firstWhere(
         (e) => e.name == json['type'],
         orElse: () => InvoiceType.installment,
       ),
-      title: json['title'] as String,
-      amountEGP: (json['amountEGP'] as num).toDouble(),
-      isPaid: json['isPaid'] as bool,
-      dueDate: json['dueDate'] as String,
+      title: json['title'] as String? ?? '',
+      amountEGP: (json['amountEGP'] as num?)?.toDouble() ?? 0.0,
+      isPaid: json['isPaid'] as bool? ?? false,
+      dueDate: json['dueDate'] as String? ?? '',
       paidTimestamp: json['paidTimestamp'] as String?,
-      compoundId: json['compoundId'] as String,
-      unitId: json['unitId'] as String,
+      compoundId: json['compoundId'] as String? ?? '',
+      unitId: json['unitId'] as String? ?? '',
       receiptUrl: json['receiptUrl'] as String?,
     );
   }

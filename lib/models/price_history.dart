@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 @immutable
 class PriceHistory {
@@ -34,9 +35,7 @@ class PriceHistory {
       changePercentage: (json['changePercentage'] as num?)?.toDouble() ?? 0.0,
       changedByUserId: json['changedByUserId'] as String? ?? '',
       reason: json['reason'] as String? ?? '',
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'] as String)
-          : DateTime.now(),
+      timestamp: DateTimeUtil.parse(json['timestamp']),
     );
   }
 

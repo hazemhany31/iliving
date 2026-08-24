@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 @immutable
 class Building {
@@ -33,18 +34,14 @@ class Building {
       code: json['code'] as String? ?? '',
       name: json['name'] as String? ?? '',
       nameAr: json['nameAr'] as String? ?? '',
-      totalFloors: json['totalFloors'] as int? ?? 1,
-      totalUnits: json['totalUnits'] as int? ?? 0,
+      totalFloors: (json['totalFloors'] as num?)?.toInt() ?? 1,
+      totalUnits: (json['totalUnits'] as num?)?.toInt() ?? 0,
       amenities: (json['amenities'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
+      updatedAt: DateTimeUtil.parse(json['updatedAt']),
     );
   }
 

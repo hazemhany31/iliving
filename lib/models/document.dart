@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum DocumentCategory {
   contract,
@@ -47,12 +48,10 @@ class DocumentItem {
       ),
       fileUrl: json['fileUrl'] as String? ?? '',
       fileExtension: json['fileExtension'] as String? ?? 'pdf',
-      fileSizeBytes: json['fileSizeBytes'] as int? ?? 0,
+      fileSizeBytes: (json['fileSizeBytes'] as num?)?.toInt() ?? 0,
       ownerUserId: json['ownerUserId'] as String?,
       associatedUnitId: json['associatedUnitId'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
     );
   }
 

@@ -23,9 +23,9 @@ class PaymentMilestone {
 
   factory PaymentMilestone.fromJson(Map<String, dynamic> json) {
     return PaymentMilestone(
-      title: json['title'] as String,
-      percentageDue: (json['percentageDue'] as num).toDouble(),
-      isPaid: json['isPaid'] as bool,
+      title: json['title'] as String? ?? '',
+      percentageDue: (json['percentageDue'] as num?)?.toDouble() ?? 0.0,
+      isPaid: json['isPaid'] as bool? ?? false,
     );
   }
 
@@ -127,11 +127,12 @@ class UnitModel {
       assetClass: json['assetClass'] as String? ?? '',
       furnishingStatus: json['furnishingStatus'] as String? ?? '',
       pricePerSqFt: (json['pricePerSqFt'] as num?)?.toDouble() ?? 0.0,
-      parkingSpaces: json['parkingSpaces'] as int? ?? 0,
+      parkingSpaces: (json['parkingSpaces'] as num?)?.toInt() ?? 0,
       constructionPhase: json['constructionPhase'] as String? ?? '',
       parentCompoundId: json['parentCompoundId'] as String? ?? json['compoundId'] as String? ?? '',
       paymentMilestones: (json['paymentMilestones'] as List<dynamic>?)
-              ?.map((e) => PaymentMilestone.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map>()
+              .map((e) => PaymentMilestone.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       floorTier: floorTierStr,

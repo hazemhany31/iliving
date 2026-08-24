@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/date_time_util.dart';
 
 enum PaymentMethod {
   bankTransfer,
@@ -128,9 +129,7 @@ class Payment {
         (e) => e.name == json['status'],
         orElse: () => PaymentStatus.success,
       ),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTimeUtil.parse(json['createdAt']),
     );
   }
 

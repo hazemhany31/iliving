@@ -29,9 +29,12 @@ class KmlPlacemark {
 
   factory KmlPlacemark.fromJson(Map<String, dynamic> json) {
     final coordsList = json['coordinates'] as List<dynamic>? ?? [];
-    final parsedCoords = coordsList.map((e) {
-      final map = e as Map<String, dynamic>;
-      return Point2D(map['lat'] as double, map['lng'] as double);
+    final parsedCoords = coordsList.whereType<Map>().map((e) {
+      final map = Map<String, dynamic>.from(e);
+      return Point2D(
+        (map['lat'] as num?)?.toDouble() ?? 0.0,
+        (map['lng'] as num?)?.toDouble() ?? 0.0,
+      );
     }).toList();
 
     return KmlPlacemark(

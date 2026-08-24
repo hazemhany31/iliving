@@ -24,11 +24,11 @@ class MaintenanceStats {
 
   factory MaintenanceStats.fromJson(Map<String, dynamic> json) {
     return MaintenanceStats(
-      totalRequests: json['totalRequests'] as int? ?? 0,
-      pendingRequests: json['pendingRequests'] as int? ?? 0,
-      inProgressRequests: json['inProgressRequests'] as int? ?? 0,
-      completedRequests: json['completedRequests'] as int? ?? 0,
-      cancelledRequests: json['cancelledRequests'] as int? ?? 0,
+      totalRequests: (json['totalRequests'] as num?)?.toInt() ?? 0,
+      pendingRequests: (json['pendingRequests'] as num?)?.toInt() ?? 0,
+      inProgressRequests: (json['inProgressRequests'] as num?)?.toInt() ?? 0,
+      completedRequests: (json['completedRequests'] as num?)?.toInt() ?? 0,
+      cancelledRequests: (json['cancelledRequests'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -59,7 +59,7 @@ class SalesTrendDataPoint {
     return SalesTrendDataPoint(
       label: json['label'] as String? ?? '',
       revenue: (json['revenue'] as num?)?.toDouble() ?? 0.0,
-      unitsSold: json['unitsSold'] as int? ?? 0,
+      unitsSold: (json['unitsSold'] as num?)?.toInt() ?? 0,
     );
   }
 
