@@ -1858,9 +1858,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 40,
-                    child: ListView(
+                    child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      children: _effectiveCompoundsList.map((c) {
+                      itemCount: _effectiveCompoundsList.length,
+                      itemBuilder: (context, index) {
+                        final c = _effectiveCompoundsList[index];
                         final isSelected = c.id == _selectedCompound?.id || c.title == _selectedCompound?.title;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
@@ -1906,7 +1908,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             ),
                           ),
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),

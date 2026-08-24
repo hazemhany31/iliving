@@ -1233,50 +1233,56 @@ class _InstallmentsModuleScreenState extends State<InstallmentsModuleScreen>
       return diff > 0 && diff <= 7;
     }).toList();
 
-    return ListView(
-      children: [
-        if (overdue.isNotEmpty) ...[
-          _DueSoonSectionHeader(
-              label: '🔴 OVERDUE (${overdue.length})', color: Colors.redAccent),
-          ...overdue.map((i) => _DueSoonCard(
-                installment: i,
-                isDark: isDark,
-                textPrimary: textPrimary,
-                textMuted: textMuted,
-                borderColor: borderColor,
-                onMarkPaid: () => _handleMarkAsPaidFromDueSoon(i),
-                isProcessing: _processingInstallmentIds.contains(i.id),
-              )),
-        ],
-        if (today.isNotEmpty) ...[
-          _DueSoonSectionHeader(
-              label: '🟠 DUE TODAY (${today.length})',
-              color: Colors.orangeAccent),
-          ...today.map((i) => _DueSoonCard(
-                installment: i,
-                isDark: isDark,
-                textPrimary: textPrimary,
-                textMuted: textMuted,
-                borderColor: borderColor,
-                onMarkPaid: () => _handleMarkAsPaidFromDueSoon(i),
-                isProcessing: _processingInstallmentIds.contains(i.id),
-              )),
-        ],
-        if (thisWeek.isNotEmpty) ...[
-          _DueSoonSectionHeader(
-              label: '🔵 DUE THIS WEEK (${thisWeek.length})',
-              color: Colors.blueAccent),
-          ...thisWeek.map((i) => _DueSoonCard(
-                installment: i,
-                isDark: isDark,
-                textPrimary: textPrimary,
-                textMuted: textMuted,
-                borderColor: borderColor,
-                onMarkPaid: () => _handleMarkAsPaidFromDueSoon(i),
-                isProcessing: _processingInstallmentIds.contains(i.id),
-              )),
-        ],
+    final items = <Widget>[
+      if (overdue.isNotEmpty) ...[
+        _DueSoonSectionHeader(
+            label: '🔴 OVERDUE (${overdue.length})', color: Colors.redAccent),
+        for (final i in overdue)
+          _DueSoonCard(
+            installment: i,
+            isDark: isDark,
+            textPrimary: textPrimary,
+            textMuted: textMuted,
+            borderColor: borderColor,
+            onMarkPaid: () => _handleMarkAsPaidFromDueSoon(i),
+            isProcessing: _processingInstallmentIds.contains(i.id),
+          ),
       ],
+      if (today.isNotEmpty) ...[
+        _DueSoonSectionHeader(
+            label: '🟠 DUE TODAY (${today.length})',
+            color: Colors.orangeAccent),
+        for (final i in today)
+          _DueSoonCard(
+            installment: i,
+            isDark: isDark,
+            textPrimary: textPrimary,
+            textMuted: textMuted,
+            borderColor: borderColor,
+            onMarkPaid: () => _handleMarkAsPaidFromDueSoon(i),
+            isProcessing: _processingInstallmentIds.contains(i.id),
+          ),
+      ],
+      if (thisWeek.isNotEmpty) ...[
+        _DueSoonSectionHeader(
+            label: '🔵 DUE THIS WEEK (${thisWeek.length})',
+            color: Colors.blueAccent),
+        for (final i in thisWeek)
+          _DueSoonCard(
+            installment: i,
+            isDark: isDark,
+            textPrimary: textPrimary,
+            textMuted: textMuted,
+            borderColor: borderColor,
+            onMarkPaid: () => _handleMarkAsPaidFromDueSoon(i),
+            isProcessing: _processingInstallmentIds.contains(i.id),
+          ),
+      ],
+    ];
+
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index],
     );
   }
 
