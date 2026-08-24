@@ -28,6 +28,9 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
+  static List<CompoundModel>? _cachedCompounds;
+  static List<Unit>? _cachedUnits;
+
   @override
   void initState() {
     super.initState();
@@ -51,13 +54,19 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
     return StreamBuilder<List<CompoundModel>>(
       stream: _compoundsStream,
       builder: (context, compoundSnap) {
-        final compounds = compoundSnap.data ?? [];
+        if (compoundSnap.hasData) {
+          _cachedCompounds = compoundSnap.data;
+        }
+        final compounds = compoundSnap.data ?? _cachedCompounds ?? [];
 
         return StreamBuilder<List<Unit>>(
           stream: _unitsStream,
           builder: (context, unitSnap) {
-            final isLoading = unitSnap.connectionState == ConnectionState.waiting;
-            final units = unitSnap.data ?? [];
+            if (unitSnap.hasData) {
+              _cachedUnits = unitSnap.data;
+            }
+            final units = unitSnap.data ?? _cachedUnits ?? [];
+            final isLoading = units.isEmpty && unitSnap.connectionState == ConnectionState.waiting;
 
             final filteredUnits = units.where((u) {
               if (_selectedCompoundId != null && u.compoundId != _selectedCompoundId) {
@@ -372,10 +381,9 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
       submitLabel: isEditing ? 'Save Changes' : 'Create Unit',
       body: Form(
         key: formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
               DropdownButtonFormField<String>(
                 initialValue: compounds.any((c) => c.id == selectedCompound) ? selectedCompound : null,
                 decoration: const InputDecoration(labelText: 'Compound Development'),
@@ -520,7 +528,6 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
             ],
           ),
         ),
-      ),
       onSubmit: () async {
         if (!formKey.currentState!.validate()) throw Exception('Please fill all required fields');
 
