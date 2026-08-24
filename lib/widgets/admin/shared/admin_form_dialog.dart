@@ -91,8 +91,14 @@ class _AdminFormDialogState extends State<AdminFormDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Dialog(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenWidth < 600 ? 16 : 40,
+        vertical: 24,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: AppBorderRadius.medium,
         side: BorderSide(

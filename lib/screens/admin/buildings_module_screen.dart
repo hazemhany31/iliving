@@ -19,6 +19,7 @@ class _BuildingsModuleScreenState extends State<BuildingsModuleScreen> {
   final FirestoreBuildingRepository _buildingRepository = FirestoreBuildingRepository();
   final FirestoreCompoundRepository _compoundRepository = FirestoreCompoundRepository();
   late final Stream<List<CompoundModel>> _compoundsStream;
+  static final Map<String, List<Building>> _cachedBuildings = {};
   String? _selectedCompoundId;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -193,8 +194,11 @@ class _BuildingsModuleScreenState extends State<BuildingsModuleScreen> {
                     : StreamBuilder<List<Building>>(
                         stream: _buildingRepository.streamBuildingsForCompound(_selectedCompoundId!),
                         builder: (context, buildingSnap) {
-                          final isLoading = buildingSnap.connectionState == ConnectionState.waiting;
-                          final buildings = buildingSnap.data ?? [];
+                          if (buildingSnap.hasData) {
+                            _cachedBuildings[_selectedCompoundId!] = buildingSnap.data!;
+                          }
+                          final buildings = buildingSnap.data ?? _cachedBuildings[_selectedCompoundId!] ?? [];
+                          final isLoading = buildings.isEmpty && buildingSnap.connectionState == ConnectionState.waiting;
                           final filteredBuildings = buildings.where((b) {
                             if (_searchQuery.isEmpty) return true;
                             final q = _searchQuery.toLowerCase();
@@ -324,41 +328,51 @@ class _BuildingsModuleScreenState extends State<BuildingsModuleScreen> {
                 decoration: const InputDecoration(labelText: 'Building ID (Doc ID)', hintText: 'e.g. BLD-001'),
               ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: codeController,
-                    decoration: const InputDecoration(labelText: 'Building Code', hintText: 'e.g. B-01'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: floorsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Total Floors'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: unitsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Total Units'),
-                  ),
-                ),
-              ],
+            TextField(
+              controller: codeController,
+              decoration: const InputDecoration(
+                labelText: 'Building Code *',
+                hintText: 'e.g. B-01',
+                prefixIcon: Icon(Icons.qr_code_2, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            TextField(
+              controller: floorsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Total Floors *',
+                hintText: 'e.g. 6',
+                prefixIcon: Icon(Icons.layers_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: unitsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Total Units *',
+                hintText: 'e.g. 24',
+                prefixIcon: Icon(Icons.door_front_door_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Building Name (English)', hintText: 'e.g. Building A1'),
+              decoration: const InputDecoration(
+                labelText: 'Building Name (English) *',
+                hintText: 'e.g. Building A1',
+                prefixIcon: Icon(Icons.domain, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextField(
               controller: nameArController,
-              decoration: const InputDecoration(labelText: 'Building Name (Arabic)', hintText: 'e.g. مبنى أ١'),
+              decoration: const InputDecoration(
+                labelText: 'Building Name (Arabic)',
+                hintText: 'e.g. مبنى أ١',
+                prefixIcon: Icon(Icons.translate, size: 20),
+              ),
             ),
           ],
         ),
@@ -380,8 +394,17 @@ class _BuildingsModuleScreenState extends State<BuildingsModuleScreen> {
         );
 
         if (isEditing) {
+          setState(() {
+            final list = _cachedBuildings[defaultCompoundId];
+            final idx = list?.indexWhere((item) => item.id == b.id) ?? -1;
+            if (idx != -1) list?[idx] = b;
+          });
           await _buildingRepository.updateBuilding(b);
         } else {
+          setState(() {
+            _cachedBuildings[defaultCompoundId] ??= [];
+            _cachedBuildings[defaultCompoundId]?.insert(0, b);
+          });
           await _buildingRepository.createBuilding(b);
         }
       },
@@ -396,6 +419,9 @@ class _BuildingsModuleScreenState extends State<BuildingsModuleScreen> {
       confirmLabel: 'Delete Record',
       isDanger: true,
       onConfirm: () async {
+        setState(() {
+          _cachedBuildings[b.compoundId]?.removeWhere((item) => item.id == b.id);
+        });
         await _buildingRepository.deleteBuilding(b.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

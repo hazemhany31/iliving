@@ -1,6 +1,6 @@
 name: iliving
 description: A luxury Real Estate and Brokerage Management Application modeled after DAMAC 360.
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -28,6 +28,8 @@ dependencies:
   pdf: ^3.12.0
   printing: ^5.13.1
   google_generative_ai: ^0.4.6
+  firebase_messaging: ^14.7.0
+  flutter_local_notifications: ^18.0.0
 
 dev_dependencies:
   flutter_test:

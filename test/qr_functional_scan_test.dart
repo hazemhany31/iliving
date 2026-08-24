@@ -11,9 +11,9 @@ void main() {
       const passId = 'GP-SH-984210';
       const timestamp = 1755890400000;
 
-      final qrData = 'https://ihome.app/gate-pass?passId=$passId&compound=$compoundId&unit=$unitId&guest=${Uri.encodeComponent(visitorName)}&type=${Uri.encodeComponent(passType)}&t=$timestamp';
+      final qrData = 'https://iliving.app/gate-pass?passId=$passId&compound=$compoundId&unit=$unitId&guest=${Uri.encodeComponent(visitorName)}&type=${Uri.encodeComponent(passType)}&t=$timestamp';
 
-      expect(qrData.startsWith('https://ihome.app/gate-pass'), isTrue);
+      expect(qrData.startsWith('https://iliving.app/gate-pass'), isTrue);
       expect(qrData.contains('unit=A301B208'), isTrue);
       expect(qrData.contains('compound=sky_hills'), isTrue);
       expect(qrData.contains('passId=GP-SH-984210'), isTrue);

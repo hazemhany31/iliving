@@ -11,6 +11,7 @@ import '../repositories/interfaces/document_repository.dart';
 import '../repositories/interfaces/ledger_repository.dart';
 import '../repositories/interfaces/notification_repository.dart';
 import '../repositories/operations_mock_data.dart';
+import 'push_notification_service.dart';
 
 class PdfResolutionResult {
   final String url;
@@ -181,6 +182,14 @@ class InstallmentReminderService {
         await _notificationRepository
             .sendNotification(notif)
             .timeout(const Duration(seconds: 2), onTimeout: () {});
+
+        // ─── Trigger mobile push notification ───
+        await PushNotificationService.instance.showLocalNotification(
+          title: notif.title,
+          body: notif.body,
+          payload: notif.deepLinkRoute,
+        );
+
         dispatchedCount++;
       }
     }

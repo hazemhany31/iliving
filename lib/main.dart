@@ -12,7 +12,6 @@ import 'theme/luxury_theme.dart';
 import 'screens/property_ops_dashboard.dart';
 import 'screens/document_viewer_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
 import 'widgets/luxury_shimmer.dart';
 import 'widgets/offline_state_manager.dart';
 import 'models/auth_model.dart';
@@ -35,6 +34,7 @@ import 'screens/admin/admin_settings_module_screen.dart';
 import 'models/notification.dart';
 import 'repositories/firestore/firestore_notification_repository.dart';
 import 'services/installment_reminder_service.dart';
+import 'services/push_notification_service.dart';
 
 final ValueNotifier<ThemeMode> luxuryThemeNotifier = ValueNotifier(ThemeMode.light);
 
@@ -94,6 +94,8 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
       await LocaleService.instance.initialize();
       unawaited(_syncManager.initialize());
       await AuthService.instance.initialize();
+      // Initialize push notification service (FCM + local notifications)
+      await PushNotificationService.instance.initialize();
       // Do NOT await ensureSeeded() here — it can block the first frame.
       // Schedule it after the first frame so the UI becomes interactive first.
     } catch (e) {
@@ -104,6 +106,11 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
           _initialized = true;
         });
         AuthService.instance.stateNotifier.addListener(_onAuthChanged);
+        // Register FCM token if user is already logged in
+        final currentUser = AuthService.instance.currentProfile;
+        if (currentUser != null) {
+          unawaited(PushNotificationService.instance.registerTokenForUser(currentUser.id));
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           FirestoreSeederService.ensureSeeded();
           if (mounted) {
@@ -119,7 +126,13 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
   void _onAuthChanged() {
     if (!mounted) return;
     setState(() {});
+    // Register/unregister FCM token based on auth state
+    final user = AuthService.instance.currentProfile;
+    if (user != null) {
+      unawaited(PushNotificationService.instance.registerTokenForUser(user.id));
+    }
   }
+
 
   @override
   void dispose() {
@@ -158,10 +171,7 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
                     if (user != null && user.isStaff) {
                       return const MainNavigationShell();
                     }
-                    if (user != null && user.isOwner) {
-                      return const OwnerNavigationShell();
-                    }
-                    return const DashboardScreen();
+                    return const OwnerNavigationShell();
                   },
                   '/login': (context) => const LoginScreen(),
                   '/admin': (context) {
@@ -169,15 +179,14 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
                     if (user != null && user.isStaff) {
                       return const AdminPortalShell();
                     }
-                    // Non-admin trying to access /admin → redirect to home
-                    return const DashboardScreen();
+                    return const OwnerNavigationShell();
                   },
                   '/admin/dashboard': (context) {
                     final user = AuthService.instance.currentProfile;
                     if (user != null && user.isStaff) {
                       return const ExecutiveDashboardScreen();
                     }
-                    return const DashboardScreen();
+                    return const OwnerNavigationShell();
                   },
                   '/owner': (context) => const OwnerNavigationShell(),
                 },
@@ -206,10 +215,7 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
           if (user.isStaff) {
             return const MainNavigationShell();
           }
-          if (user.isOwner) {
-            return const OwnerNavigationShell();
-          }
-          return const DashboardScreen();
+          return const OwnerNavigationShell();
         }
 
         return const LoginScreen();
@@ -253,7 +259,7 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
             ),
             const SizedBox(height: 24),
             Text(
-              'iHOME',
+              'iLIVING',
               style: TextStyle(
                 color: textColor,
                 fontFamily: AppTextStyles.fontFamily,
@@ -828,7 +834,7 @@ void _showRealPaymentReceiptDialog(BuildContext context, OperationNotification n
                       MaterialPageRoute(
                         builder: (context) => DocumentViewerScreen(
                           title: isAr ? 'كشف حساب الوحدة $unitText' : 'Statement for Unit $unitText',
-                          documentUrl: notif.pdfUrl ?? 'https://ihome.app/statement/$unitText.pdf',
+                          documentUrl: notif.pdfUrl ?? 'https://iliving.app/statement/$unitText.pdf',
                         ),
                       ),
                     );
@@ -1348,7 +1354,7 @@ class _MainNavigationShellState extends State<MainNavigationShell>
                 MaterialPageRoute(
                   builder: (context) => DocumentViewerScreen(
                     title: fn.pdfTitle ?? fn.title,
-                    documentUrl: fn.pdfUrl ?? 'https://ihome.app/statement/${fn.unitId ?? "A01-207"}.pdf',
+                    documentUrl: fn.pdfUrl ?? 'https://iliving.app/statement/${fn.unitId ?? "A01-207"}.pdf',
                   ),
                 ),
               );
@@ -2361,7 +2367,7 @@ class _OwnerNavigationShellState extends State<OwnerNavigationShell> {
                 MaterialPageRoute(
                   builder: (context) => DocumentViewerScreen(
                     title: fn.pdfTitle ?? fn.title,
-                    documentUrl: fn.pdfUrl ?? 'https://ihome.app/statement/${fn.unitId ?? "A01-207"}.pdf',
+                    documentUrl: fn.pdfUrl ?? 'https://iliving.app/statement/${fn.unitId ?? "A01-207"}.pdf',
                   ),
                 ),
               );

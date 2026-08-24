@@ -44,7 +44,7 @@ class AIAssistantService {
   bool _initialized = false;
 
   static const String _systemPrompt = '''
-You are iHome Luxury Concierge, the AI assistant for iHome — a premium real estate platform in Egypt.
+You are iLiving Luxury Concierge, the AI assistant for iLiving — a premium real estate platform in Egypt.
 
 Your capabilities:
 - Answer questions about property compounds, units, pricing, and availability
@@ -114,8 +114,8 @@ Guidelines:
 
     final profile = AuthService.instance.currentProfile;
     final welcome = profile != null
-        ? "Hello ${profile.displayName}, welcome to your iHome Luxury Concierge. How may I assist you with your properties today?"
-        : "Welcome to your iHome Luxury Concierge. How may I assist you today?";
+        ? "Hello ${profile.displayName}, welcome to your iLiving Luxury Concierge. How may I assist you with your properties today?"
+        : "Welcome to your iLiving Luxury Concierge. How may I assist you today?";
     _history.add(AIChatMessage(text: welcome, isUser: false, timestamp: DateTime.now()));
     _controller.add(List.from(_history));
   }

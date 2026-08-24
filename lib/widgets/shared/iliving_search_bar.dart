@@ -4,7 +4,7 @@ import '../../theme/app_theme.dart';
 
 /// Pill-shaped search bar matching the reference image.
 /// Features a subtle neutral fill, minimal search icon, and an optional filter button.
-class IHomeSearchBar extends StatefulWidget {
+class ILivingSearchBar extends StatefulWidget {
   final String initialQuery;
   final ValueChanged<String> onSearch;
   final VoidCallback? onFilterTap;
@@ -13,7 +13,7 @@ class IHomeSearchBar extends StatefulWidget {
   final double height;
   final bool showFilterButton;
 
-  const IHomeSearchBar({
+  const ILivingSearchBar({
     super.key,
     this.initialQuery = '',
     required this.onSearch,
@@ -25,10 +25,10 @@ class IHomeSearchBar extends StatefulWidget {
   });
 
   @override
-  State<IHomeSearchBar> createState() => _IHomeSearchBarState();
+  State<ILivingSearchBar> createState() => _ILivingSearchBarState();
 }
 
-class _IHomeSearchBarState extends State<IHomeSearchBar> {
+class _ILivingSearchBarState extends State<ILivingSearchBar> {
   late final TextEditingController _controller;
   Timer? _debounceTimer;
 
@@ -39,7 +39,7 @@ class _IHomeSearchBarState extends State<IHomeSearchBar> {
   }
 
   @override
-  void didUpdateWidget(covariant IHomeSearchBar oldWidget) {
+  void didUpdateWidget(covariant ILivingSearchBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialQuery != oldWidget.initialQuery &&
         widget.initialQuery != _controller.text) {

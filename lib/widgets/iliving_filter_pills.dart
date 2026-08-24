@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import '../theme/app_theme.dart';
 
-class IHomeFilterOption<T> {
+class ILivingFilterOption<T> {
   final T value;
   final String label;
   final IconData? icon;
   final String? badge;
 
-  const IHomeFilterOption({
+  const ILivingFilterOption({
     required this.value,
     required this.label,
     this.icon,
@@ -17,13 +17,13 @@ class IHomeFilterOption<T> {
 
 /// Horizontal scrolling pill segmented filter matching the reference design.
 /// (e.g., [🏢 Apartment] [🏡 Home] [🏬 Office])
-class IHomeFilterPills<T> extends StatelessWidget {
-  final List<IHomeFilterOption<T>> options;
+class ILivingFilterPills<T> extends StatelessWidget {
+  final List<ILivingFilterOption<T>> options;
   final T selectedValue;
   final ValueChanged<T> onSelected;
   final EdgeInsetsGeometry padding;
 
-  const IHomeFilterPills({
+  const ILivingFilterPills({
     super.key,
     required this.options,
     required this.selectedValue,

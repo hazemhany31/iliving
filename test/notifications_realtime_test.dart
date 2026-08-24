@@ -15,7 +15,7 @@ void main() {
         unitId: 'A01-207',
         installmentId: 'INS-2026-08',
         installmentAmount: 405000.0,
-        pdfUrl: 'https://ihome.app/receipts/REC-405000.pdf',
+        pdfUrl: 'https://iliving.app/receipts/REC-405000.pdf',
         pdfTitle: 'HSBC Official Receipt - 405,000 EGP',
         isRead: false,
         createdAt: DateTime.now(),
@@ -69,14 +69,14 @@ void main() {
         bodyAr: 'عقد البيع النهائي موقع ومتاح الآن للتحميل.',
         type: 'document_uploaded',
         unitId: 'A01-207',
-        pdfUrl: 'https://ihome.app/documents/SPA_A01-207.pdf',
+        pdfUrl: 'https://iliving.app/documents/SPA_A01-207.pdf',
         pdfTitle: 'SPA Contract - Unit A01-207',
         isRead: false,
         createdAt: DateTime.now(),
       );
 
       expect(notif.type, 'document_uploaded');
-      expect(notif.pdfUrl, 'https://ihome.app/documents/SPA_A01-207.pdf');
+      expect(notif.pdfUrl, 'https://iliving.app/documents/SPA_A01-207.pdf');
       expect(notif.pdfTitle, 'SPA Contract - Unit A01-207');
     });
 

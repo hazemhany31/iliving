@@ -17,6 +17,7 @@ class ProjectsModuleScreen extends StatefulWidget {
 class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
   final FirestoreProjectRepository _repository = FirestoreProjectRepository();
   late final Stream<List<Project>> _projectsStream;
+  static List<Project>? _cachedProjects;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -42,8 +43,11 @@ class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
     return StreamBuilder<List<Project>>(
       stream: _projectsStream,
       builder: (context, snapshot) {
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final projects = snapshot.data ?? [];
+        if (snapshot.hasData) {
+          _cachedProjects = snapshot.data;
+        }
+        final projects = snapshot.data ?? _cachedProjects ?? [];
+        final isLoading = projects.isEmpty && snapshot.connectionState == ConnectionState.waiting;
         final filteredProjects = projects.where((p) {
           if (_searchQuery.isEmpty) return true;
           final q = _searchQuery.toLowerCase();
@@ -287,65 +291,75 @@ class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
                 decoration: const InputDecoration(labelText: 'Project ID (Doc ID)', hintText: 'e.g. PROJ-001'),
               ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: codeController,
-                    decoration: const InputDecoration(labelText: 'Project Code', hintText: 'e.g. PRJ-001'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    isExpanded: true,
-                    initialValue: status,
-                    decoration: const InputDecoration(labelText: 'Status'),
-                    items: const [
-                      DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE', overflow: TextOverflow.ellipsis)),
-                      DropdownMenuItem(value: 'PLANNING', child: Text('PLANNING', overflow: TextOverflow.ellipsis)),
-                      DropdownMenuItem(value: 'COMPLETED', child: Text('COMPLETED', overflow: TextOverflow.ellipsis)),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => status = val);
-                    },
-                  ),
-                ),
-              ],
+            TextField(
+              controller: codeController,
+              decoration: const InputDecoration(
+                labelText: 'Project Code',
+                hintText: 'e.g. PRJ-001',
+                prefixIcon: Icon(Icons.qr_code_2, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: status,
+              decoration: const InputDecoration(
+                labelText: 'Status',
+                prefixIcon: Icon(Icons.traffic, size: 20),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE', overflow: TextOverflow.ellipsis)),
+                DropdownMenuItem(value: 'PLANNING', child: Text('PLANNING', overflow: TextOverflow.ellipsis)),
+                DropdownMenuItem(value: 'COMPLETED', child: Text('COMPLETED', overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (val) {
+                if (val != null) setModalState(() => status = val);
+              },
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Project Name (English)', hintText: 'e.g. Grand Residence'),
+              decoration: const InputDecoration(
+                labelText: 'Project Name (English) *',
+                hintText: 'e.g. Grand Residence',
+                prefixIcon: Icon(Icons.domain, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextField(
               controller: nameArController,
-              decoration: const InputDecoration(labelText: 'Project Name (Arabic)', hintText: 'e.g. المجمع السكني الكبير'),
+              decoration: const InputDecoration(
+                labelText: 'Project Name (Arabic)',
+                hintText: 'e.g. المجمع السكني الكبير',
+                prefixIcon: Icon(Icons.translate, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: cityController,
-                    decoration: const InputDecoration(labelText: 'City'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: districtController,
-                    decoration: const InputDecoration(labelText: 'District'),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: cityController,
+              decoration: const InputDecoration(
+                labelText: 'City',
+                hintText: 'e.g. Cairo',
+                prefixIcon: Icon(Icons.location_city, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            TextField(
+              controller: districtController,
+              decoration: const InputDecoration(
+                labelText: 'District',
+                hintText: 'e.g. New Cairo',
+                prefixIcon: Icon(Icons.map_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: descController,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                prefixIcon: Icon(Icons.notes, size: 20),
+              ),
             ),
           ],
         ),
@@ -371,8 +385,15 @@ class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
         );
 
         if (isEditing) {
+          setState(() {
+            final idx = _cachedProjects?.indexWhere((proj) => proj.id == p.id) ?? -1;
+            if (idx != -1) _cachedProjects?[idx] = p;
+          });
           await _repository.updateProject(p);
         } else {
+          setState(() {
+            _cachedProjects?.insert(0, p);
+          });
           await _repository.createProject(p);
         }
       },
@@ -387,6 +408,9 @@ class _ProjectsModuleScreenState extends State<ProjectsModuleScreen> {
       confirmLabel: 'Delete Record',
       isDanger: true,
       onConfirm: () async {
+        setState(() {
+          _cachedProjects?.removeWhere((proj) => proj.id == p.id);
+        });
         await _repository.deleteProject(p.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

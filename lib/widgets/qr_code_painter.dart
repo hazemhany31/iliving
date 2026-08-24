@@ -36,7 +36,7 @@ class QrCodeWidget extends StatelessWidget {
       ),
       child: Center(
         child: QrImageView(
-          data: qrData.isEmpty ? 'https://ihome.app' : qrData,
+          data: qrData.isEmpty ? 'https://iliving.app' : qrData,
           version: QrVersions.auto,
           size: size - 24,
           eyeStyle: QrEyeStyle(

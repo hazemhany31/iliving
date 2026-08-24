@@ -1,5 +1,6 @@
 import '../models/notification.dart';
 import '../repositories/interfaces/notification_repository.dart';
+import 'push_notification_service.dart';
 
 class NotificationService {
   final NotificationRepository _notificationRepository;
@@ -35,6 +36,13 @@ class NotificationService {
     );
 
     await _notificationRepository.sendNotification(notification);
+
+    // ─── Trigger mobile push notification ───
+    await PushNotificationService.instance.showLocalNotification(
+      title: title,
+      body: body,
+      payload: deepLinkRoute,
+    );
   }
 
   /// Send a real-time notification when a payment is logged or received
@@ -64,6 +72,13 @@ class NotificationService {
     );
 
     await _notificationRepository.sendNotification(notification);
+
+    // ─── Trigger mobile push notification ───
+    await PushNotificationService.instance.showLocalNotification(
+      title: notification.title,
+      body: notification.body,
+      payload: '/payments',
+    );
   }
 
   /// Send a real-time notification when a new maintenance ticket is created
@@ -94,6 +109,13 @@ class NotificationService {
     );
 
     await _notificationRepository.sendNotification(notification);
+
+    // ─── Trigger mobile push notification ───
+    await PushNotificationService.instance.showLocalNotification(
+      title: notification.title,
+      body: notification.body,
+      payload: '/maintenance',
+    );
   }
 
   /// Send a real-time notification when a maintenance ticket status or detail is updated
@@ -118,6 +140,13 @@ class NotificationService {
     );
 
     await _notificationRepository.sendNotification(notification);
+
+    // ─── Trigger mobile push notification ───
+    await PushNotificationService.instance.showLocalNotification(
+      title: notification.title,
+      body: notification.body,
+      payload: '/maintenance',
+    );
   }
 
   /// Send a real-time notification when a comment or update is added to a maintenance ticket
@@ -140,6 +169,13 @@ class NotificationService {
     );
 
     await _notificationRepository.sendNotification(notification);
+
+    // ─── Trigger mobile push notification ───
+    await PushNotificationService.instance.showLocalNotification(
+      title: notification.title,
+      body: notification.body,
+      payload: '/maintenance',
+    );
   }
 }
 

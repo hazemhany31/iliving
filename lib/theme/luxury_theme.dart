@@ -3,7 +3,7 @@ import 'app_theme.dart';
 
 export 'app_theme.dart';
 
-/// Compatibility & convenience wrapper for the iHome design system.
+/// Compatibility & convenience wrapper for the iLiving design system.
 /// Keeps legacy static references functional while bridging directly to [AppColors] and [AppTheme].
 class LuxuryTheme {
   // Brand color mappings

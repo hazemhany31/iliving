@@ -5,7 +5,7 @@ import 'image_loader.dart';
 /// Luxury Property Card matching the reference design.
 /// Features full-bleed rounded image, floating favorite heart, location tag,
 /// star rating, price, and clean visual hierarchy.
-class IHomePropertyCard extends StatelessWidget {
+class ILivingPropertyCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? location;
@@ -23,7 +23,7 @@ class IHomePropertyCard extends StatelessWidget {
   final double? width;
   final String? tagText;
 
-  const IHomePropertyCard({
+  const ILivingPropertyCard({
     super.key,
     required this.title,
     this.subtitle,

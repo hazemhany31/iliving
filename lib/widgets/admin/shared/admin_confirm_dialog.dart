@@ -65,7 +65,12 @@ class _AdminConfirmDialogState extends State<AdminConfirmDialog> {
 
     setState(() => _isLoading = true);
     try {
-      await widget.onConfirm!();
+      await widget.onConfirm!().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () {
+          debugPrint("[AdminConfirmDialog] onConfirm execution timed out or completed asynchronously.");
+        },
+      );
       if (mounted) {
         Navigator.of(context).pop(true);
       }
@@ -84,8 +89,14 @@ class _AdminConfirmDialogState extends State<AdminConfirmDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = widget.isDanger ? AppColors.error : AppColors.accent;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Dialog(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenWidth < 600 ? 16 : 40,
+        vertical: 24,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: AppBorderRadius.medium,
         side: BorderSide(
@@ -94,7 +105,7 @@ class _AdminConfirmDialogState extends State<AdminConfirmDialog> {
       ),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 440),
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(screenWidth < 600 ? 18 : 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,27 +168,32 @@ class _AdminConfirmDialogState extends State<AdminConfirmDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton(
-                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
-                  child: Text(widget.cancelLabel),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleConfirm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accentColor,
-                    foregroundColor: Colors.white,
+                Flexible(
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+                    child: Text(widget.cancelLabel, overflow: TextOverflow.ellipsis),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(widget.confirmLabel),
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleConfirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(widget.confirmLabel, overflow: TextOverflow.ellipsis),
+                  ),
                 ),
               ],
             ),

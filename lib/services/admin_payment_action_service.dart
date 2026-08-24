@@ -10,6 +10,7 @@ import '../repositories/interfaces/ledger_repository.dart';
 import '../repositories/interfaces/notification_repository.dart';
 import '../repositories/interfaces/payment_repository.dart';
 import '../services/payment_service.dart';
+import 'push_notification_service.dart';
 
 /// Result returned after marking an installment as paid.
 class MarkAsPaidResult {
@@ -241,6 +242,13 @@ class AdminPaymentActionService {
     );
 
     await _notificationRepository.sendNotification(notif);
+
+    // ─── Trigger mobile push notification ───
+    await PushNotificationService.instance.showLocalNotification(
+      title: notif.title,
+      body: notif.body,
+      payload: '/payments',
+    );
   }
 
   static String _formatCurrency(double amount) {

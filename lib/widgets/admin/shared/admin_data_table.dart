@@ -51,7 +51,7 @@ class AdminDataTable<T> extends StatefulWidget {
     this.rowActions,
     this.selectedItems = const {},
     this.onSelectionChanged,
-    this.pageSize = 20,
+    this.pageSize = 15,
     this.enablePagination = true,
   });
 
@@ -111,12 +111,13 @@ class _AdminDataTableState<T> extends State<AdminDataTable<T>> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          Expanded(
             child: SingleChildScrollView(
-              child: DataTable(
+              scrollDirection: Axis.horizontal,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: DataTable(
                 showCheckboxColumn: hasSelection,
                 headingRowColor: WidgetStateProperty.all(
                   isDark ? AppColors.darkSurface : AppColors.lightCard,
@@ -233,37 +234,41 @@ class _AdminDataTableState<T> extends State<AdminDataTable<T>> {
               ),
             ),
           ),
-          if (paginate) ...[
+        ),
+        if (paginate) ...[
             Divider(height: 1, color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isVeryNarrow = constraints.maxWidth < 340;
+                  final infoWidget = Text(
                     'Showing $startIdx–$endIdx of $totalItems',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.5,
                       color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted,
                     ),
-                  ),
-                  Row(
+                  );
+
+                  final navRow = Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.chevron_left_rounded, size: 20),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                         onPressed: currentPage > 1
                             ? () => setState(() => _currentPage = currentPage - 1)
                             : null,
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           'Page $currentPage of $totalPages',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: isDark ? AppColors.textLight : AppColors.textDark,
                           ),
@@ -272,14 +277,34 @@ class _AdminDataTableState<T> extends State<AdminDataTable<T>> {
                       IconButton(
                         icon: const Icon(Icons.chevron_right_rounded, size: 20),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                         onPressed: currentPage < totalPages
                             ? () => setState(() => _currentPage = currentPage + 1)
                             : null,
                       ),
                     ],
-                  ),
-                ],
+                  );
+
+                  if (isVeryNarrow) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        infoWidget,
+                        const SizedBox(height: 2),
+                        navRow,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(child: infoWidget),
+                      const SizedBox(width: 8),
+                      navRow,
+                    ],
+                  );
+                },
               ),
             ),
           ],

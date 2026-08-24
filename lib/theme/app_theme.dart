@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// iHome Design Tokens — Extracted from Abu Hossain Real Estate Reference
+// iLiving Design Tokens — Extracted from Abu Hossain Real Estate Reference
 // ─────────────────────────────────────────────────────────────────────────────
 // Design philosophy: calm white-space-rich layouts, pill-shaped controls,
 // ultra-soft floating shadows, single-accent-per-screen, strong image-first

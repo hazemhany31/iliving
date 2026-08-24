@@ -143,6 +143,7 @@ class _YieldAnalyticsScreenState extends State<YieldAnalyticsScreen> {
                               borderRadius: AppBorderRadius.medium,
                             ),
                             child: DropdownButtonFormField<CompoundModel>(
+                              isExpanded: true,
                               initialValue: _selectedCompound,
                               dropdownColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
                               decoration: InputDecoration(
@@ -164,7 +165,7 @@ class _YieldAnalyticsScreenState extends State<YieldAnalyticsScreen> {
                               items: _compounds.map((CompoundModel compound) {
                                 return DropdownMenuItem<CompoundModel>(
                                   value: compound,
-                                  child: Text(compound.title),
+                                  child: Text(compound.title, overflow: TextOverflow.ellipsis),
                                 );
                               }).toList(),
                               onChanged: (CompoundModel? newValue) {

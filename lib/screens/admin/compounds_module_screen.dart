@@ -17,6 +17,7 @@ class CompoundsModuleScreen extends StatefulWidget {
 class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
   final FirestoreCompoundRepository _repository = FirestoreCompoundRepository();
   late final Stream<List<CompoundModel>> _compoundsStream;
+  static List<CompoundModel>? _cachedCompounds;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -42,8 +43,11 @@ class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
     return StreamBuilder<List<CompoundModel>>(
       stream: _compoundsStream,
       builder: (context, snapshot) {
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final compounds = snapshot.data ?? [];
+        if (snapshot.hasData) {
+          _cachedCompounds = snapshot.data;
+        }
+        final compounds = snapshot.data ?? _cachedCompounds ?? [];
+        final isLoading = compounds.isEmpty && snapshot.connectionState == ConnectionState.waiting;
         final filteredCompounds = compounds.where((c) {
           if (_searchQuery.isEmpty) return true;
           final q = _searchQuery.toLowerCase();
@@ -279,59 +283,68 @@ class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Compound Title', hintText: 'e.g. Al Yasmine Heights'),
+              decoration: const InputDecoration(
+                labelText: 'Compound Title *',
+                hintText: 'e.g. Al Yasmine Heights',
+                prefixIcon: Icon(Icons.apartment_outlined, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: locationController,
-                    decoration: const InputDecoration(labelText: 'Location'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: categoryController,
-                    decoration: const InputDecoration(labelText: 'Category'),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: locationController,
+              decoration: const InputDecoration(
+                labelText: 'Location / Address',
+                hintText: 'e.g. New Cairo, District 5',
+                prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Base Price (EGP)'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: areaController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Area (Sq Ft)'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: completionController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Completion %'),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                hintText: 'e.g. Luxury Residential',
+                prefixIcon: Icon(Icons.category_outlined, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Base Price (EGP)',
+                hintText: 'e.g. 5500000',
+                prefixIcon: Icon(Icons.payments_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: areaController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Total Area (Sq Ft)',
+                hintText: 'e.g. 2200',
+                prefixIcon: Icon(Icons.square_foot_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: completionController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Construction Completion %',
+                hintText: 'e.g. 85',
+                prefixIcon: Icon(Icons.percent_rounded, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: descController,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                prefixIcon: Icon(Icons.notes, size: 20),
+              ),
             ),
           ],
         ),
@@ -355,8 +368,15 @@ class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
         );
 
         if (isEditing) {
+          setState(() {
+            final idx = _cachedCompounds?.indexWhere((comp) => comp.id == c.id) ?? -1;
+            if (idx != -1) _cachedCompounds?[idx] = c;
+          });
           await _repository.updateCompound(c);
         } else {
+          setState(() {
+            _cachedCompounds?.insert(0, c);
+          });
           await _repository.createCompound(c);
         }
       },
@@ -371,6 +391,9 @@ class _CompoundsModuleScreenState extends State<CompoundsModuleScreen> {
       confirmLabel: 'Delete Record',
       isDanger: true,
       onConfirm: () async {
+        setState(() {
+          _cachedCompounds?.removeWhere((comp) => comp.id == c.id);
+        });
         await _repository.deleteCompound(c.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

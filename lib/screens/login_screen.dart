@@ -4,7 +4,7 @@ import '../theme/app_theme.dart';
 import '../services/sync_state.dart';
 import '../services/locale_service.dart';
 import '../l10n/app_localizations.dart';
-import '../widgets/ihome_button.dart';
+import '../widgets/iliving_button.dart';
 
 class OnboardingSlide {
   final String image;
@@ -369,7 +369,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'iHOME',
+                  'iLIVING',
                   style: TextStyle(
                     fontFamily: AppTextStyles.fontFamily,
                     color: Colors.white,
@@ -578,7 +578,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 14),
 
             // Primary Pill Submit Button
-            IHomeButton(
+            ILivingButton(
               key: const Key('login_submit_btn'),
               text: l10n.signIn,
               onPressed: _isLoading ? null : _attemptLogin,
@@ -692,7 +692,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Connecting to iHome network',
+              'Connecting to iLiving network',
               style: TextStyle(
                 fontFamily: AppTextStyles.fontFamily,
                 color: Colors.white.withAlpha(180),

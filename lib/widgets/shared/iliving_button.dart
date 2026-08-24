@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
-enum IHomeButtonVariant {
+enum ILivingButtonVariant {
   primary,   // Charcoal in light mode / Accent in dark mode
   accent,    // Accent soft blue
   highlight, // Coral
@@ -10,10 +10,10 @@ enum IHomeButtonVariant {
 }
 
 /// Pill-shaped button matching the Abu Hossain real estate reference ("Get Started", "Book Now").
-class IHomeButton extends StatelessWidget {
+class ILivingButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
-  final IHomeButtonVariant variant;
+  final ILivingButtonVariant variant;
   final IconData? leadingIcon;
   final IconData? trailingIcon;
   final bool isLoading;
@@ -22,11 +22,11 @@ class IHomeButton extends StatelessWidget {
   final double fontSize;
   final EdgeInsetsGeometry? padding;
 
-  const IHomeButton({
+  const ILivingButton({
     super.key,
     required this.text,
     required this.onPressed,
-    this.variant = IHomeButtonVariant.primary,
+    this.variant = ILivingButtonVariant.primary,
     this.leadingIcon,
     this.trailingIcon,
     this.isLoading = false,
@@ -45,22 +45,22 @@ class IHomeButton extends StatelessWidget {
     BorderSide? border;
 
     switch (variant) {
-      case IHomeButtonVariant.primary:
+      case ILivingButtonVariant.primary:
         bg = isDark ? AppColors.accent : AppColors.primary;
         fg = Colors.white;
         border = null;
         break;
-      case IHomeButtonVariant.accent:
+      case ILivingButtonVariant.accent:
         bg = AppColors.accent;
         fg = Colors.white;
         border = null;
         break;
-      case IHomeButtonVariant.highlight:
+      case ILivingButtonVariant.highlight:
         bg = AppColors.highlight;
         fg = Colors.white;
         border = null;
         break;
-      case IHomeButtonVariant.outlined:
+      case ILivingButtonVariant.outlined:
         bg = Colors.transparent;
         fg = isDark ? AppColors.textLight : AppColors.textDark;
         border = BorderSide(
@@ -68,7 +68,7 @@ class IHomeButton extends StatelessWidget {
           width: 1.5,
         );
         break;
-      case IHomeButtonVariant.ghost:
+      case ILivingButtonVariant.ghost:
         bg = Colors.transparent;
         fg = isDark ? AppColors.accent : AppColors.primary;
         border = null;

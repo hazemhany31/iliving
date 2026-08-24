@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-class IHomeNavItem {
+class ILivingNavItem {
   final IconData icon;
   final IconData? activeIcon;
   final String label;
   final String? badge;
 
-  const IHomeNavItem({
+  const ILivingNavItem({
     required this.icon,
     this.activeIcon,
     required this.label,
@@ -16,13 +16,13 @@ class IHomeNavItem {
 }
 
 /// Floating pill bottom navigation bar matching the reference image.
-class IHomeBottomNav extends StatelessWidget {
+class ILivingBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
-  final List<IHomeNavItem> items;
+  final List<ILivingNavItem> items;
   final double height;
 
-  const IHomeBottomNav({
+  const ILivingBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,

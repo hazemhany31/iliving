@@ -385,144 +385,146 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: compounds.any((c) => c.id == selectedCompound) ? selectedCompound : null,
-                decoration: const InputDecoration(labelText: 'Compound Development'),
+                decoration: const InputDecoration(
+                  labelText: 'Compound Development *',
+                  prefixIcon: Icon(Icons.location_city_outlined, size: 20),
+                ),
                 items: compounds.map((c) {
-                  return DropdownMenuItem(value: c.id, child: Text(c.title));
+                  return DropdownMenuItem(
+                    value: c.id,
+                    child: Text(c.title, overflow: TextOverflow.ellipsis),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) selectedCompound = val;
                 },
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: unitNumberController,
-                      enabled: !isEditing,
-                      decoration: const InputDecoration(labelText: 'Unit Number (e.g. U-101)'),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: buildingIdController,
-                      decoration: const InputDecoration(labelText: 'Building Code / Name'),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: unitNumberController,
+                enabled: !isEditing,
+                decoration: const InputDecoration(
+                  labelText: 'Unit Number (e.g. U-101) *',
+                  prefixIcon: Icon(Icons.home_outlined, size: 20),
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: floorTierController,
-                      decoration: const InputDecoration(labelText: 'Floor Tier'),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<UnitStatus>(
-                      initialValue: selectedStatus,
-                      decoration: const InputDecoration(labelText: 'Unit Status'),
-                      items: UnitStatus.values.map((s) {
-                        return DropdownMenuItem(value: s, child: Text(s.nameString));
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) selectedStatus = val;
-                      },
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: buildingIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Building Code / Name *',
+                  prefixIcon: Icon(Icons.domain_outlined, size: 20),
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: areaSqFtController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Total Area (SqFt)'),
-                      validator: (val) => double.tryParse(val ?? '') == null ? 'Valid number required' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: pricePerSqFtController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Price per SqFt (EGP)'),
-                      validator: (val) => double.tryParse(val ?? '') == null ? 'Valid number required' : null,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: floorTierController,
+                decoration: const InputDecoration(
+                  labelText: 'Floor Tier *',
+                  prefixIcon: Icon(Icons.layers_outlined, size: 20),
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: assetClassController,
-                      decoration: const InputDecoration(labelText: 'Asset Class'),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: furnishingController,
-                      decoration: const InputDecoration(labelText: 'Furnishing Status'),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              DropdownButtonFormField<UnitStatus>(
+                isExpanded: true,
+                initialValue: selectedStatus,
+                decoration: const InputDecoration(
+                  labelText: 'Unit Status *',
+                  prefixIcon: Icon(Icons.verified_outlined, size: 20),
+                ),
+                items: UnitStatus.values.map((s) {
+                  return DropdownMenuItem(
+                    value: s,
+                    child: Text(s.nameString, overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) selectedStatus = val;
+                },
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: parkingController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Parking Spaces'),
-                      validator: (val) => int.tryParse(val ?? '') == null ? 'Integer required' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: phaseController,
-                      decoration: const InputDecoration(labelText: 'Construction Phase'),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: areaSqFtController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Total Area (SqFt) *',
+                  prefixIcon: Icon(Icons.square_foot_outlined, size: 20),
+                ),
+                validator: (val) => double.tryParse(val ?? '') == null ? 'Valid number required' : null,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: orientationController,
-                      decoration: const InputDecoration(labelText: 'Orientation'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: blockController,
-                      decoration: const InputDecoration(labelText: 'Block / Zone'),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: pricePerSqFtController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Price per SqFt (EGP) *',
+                  prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                ),
+                validator: (val) => double.tryParse(val ?? '') == null ? 'Valid number required' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: assetClassController,
+                decoration: const InputDecoration(
+                  labelText: 'Asset Class *',
+                  prefixIcon: Icon(Icons.category_outlined, size: 20),
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: furnishingController,
+                decoration: const InputDecoration(
+                  labelText: 'Furnishing Status',
+                  prefixIcon: Icon(Icons.chair_outlined, size: 20),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: parkingController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Parking Spaces',
+                  prefixIcon: Icon(Icons.local_parking_outlined, size: 20),
+                ),
+                validator: (val) => int.tryParse(val ?? '') == null ? 'Integer required' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: phaseController,
+                decoration: const InputDecoration(
+                  labelText: 'Construction Phase',
+                  prefixIcon: Icon(Icons.engineering_outlined, size: 20),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: orientationController,
+                decoration: const InputDecoration(
+                  labelText: 'Orientation',
+                  prefixIcon: Icon(Icons.explore_outlined, size: 20),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: blockController,
+                decoration: const InputDecoration(
+                  labelText: 'Block / Zone',
+                  prefixIcon: Icon(Icons.grid_view_outlined, size: 20),
+                ),
+              ),
+              const SizedBox(height: 14),
               TextFormField(
                 controller: configurationController,
-                decoration: const InputDecoration(labelText: 'Unit Configuration / Layout'),
+                decoration: const InputDecoration(
+                  labelText: 'Unit Configuration / Layout *',
+                  prefixIcon: Icon(Icons.architecture_outlined, size: 20),
+                ),
                 validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
             ],
@@ -560,8 +562,17 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
         );
 
         if (isEditing) {
+          setState(() {
+            final idx = _cachedUnits?.indexWhere((u) => u.unitNumber == newUnit.unitNumber) ?? -1;
+            if (idx != -1) {
+              _cachedUnits?[idx] = newUnit;
+            }
+          });
           await _unitRepository.updateUnit(newUnit);
         } else {
+          setState(() {
+            _cachedUnits?.insert(0, newUnit);
+          });
           await _unitRepository.createUnit(newUnit);
         }
 
@@ -586,6 +597,9 @@ class _UnitInventoryModuleScreenState extends State<UnitInventoryModuleScreen> {
       confirmLabel: 'Delete Unit',
       isDanger: true,
       onConfirm: () async {
+        setState(() {
+          _cachedUnits?.removeWhere((u) => u.unitNumber == unit.unitNumber);
+        });
         await _unitRepository.deleteUnit(unit.unitNumber);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

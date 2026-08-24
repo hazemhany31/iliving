@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/luxury_theme.dart';
-import '../widgets/ihome_card.dart';
-import '../widgets/ihome_button.dart';
+import '../widgets/iliving_card.dart';
+import '../widgets/iliving_button.dart';
 import '../models/unit_model.dart';
 import '../models/compound_model.dart';
 import '../models/project.dart';
@@ -244,7 +244,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         title: 'عقد التمليك النهائي الموثق - Unit ${unit.unitNumber}',
         description: 'Official Property Deed & Handover Contract registered under Sky Hills Development.',
         category: DocumentCategory.contract,
-        fileUrl: 'https://ihome.app/docs/contract_${unit.unitNumber}.pdf',
+        fileUrl: 'https://iliving.app/docs/contract_${unit.unitNumber}.pdf',
         fileExtension: 'pdf',
         fileSizeBytes: 2450000,
         associatedUnitId: unit.id,
@@ -255,7 +255,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         title: 'المخطط الهندسي والمعماري للوحدة (Architectural Blueprint)',
         description: 'High-resolution floor plan blueprint, MEP electrical layout, and interior specs.',
         category: DocumentCategory.blueprint,
-        fileUrl: 'https://ihome.app/docs/blueprint_${unit.unitNumber}.pdf',
+        fileUrl: 'https://iliving.app/docs/blueprint_${unit.unitNumber}.pdf',
         fileExtension: 'pdf',
         fileSizeBytes: 5800000,
         associatedUnitId: unit.id,
@@ -266,13 +266,27 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         title: 'مخالصة الدفعة المقدمة وسندات السداد (Payment Receipts)',
         description: 'Certified financial clearance receipt for down payment and executed installments.',
         category: DocumentCategory.receipt,
-        fileUrl: 'https://ihome.app/docs/receipts_${unit.unitNumber}.pdf',
+        fileUrl: 'https://iliving.app/docs/receipts_${unit.unitNumber}.pdf',
         fileExtension: 'pdf',
         fileSizeBytes: 1200000,
         associatedUnitId: unit.id,
         createdAt: DateTime(2024, 1, 10),
       ),
     ];
+  }
+
+  static bool _matchesUnitString(String? rawTarget, Unit unit) {
+    if (rawTarget == null || rawTarget.trim().isEmpty) return false;
+    final cleanT = rawTarget.toLowerCase().replaceAll('unit', '').replaceAll('-', '').replaceAll('_', '').replaceAll(' ', '').trim();
+    final cleanUId = unit.id.toLowerCase().replaceAll('unit', '').replaceAll('-', '').replaceAll('_', '').replaceAll(' ', '').trim();
+    final cleanUNum = unit.unitNumber.toLowerCase().replaceAll('unit', '').replaceAll('-', '').replaceAll('_', '').replaceAll(' ', '').trim();
+    if (cleanT.isEmpty) return false;
+    return cleanT == cleanUId ||
+        cleanT == cleanUNum ||
+        cleanUId.contains(cleanT) ||
+        cleanT.contains(cleanUId) ||
+        cleanUNum.contains(cleanT) ||
+        cleanT.contains(cleanUNum);
   }
 
   List<Unit> get _userAccessibleUnits {
@@ -733,9 +747,15 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       _maintenanceSub = _maintRepo.streamAllTickets().listen(
         (tickets) {
           final unitTickets = tickets.where((t) {
-            return t.unitId == unit.id ||
-                t.unitId == unit.unitNumber ||
-                (t.compoundId == unit.compoundId && (matchedUser != null && t.residentUserId == matchedUser.uid));
+            final matchesUnit = _matchesUnitString(t.unitId, unit);
+            final matchesCompoundUser = (t.compoundId.isNotEmpty &&
+                unit.compoundId.isNotEmpty &&
+                t.compoundId.toLowerCase() == unit.compoundId.toLowerCase() &&
+                matchedUser != null &&
+                t.residentUserId.isNotEmpty &&
+                (t.residentUserId.toLowerCase() == matchedUser.uid.toLowerCase() ||
+                    (matchedUser.clientCode != null && t.residentUserId.toLowerCase() == matchedUser.clientCode!.toLowerCase())));
+            return matchesUnit || matchesCompoundUser;
           }).toList();
           if (mounted) {
             setState(() => _unitMaintenanceTickets = unitTickets.isNotEmpty
@@ -752,8 +772,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       _documentsSub = _docRepo.streamAllDocuments().listen(
         (docs) {
           final unitDocs = docs.where((d) {
-            return d.associatedUnitId == unit.id ||
-                d.associatedUnitId == unit.unitNumber ||
+            return _matchesUnitString(d.associatedUnitId, unit) ||
                 (matchedUser != null && d.ownerUserId == matchedUser.uid);
           }).toList();
           if (mounted) {
@@ -966,7 +985,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                IHomeButton(
+                ILivingButton(
                   text: l10n.retry,
                   onPressed: _loadMasterCollections,
                   width: 140,
@@ -1027,12 +1046,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         _buildFinancialOverviewSection(),
                         const SizedBox(height: 20),
                         _buildInstallmentScheduleSection(),
-                        if (!(AuthService.instance.currentProfile?.isAdmin ?? false)) ...[
-                          const SizedBox(height: 20),
-                          _buildDynamicGuestPassSection(),
-                          const SizedBox(height: 20),
-                          _buildMaintenanceOperationsSection(),
-                        ],
+                        const SizedBox(height: 20),
+                        _buildDynamicGuestPassSection(),
+                        const SizedBox(height: 20),
+                        _buildMaintenanceOperationsSection(),
                         const SizedBox(height: 20),
                         _buildDocumentsSection(),
                       ] else if (_selectedCategoryIndex == 1) ...[
@@ -2819,7 +2836,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: installments.isEmpty
-              ? IHomeCard(
+              ? ILivingCard(
                   padding: const EdgeInsets.all(20),
                   borderRadius: AppBorderRadius.medium,
                   child: Center(
@@ -3146,9 +3163,6 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
   Widget _buildMaintenanceOperationsSection() {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (AuthService.instance.currentProfile?.isAdmin ?? false) {
-      return const SizedBox.shrink();
-    }
 
     final tickets = _unitMaintenanceTickets;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
@@ -3203,7 +3217,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
               // Tickets Feed
               tickets.isEmpty
-                  ? IHomeCard(
+                  ? ILivingCard(
                       padding: const EdgeInsets.all(20),
                       borderRadius: AppBorderRadius.medium,
                       child: Center(
@@ -3356,7 +3370,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: docs.isEmpty
-              ? IHomeCard(
+              ? ILivingCard(
                   padding: const EdgeInsets.all(20),
                   borderRadius: AppBorderRadius.medium,
                   child: Center(
@@ -3384,6 +3398,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           );
                         } catch (e) {
                           debugPrint("Error opening PDF: $e");
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to open PDF preview: $e'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
                         }
                       },
                       child: Container(
@@ -3434,7 +3456,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               icon: const Icon(Icons.download_rounded, color: AppColors.accent, size: 20),
                               tooltip: 'Download PDF',
                               onPressed: () async {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                final messenger = ScaffoldMessenger.of(context);
+                                messenger.hideCurrentSnackBar();
+                                messenger.showSnackBar(
                                   SnackBar(
                                     duration: const Duration(seconds: 2),
                                     backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -3467,6 +3491,15 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                   );
                                 } catch (e) {
                                   debugPrint("Error downloading PDF: $e");
+                                  if (mounted) {
+                                    messenger.hideCurrentSnackBar();
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to download PDF: $e'),
+                                        backgroundColor: AppColors.error,
+                                      ),
+                                    );
+                                  }
                                 }
                               },
                             ),
@@ -3672,7 +3705,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       passType: PassType.durationBased,
       validFrom: DateTime.now(),
       validUntil: validUntil,
-      serverSecretKey: 'ihome_gate_secret_2026',
+      serverSecretKey: 'iliving_gate_secret_2026',
     );
 
     final GlobalKey qrBoundaryKey = GlobalKey();
@@ -3702,7 +3735,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
             final minutes = ((remainingSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
             final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
 
-            final realQrPayload = 'https://ihome.app/gate-pass?passId=${currentPass.id}&compound=${Uri.encodeComponent(compoundTitle)}&unit=${Uri.encodeComponent(unitId)}&host=${Uri.encodeComponent(hostName)}&type=${Uri.encodeComponent(passCategory)}&validUntil=${Uri.encodeComponent(currentPass.validUntil.toIso8601String())}&token=${currentPass.qrPayloadSigned}';
+            final realQrPayload = 'https://iliving.app/gate-pass?passId=${currentPass.id}&compound=${Uri.encodeComponent(compoundTitle)}&unit=${Uri.encodeComponent(unitId)}&host=${Uri.encodeComponent(hostName)}&type=${Uri.encodeComponent(passCategory)}&validUntil=${Uri.encodeComponent(currentPass.validUntil.toIso8601String())}&token=${currentPass.qrPayloadSigned}';
 
             return Container(
               decoration: BoxDecoration(
@@ -3858,7 +3891,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                       passType: PassType.durationBased,
                                       validFrom: DateTime.now(),
                                       validUntil: validUntil,
-                                      serverSecretKey: 'ihome_gate_secret_2026',
+                                      serverSecretKey: 'iliving_gate_secret_2026',
                                     );
                                   });
                                 },
@@ -4188,7 +4221,7 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 passType: PassType.durationBased,
                                 validFrom: DateTime.now(),
                                 validUntil: validUntil,
-                                serverSecretKey: 'ihome_gate_secret_2026',
+                                serverSecretKey: 'iliving_gate_secret_2026',
                               );
                             });
                           },
@@ -4212,6 +4245,25 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     required String shareText,
     required String subject,
   }) async {
+    Rect? shareOrigin;
+    try {
+      final box = boundaryKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box != null && box.hasSize && box.size.width > 0 && box.size.height > 0) {
+        shareOrigin = box.localToGlobal(Offset.zero) & box.size;
+      }
+    } catch (_) {}
+
+    if (shareOrigin == null || shareOrigin.isEmpty) {
+      try {
+        if (mounted) {
+          final size = MediaQuery.of(context).size;
+          shareOrigin = Rect.fromLTWH(0, 0, size.width, size.height > 0 ? size.height / 2 : 300);
+        }
+      } catch (_) {
+        shareOrigin = const Rect.fromLTWH(0, 0, 300, 300);
+      }
+    }
+
     try {
       final boundary = boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary != null) {
@@ -4220,12 +4272,13 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         if (byteData != null) {
           final bytes = byteData.buffer.asUint8List();
           final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/ihome_gate_pass_${DateTime.now().millisecondsSinceEpoch}.png');
+          final file = File('${tempDir.path}/iliving_gate_pass_${DateTime.now().millisecondsSinceEpoch}.png');
           await file.writeAsBytes(bytes);
           await Share.shareXFiles(
             [XFile(file.path, mimeType: 'image/png', name: 'iLiving_Gate_Pass.png')],
             text: shareText,
             subject: subject,
+            sharePositionOrigin: shareOrigin,
           );
           return;
         }
@@ -4234,7 +4287,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       debugPrint('Error capturing QR code image for share: $e');
     }
     // Fallback to text share
-    await Share.share(shareText, subject: subject);
+    await Share.share(
+      shareText,
+      subject: subject,
+      sharePositionOrigin: shareOrigin,
+    );
   }
 
   Widget _buildAccessActionCard(String title, IconData icon, VoidCallback onTap, bool isDark) {

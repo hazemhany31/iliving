@@ -157,7 +157,8 @@ class AdminPagination extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  infoText,
+                  Flexible(child: infoText),
+                  const SizedBox(width: 8),
                   pageSizeSelector,
                 ],
               ),
@@ -170,13 +171,16 @@ class AdminPagination extends StatelessWidget {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                infoText,
-                const SizedBox(width: 16),
-                pageSizeSelector,
-              ],
+            Flexible(
+              child: Row(
+                children: [
+                  Flexible(child: infoText),
+                  const SizedBox(width: 16),
+                  pageSizeSelector,
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             navButtons,
           ],
         );

@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import 'ihome_button.dart';
+import 'iliving_button.dart';
 
 /// Sticky bottom CTA bar matching the detail sheet in the reference image.
 /// Left side: price / amount with meta label.
 /// Right side: pill action button.
-class IHomeStickyCtaBar extends StatelessWidget {
+class ILivingStickyCtaBar extends StatelessWidget {
   final String priceLabel;
   final String priceValue;
   final String? pricePeriod;
   final String buttonText;
   final VoidCallback? onButtonPressed;
-  final IHomeButtonVariant buttonVariant;
+  final ILivingButtonVariant buttonVariant;
   final bool isLoading;
 
-  const IHomeStickyCtaBar({
+  const ILivingStickyCtaBar({
     super.key,
     this.priceLabel = 'Price',
     required this.priceValue,
     this.pricePeriod,
     required this.buttonText,
     required this.onButtonPressed,
-    this.buttonVariant = IHomeButtonVariant.highlight,
+    this.buttonVariant = ILivingButtonVariant.highlight,
     this.isLoading = false,
   });
 
@@ -94,7 +94,7 @@ class IHomeStickyCtaBar extends StatelessWidget {
           const SizedBox(width: 16),
 
           // CTA Button
-          IHomeButton(
+          ILivingButton(
             text: buttonText,
             onPressed: onButtonPressed,
             variant: buttonVariant,

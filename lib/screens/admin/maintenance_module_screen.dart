@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/installment.dart';
 import '../../models/maintenance_request.dart';
+import '../../models/unit_model.dart';
 import '../../repositories/interfaces/maintenance_repository.dart';
 import '../../repositories/interfaces/ledger_repository.dart';
 import '../../repositories/firestore/firestore_contract_repository.dart';
 import '../../repositories/firestore/firestore_ledger_repository.dart';
 import '../../repositories/firestore/firestore_maintenance_repository.dart';
+import '../../repositories/firestore/firestore_unit_repository.dart';
 import '../../theme/luxury_theme.dart';
 import '../../utils/maintenance_validator.dart';
 import '../../widgets/admin/shared/admin_data_table.dart';
@@ -30,14 +32,17 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
   late final MaintenanceRepository _maintRepo;
   late final LedgerRepository _ledgerRepo;
   late final ContractRepository _contractRepo;
+  final FirestoreUnitRepository _unitRepo = FirestoreUnitRepository();
 
   late final TabController _tabController;
 
   StreamSubscription? _ticketsSub;
   StreamSubscription? _installmentsSub;
+  StreamSubscription? _unitsSub;
 
   List<MaintenanceRequest> _tickets = [];
   List<Installment> _maintenanceInstallments = [];
+  List<Unit> _allUnits = [];
 
   bool _isLoading = true;
   String _searchQuery = '';
@@ -55,6 +60,10 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
   }
 
   void _startStreams() {
+    _unitsSub = _unitRepo.streamAllUnits().listen((units) {
+      if (mounted) setState(() => _allUnits = units);
+    });
+
     _ticketsSub = _maintRepo.streamAllTickets().listen(
       (tickets) {
         if (mounted) setState(() { _tickets = tickets; _isLoading = false; });
@@ -83,6 +92,7 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
     _searchController.dispose();
     _ticketsSub?.cancel();
     _installmentsSub?.cancel();
+    _unitsSub?.cancel();
     super.dispose();
   }
 
@@ -658,11 +668,13 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
   }
 
   void _showCreateMaintenanceTicketDialog(BuildContext context) {
-    final unitController = TextEditingController(text: 'B01B202');
+    String initialUnitNum = _allUnits.isNotEmpty ? _allUnits.first.unitNumber : 'B01B202';
+    final unitController = TextEditingController(text: initialUnitNum);
     final titleController = TextEditingController();
     final descController = TextEditingController();
     MaintenanceCategory category = MaintenanceCategory.plumbing;
     MaintenanceUrgency urgency = MaintenanceUrgency.medium;
+    String? selectedUnitDropdown = _allUnits.any((u) => u.unitNumber == initialUnitNum) ? initialUnitNum : null;
 
     AdminFormDialog.show(
       context: context,
@@ -675,17 +687,52 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
         builder: (context, setModalState) {
           return Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_allUnits.isNotEmpty) ...[
+                DropdownButtonFormField<String?>(
+                  isExpanded: true,
+                  initialValue: selectedUnitDropdown,
+                  decoration: const InputDecoration(
+                    labelText: 'اختر الوحدة العقارية (Select Unit)',
+                    prefixIcon: Icon(Icons.apartment_rounded, size: 20),
+                  ),
+                  items: [
+                    ..._allUnits.map((u) {
+                      return DropdownMenuItem<String?>(
+                        value: u.unitNumber,
+                        child: Text(
+                          '${u.unitNumber} • ${u.configuration} (${u.parentCompoundId.isNotEmpty ? u.parentCompoundId : "Sky Hills"})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setModalState(() {
+                        selectedUnitDropdown = val;
+                        unitController.text = val;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
               TextField(
                 controller: unitController,
-                decoration: const InputDecoration(labelText: 'رقم الوحدة (Unit ID)', hintText: 'مثال: B01B202'),
+                decoration: const InputDecoration(labelText: 'رقم الوحدة (Unit ID / Number)', hintText: 'مثال: Unit b206 أو B01B202'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<MaintenanceCategory>(
+                isExpanded: true,
                 initialValue: category,
                 decoration: const InputDecoration(labelText: 'تصنيف الصيانة'),
                 items: MaintenanceCategory.values.map((c) {
-                  return DropdownMenuItem(value: c, child: Text(c.name.toUpperCase()));
+                  return DropdownMenuItem(
+                    value: c,
+                    child: Text(c.name.toUpperCase(), overflow: TextOverflow.ellipsis),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) setModalState(() => category = val);
@@ -693,10 +740,14 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<MaintenanceUrgency>(
+                isExpanded: true,
                 initialValue: urgency,
                 decoration: const InputDecoration(labelText: 'درجة الأهمية / الأولوية'),
                 items: MaintenanceUrgency.values.map((u) {
-                  return DropdownMenuItem(value: u, child: Text(u.name.toUpperCase()));
+                  return DropdownMenuItem(
+                    value: u,
+                    child: Text(u.name.toUpperCase(), overflow: TextOverflow.ellipsis),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) setModalState(() => urgency = val);
@@ -725,15 +776,37 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
         final descErr = MaintenanceValidator.validateDescription(descController.text, isAr: true);
         if (descErr != null) throw Exception(descErr);
 
+        final selectedUnitNumber = unitController.text.trim().isNotEmpty ? unitController.text.trim() : 'B01B202';
+        Unit? matchedUnit;
+        try {
+          final allUnits = _allUnits.isNotEmpty ? _allUnits : await _unitRepo.getUnits();
+          final cleanTarget = selectedUnitNumber.toLowerCase().replaceAll('unit', '').replaceAll(' ', '').trim();
+          final matches = allUnits.where((u) {
+            final cleanNum = u.unitNumber.toLowerCase().replaceAll('unit', '').replaceAll(' ', '').trim();
+            final cleanId = u.id.toLowerCase().replaceAll('unit', '').replaceAll(' ', '').trim();
+            return cleanNum == cleanTarget || cleanId == cleanTarget || cleanNum.contains(cleanTarget) || cleanTarget.contains(cleanNum);
+          });
+          if (matches.isNotEmpty) {
+            matchedUnit = matches.first;
+          }
+        } catch (_) {}
+
+        final compoundId = (matchedUnit != null && matchedUnit.parentCompoundId.isNotEmpty)
+            ? matchedUnit.parentCompoundId
+            : 'sky_hills';
+        final residentId = (matchedUnit?.currentOwnerId != null && matchedUnit!.currentOwnerId!.isNotEmpty)
+            ? matchedUnit.currentOwnerId!
+            : 'RESIDENT-ADMIN';
+
         final ticketId = 'ticket_${DateTime.now().millisecondsSinceEpoch}';
         final ticketNo = 'TKT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
         final ticket = MaintenanceRequest(
           id: ticketId,
           ticketNumber: ticketNo,
-          compoundId: 'zayed_lagoons',
-          unitId: unitController.text.trim().isNotEmpty ? unitController.text.trim() : 'B01B202',
-          residentUserId: 'CLI-202',
+          compoundId: compoundId,
+          unitId: selectedUnitNumber,
+          residentUserId: residentId,
           category: category,
           urgency: urgency,
           title: titleController.text.trim(),
@@ -743,6 +816,9 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
           updatedAt: DateTime.now(),
         );
 
+        setState(() {
+          _tickets.insert(0, ticket);
+        });
         await _maintRepo.createTicket(ticket);
         messenger.showSnackBar(
           const SnackBar(
@@ -770,10 +846,14 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<MaintenanceStatus>(
+                isExpanded: true,
                 initialValue: status,
                 decoration: const InputDecoration(labelText: 'الحالة الجديدة (New Status)'),
                 items: MaintenanceStatus.values.map((s) {
-                  return DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()));
+                  return DropdownMenuItem(
+                    value: s,
+                    child: Text(s.name.toUpperCase(), overflow: TextOverflow.ellipsis),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) setModalState(() => status = val);
@@ -786,6 +866,10 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
       onSubmit: () async {
         final messenger = ScaffoldMessenger.of(context);
         final updated = ticket.copyWith(status: status, updatedAt: DateTime.now());
+        setState(() {
+          final idx = _tickets.indexWhere((t) => t.id == ticket.id);
+          if (idx != -1) _tickets[idx] = updated;
+        });
         await _maintRepo.updateTicket(updated);
         messenger.showSnackBar(
           const SnackBar(
@@ -848,6 +932,15 @@ class _MaintenanceModuleScreenState extends State<MaintenanceModuleScreen>
           status: isPaid ? InstallmentStatus.paid : (paid > 0 ? InstallmentStatus.partiallyPaid : InstallmentStatus.unpaid),
           paidAt: isPaid ? DateTime.now() : inst.paidAt,
         );
+
+        setState(() {
+          final idx = _maintenanceInstallments.indexWhere((i) => i.id == inst.id);
+          if (idx != -1) {
+            _maintenanceInstallments[idx] = updated;
+          } else {
+            _maintenanceInstallments.insert(0, updated);
+          }
+        });
 
         // 1. Update installment doc in Firestore (immediate local cache write)
         await _ledgerRepo.updateInstallment(updated).timeout(

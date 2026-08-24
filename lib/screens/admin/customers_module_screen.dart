@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/user_profile.dart';
 import '../../models/unit_model.dart';
 import '../../models/contract.dart';
@@ -10,6 +11,7 @@ import '../../repositories/firestore/firestore_contract_repository.dart';
 import '../../repositories/firestore/firestore_ledger_repository.dart';
 import '../../repositories/firestore/firestore_payment_repository.dart';
 import '../../services/ledger_service.dart';
+import '../../services/auth_service.dart';
 import '../../theme/luxury_theme.dart';
 import '../../widgets/admin/shared/admin_data_table.dart';
 import '../../widgets/admin/shared/admin_form_dialog.dart';
@@ -396,7 +398,7 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
                                           fontSize: 12,
                                         ),
                                       ),
-                                      onPressed: () => _showUserFormDialog(context),
+                                      onPressed: () => _showUserFormDialog(context, availableUnits: allUnits),
                                     ),
                                   ),
                                 ],
@@ -669,7 +671,7 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
                                                   _showCustomerFinancialSummary(context, agg);
                                                   break;
                                                 case 'edit_profile':
-                                                  _showUserFormDialog(context, user: agg.user);
+                                                  _showUserFormDialog(context, user: agg.user, availableUnits: allUnits);
                                                   break;
                                                 case 'assign_unit':
                                                   _showAssignUnitDialog(context, agg, allUnits);
@@ -802,103 +804,203 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
     );
   }
 
-  void _showUserFormDialog(BuildContext context, {UserProfile? user}) {
+  void _showUserFormDialog(BuildContext context, {UserProfile? user, List<Unit>? availableUnits}) {
     final isEditing = user != null;
-    final uidController = TextEditingController(text: user?.uid ?? 'USR-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
+    final randomNum = (DateTime.now().millisecondsSinceEpoch % 900 + 100);
+    final defaultCode = 'CLI-$randomNum';
+    final uidController = TextEditingController(text: user?.uid ?? 'USR-$randomNum');
     final nameController = TextEditingController(text: user?.fullName ?? '');
-    final emailController = TextEditingController(text: user?.email ?? '');
+    final emailController = TextEditingController(text: user?.email ?? 'client$randomNum@iliving.com.eg');
     final phoneController = TextEditingController(text: user?.phoneNumber ?? '+201000000000');
-    final clientCodeController = TextEditingController(text: user?.clientCode ?? 'CLI-VIP-101');
+    final clientCodeController = TextEditingController(text: user?.clientCode ?? defaultCode);
     final nationalIdController = TextEditingController(text: user?.nationalIdOrPassport ?? '29901010101010');
+    final passwordController = TextEditingController(text: isEditing ? '' : 'iLiving$randomNum!2026');
+    bool obscurePassword = false;
     UserRole role = user?.role ?? UserRole.customer;
     KycStatus kycStatus = user?.kycStatus ?? KycStatus.verified;
+    String? selectedUnitId = user != null && user.associatedUnitIds.isNotEmpty ? user.associatedUnitIds.first : null;
+
+    void refreshGeneratedCredentials() {
+      final codeDigits = clientCodeController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      final cleanNum = codeDigits.isNotEmpty ? codeDigits : '$randomNum';
+      passwordController.text = 'iLiving$cleanNum!2026';
+      final nameSlug = nameController.text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '.').replaceAll(RegExp(r'[^a-z0-9.]'), '');
+      if (nameSlug.isNotEmpty) {
+        emailController.text = '$nameSlug@iliving.com.eg';
+      } else {
+        emailController.text = 'client$cleanNum@iliving.com.eg';
+      }
+    }
 
     AdminFormDialog.show(
       context: context,
       title: isEditing ? 'Edit Customer Info' : 'Create New Customer Account',
-      subtitle: isEditing ? 'Update customer profile in Firestore Master SSOT' : 'Register new customer profile in Firestore',
+      subtitle: isEditing ? 'Update customer profile in Firestore Master SSOT' : 'Register customer profile and generate working login credentials',
       icon: isEditing ? Icons.manage_accounts : Icons.person_add_alt_1,
       body: StatefulBuilder(
         builder: (context, setModalState) => Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!isEditing)
+            if (!isEditing) ...[
               TextField(
                 controller: uidController,
                 decoration: const InputDecoration(labelText: 'User ID (UID)', hintText: 'e.g. USR-001'),
               ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 14),
+            ],
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Full Name', hintText: 'e.g. Ahmed Ali'),
+              decoration: const InputDecoration(
+                labelText: 'Full Name *',
+                hintText: 'e.g. Ahmed Ali',
+                prefixIcon: Icon(Icons.person_outline, size: 20),
+              ),
+              onChanged: (val) {
+                if (!isEditing && emailController.text.contains('@iliving.com.eg')) {
+                  final nameSlug = val.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '.').replaceAll(RegExp(r'[^a-z0-9.]'), '');
+                  if (nameSlug.isNotEmpty) {
+                    setModalState(() => emailController.text = '$nameSlug@iliving.com.eg');
+                  }
+                }
+              },
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email Address', hintText: 'user@iliving.com'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: phoneController,
-                    decoration: const InputDecoration(labelText: 'Phone Number', hintText: '+20100...'),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email Address (Login Username) *',
+                hintText: 'user@iliving.com.eg',
+                prefixIcon: Icon(Icons.alternate_email, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: clientCodeController,
-                    decoration: const InputDecoration(labelText: 'Client Code', hintText: 'CLI-101'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: nationalIdController,
-                    decoration: const InputDecoration(labelText: 'National ID / Passport'),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                hintText: '+201001234567',
+                prefixIcon: Icon(Icons.phone_outlined, size: 20),
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<UserRole>(
-                    isExpanded: true,
-                    initialValue: role,
-                    decoration: const InputDecoration(labelText: 'Role'),
-                    items: UserRole.values.map((r) {
-                      return DropdownMenuItem(value: r, child: Text(r.nameString, overflow: TextOverflow.ellipsis));
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => role = val);
-                    },
+            if (!isEditing) ...[
+              const SizedBox(height: 14),
+              TextField(
+                controller: passwordController,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Working Login Password *',
+                  hintText: 'e.g. iLiving101!2026',
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          size: 20,
+                        ),
+                        tooltip: obscurePassword ? 'Show' : 'Hide',
+                        onPressed: () => setModalState(() => obscurePassword = !obscurePassword),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.casino_outlined, size: 20, color: AppColors.accent),
+                        tooltip: 'Generate Strong Password',
+                        onPressed: () => setModalState(refreshGeneratedCredentials),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<KycStatus>(
-                    isExpanded: true,
-                    initialValue: kycStatus,
-                    decoration: const InputDecoration(labelText: 'KYC Status'),
-                    items: KycStatus.values.map((k) {
-                      return DropdownMenuItem(value: k, child: Text(k.name.toUpperCase(), overflow: TextOverflow.ellipsis));
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => kycStatus = val);
-                    },
-                  ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 5, left: 4),
+                child: Text(
+                  '💡 The generated password will be registered in live Auth so the client can log in immediately.',
+                  style: TextStyle(fontSize: 11, color: AppColors.accent),
                 ),
+              ),
+            ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: clientCodeController,
+              decoration: const InputDecoration(
+                labelText: 'Client Code',
+                hintText: 'e.g. CLI-101',
+                prefixIcon: Icon(Icons.badge_outlined, size: 20),
+              ),
+              onChanged: (val) {
+                if (!isEditing) {
+                  setModalState(refreshGeneratedCredentials);
+                }
+              },
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: nationalIdController,
+              decoration: const InputDecoration(
+                labelText: 'National ID / Passport',
+                hintText: 'e.g. 29901010101010',
+                prefixIcon: Icon(Icons.credit_card_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 14),
+            DropdownButtonFormField<String?>(
+              isExpanded: true,
+              initialValue: selectedUnitId,
+              decoration: const InputDecoration(
+                labelText: 'Assigned Property Unit (ربط الوحدة العقارية للعميل)',
+                prefixIcon: Icon(Icons.apartment_rounded, size: 20),
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('No unit assigned / بدون وحدة حالياً', overflow: TextOverflow.ellipsis),
+                ),
+                ...(availableUnits ?? []).map((u) {
+                  return DropdownMenuItem<String?>(
+                    value: u.unitNumber,
+                    child: Text(
+                      '${u.unitNumber} • ${u.configuration} (${u.parentCompoundId.isNotEmpty ? u.parentCompoundId : "Sky Hills"})',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }),
               ],
+              onChanged: (val) {
+                setModalState(() => selectedUnitId = val);
+              },
+            ),
+            const SizedBox(height: 14),
+            DropdownButtonFormField<UserRole>(
+              isExpanded: true,
+              initialValue: role,
+              decoration: const InputDecoration(
+                labelText: 'Role',
+                prefixIcon: Icon(Icons.admin_panel_settings_outlined, size: 20),
+              ),
+              items: UserRole.values.map((r) {
+                return DropdownMenuItem(value: r, child: Text(r.nameString, overflow: TextOverflow.ellipsis));
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) setModalState(() => role = val);
+              },
+            ),
+            const SizedBox(height: 14),
+            DropdownButtonFormField<KycStatus>(
+              isExpanded: true,
+              initialValue: kycStatus,
+              decoration: const InputDecoration(
+                labelText: 'KYC Status',
+                prefixIcon: Icon(Icons.verified_user_outlined, size: 20),
+              ),
+              items: KycStatus.values.map((k) {
+                return DropdownMenuItem(value: k, child: Text(k.name.toUpperCase(), overflow: TextOverflow.ellipsis));
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) setModalState(() => kycStatus = val);
+              },
             ),
           ],
         ),
@@ -908,22 +1010,65 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
           throw Exception('Full Name and Email are required');
         }
 
-        final u = UserProfile(
-          uid: uidController.text.trim(),
-          email: emailController.text.trim(),
-          phoneNumber: phoneController.text.trim(),
-          fullName: nameController.text.trim(),
-          nationalIdOrPassport: nationalIdController.text.trim(),
-          clientCode: clientCodeController.text.trim(),
-          role: role,
-          kycStatus: kycStatus,
-          createdAt: user?.createdAt ?? DateTime.now(),
-        );
+        final List<String> unitIds = selectedUnitId != null && selectedUnitId!.isNotEmpty
+            ? [selectedUnitId!]
+            : (isEditing ? user.associatedUnitIds : <String>[]);
 
         if (isEditing) {
+          final u = user.copyWith(
+            uid: uidController.text.trim(),
+            email: emailController.text.trim(),
+            phoneNumber: phoneController.text.trim(),
+            fullName: nameController.text.trim(),
+            nationalIdOrPassport: nationalIdController.text.trim(),
+            clientCode: clientCodeController.text.trim(),
+            role: role,
+            kycStatus: kycStatus,
+            associatedUnitIds: unitIds,
+          );
           await _userRepo.updateUser(u);
+          if (selectedUnitId != null && availableUnits != null) {
+            final matched = availableUnits.where((un) => un.unitNumber == selectedUnitId || un.id == selectedUnitId);
+            if (matched.isNotEmpty) {
+              await _unitRepo.updateUnitStatus(matched.first.id, UnitStatus.contracted, ownerId: u.uid);
+            }
+          }
         } else {
-          await _userRepo.createUser(u);
+          final pass = passwordController.text.trim();
+          if (pass.isEmpty) {
+            throw Exception('Password is required for customer account creation');
+          }
+          final result = await AuthService.instance.createCustomerAccount(
+            fullName: nameController.text.trim(),
+            email: emailController.text.trim(),
+            password: pass,
+            phoneNumber: phoneController.text.trim(),
+            clientCode: clientCodeController.text.trim(),
+            nationalIdOrPassport: nationalIdController.text.trim(),
+            role: role,
+            kycStatus: kycStatus,
+            associatedUnitIds: unitIds,
+            uid: uidController.text.trim(),
+          );
+
+          if (selectedUnitId != null && availableUnits != null) {
+            final matched = availableUnits.where((un) => un.unitNumber == selectedUnitId || un.id == selectedUnitId);
+            if (matched.isNotEmpty) {
+              await _unitRepo.updateUnitStatus(matched.first.id, UnitStatus.contracted, ownerId: result.profile.uid);
+            }
+          }
+
+          if (context.mounted) {
+            Future.microtask(() {
+              if (context.mounted) {
+                _showCredentialsSuccessDialog(
+                  context,
+                  profile: result.profile,
+                  password: result.generatedPassword,
+                );
+              }
+            });
+          }
         }
       },
     );
@@ -949,6 +1094,7 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<Unit>(
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Select Unit from Inventory'),
                 items: allUnits.map((unit) {
                   final isAssignedToThisUser = unit.currentOwnerId == agg.user.uid || unit.currentOwnerId == agg.user.clientCode;
@@ -957,7 +1103,10 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
                       : (unit.currentOwnerId != null && unit.currentOwnerId!.isNotEmpty ? ' (Owned by ${unit.currentOwnerId})' : ' (Available)');
                   return DropdownMenuItem(
                     value: unit,
-                    child: Text('${unit.unitNumber} - ${unit.compoundId} | EGP ${_formatNumber(unit.priceEGP)}$ownerLabel'),
+                    child: Text(
+                      '${unit.unitNumber} - ${unit.compoundId} | EGP ${_formatNumber(unit.priceEGP)}$ownerLabel',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   );
                 }).toList(),
                 onChanged: (val) => setModalState(() => selectedUnit = val),
@@ -1013,10 +1162,14 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<Unit>(
+                isExpanded: true,
                 initialValue: targetUnit,
                 decoration: const InputDecoration(labelText: 'Target Unit'),
                 items: allUnits.map((u) {
-                  return DropdownMenuItem(value: u, child: Text('${u.unitNumber} (${u.compoundId})'));
+                  return DropdownMenuItem(
+                    value: u,
+                    child: Text('${u.unitNumber} (${u.compoundId})', overflow: TextOverflow.ellipsis),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) {
@@ -1029,84 +1182,86 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
                   }
                 },
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Agreed Total Price (EGP)'),
-                      onChanged: (val) {
-                        final p = double.tryParse(val) ?? 0;
-                        if (p > 0) {
-                          setModalState(() {
-                            downPaymentController.text = (p * 0.10).toStringAsFixed(0);
-                            maintenanceDepositController.text = (p * 0.08).toStringAsFixed(0);
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: downPaymentController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Down Payment (EGP)'),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Agreed Total Price (EGP) *',
+                  prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                ),
+                onChanged: (val) {
+                  final p = double.tryParse(val) ?? 0;
+                  if (p > 0) {
+                    setModalState(() {
+                      downPaymentController.text = (p * 0.10).toStringAsFixed(0);
+                      maintenanceDepositController.text = (p * 0.08).toStringAsFixed(0);
+                    });
+                  }
+                },
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: maintenanceDepositController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Maintenance Deposit / وديعة الصيانة (EGP)',
-                        hintText: 'e.g. 120000 (8%)',
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextField(
+                controller: downPaymentController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Down Payment (EGP) *',
+                  prefixIcon: Icon(Icons.account_balance_wallet_outlined, size: 20),
+                ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: installmentsCount,
-                      decoration: const InputDecoration(labelText: 'Installments Count'),
-                      items: [1, 2, 4, 8, 12, 16, 20].map((n) {
-                        return DropdownMenuItem(value: n, child: Text('$n Installments'));
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => installmentsCount = val);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<SignatureStatus>(
-                      initialValue: signatureStatus,
-                      decoration: const InputDecoration(labelText: 'Signature Status'),
-                      items: SignatureStatus.values.map((s) {
-                        return DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()));
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => signatureStatus = val);
-                      },
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              TextField(
+                controller: maintenanceDepositController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Maintenance Deposit / وديعة الصيانة (EGP) *',
+                  hintText: 'e.g. 120000 (8%)',
+                  prefixIcon: Icon(Icons.shield_outlined, size: 20),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<int>(
+                isExpanded: true,
+                initialValue: installmentsCount,
+                decoration: const InputDecoration(
+                  labelText: 'Installments Count',
+                  prefixIcon: Icon(Icons.calendar_month_outlined, size: 20),
+                ),
+                items: [1, 2, 4, 8, 12, 16, 20].map((n) {
+                  return DropdownMenuItem(
+                    value: n,
+                    child: Text('$n Installments', overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setModalState(() => installmentsCount = val);
+                },
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<SignatureStatus>(
+                isExpanded: true,
+                initialValue: signatureStatus,
+                decoration: const InputDecoration(
+                  labelText: 'Signature Status',
+                  prefixIcon: Icon(Icons.draw_outlined, size: 20),
+                ),
+                items: SignatureStatus.values.map((s) {
+                  return DropdownMenuItem(
+                    value: s,
+                    child: Text(s.name.toUpperCase(), overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setModalState(() => signatureStatus = val);
+                },
+              ),
+              const SizedBox(height: 14),
               TextField(
                 controller: pdfUrlController,
-                decoration: const InputDecoration(labelText: 'PDF Document Link / Storage URL'),
+                decoration: const InputDecoration(
+                  labelText: 'PDF Document Link / Storage URL',
+                  prefixIcon: Icon(Icons.link_rounded, size: 20),
+                ),
               ),
               const SizedBox(height: 8),
               CheckboxListTile(
@@ -1201,167 +1356,248 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
 
     final contract = agg.contracts.first;
 
+    final List<Installment> localInstallments = List.from(agg.installments);
+
     showDialog(
       context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-          shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.large),
-          title: Row(
-            children: [
-              const Icon(Icons.calendar_month_outlined, color: AppColors.accent),
-              const SizedBox(width: 10),
-              Text(
-                'Installment Schedule (${agg.user.fullName})',
-                style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 16, fontWeight: FontWeight.bold),
+      builder: (dialogCtx) {
+        final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
+        final screenWidth = MediaQuery.of(dialogCtx).size.width;
+        final screenHeight = MediaQuery.of(dialogCtx).size.height;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: screenWidth < 600 ? 16 : 40,
+                vertical: 24,
               ),
-            ],
-          ),
-          content: SizedBox(
-            width: 600,
-            height: 450,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Scheduled: ${agg.installments.length}',
-                      style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontWeight: FontWeight.bold, fontSize: 13),
+              shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.large),
+              title: Row(
+                children: [
+                  const Icon(Icons.calendar_month_outlined, color: AppColors.accent),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Installment Schedule (${agg.user.fullName})',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    Row(
+                  ),
+                ],
+              ),
+              content: Container(
+                width: 600,
+                constraints: BoxConstraints(
+                  maxWidth: 600,
+                  maxHeight: screenHeight * 0.75,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      alignment: WrapAlignment.spaceBetween,
                       children: [
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.accent,
-                            side: const BorderSide(color: AppColors.accent, width: 1.5),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
-                          ),
-                          icon: const Icon(Icons.shield_outlined, size: 14),
-                          label: const Text(
-                            '+ وديعة الصيانة (Deposit)',
-                            style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () {
-                            _showAddUpdateMaintenanceDepositDialog(context, agg, contract);
-                          },
+                        Text(
+                          'Total Scheduled: ${localInstallments.length}',
+                          style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontWeight: FontWeight.bold, fontSize: 13),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark ? AppColors.accent : AppColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
-                          ),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Add Installment', style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 12, fontWeight: FontWeight.bold)),
-                          onPressed: () {
-                            _showCreateInstallmentSubDialog(context, agg, contract);
-                          },
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.accent,
+                                side: const BorderSide(color: AppColors.accent, width: 1.5),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                              ),
+                              icon: const Icon(Icons.shield_outlined, size: 14),
+                              label: const Text(
+                                '+ وديعة الصيانة (Deposit)',
+                                style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () async {
+                                await _showAddUpdateMaintenanceDepositDialog(context, agg, contract, () {
+                                  setDialogState(() {
+                                    localInstallments.clear();
+                                    localInstallments.addAll(agg.installments);
+                                  });
+                                });
+                                setDialogState(() {
+                                  localInstallments.clear();
+                                  localInstallments.addAll(agg.installments);
+                                });
+                              },
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                              ),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add Installment', style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              onPressed: () async {
+                                await _showCreateInstallmentSubDialog(context, agg, contract, () {
+                                  setDialogState(() {
+                                    localInstallments.clear();
+                                    localInstallments.addAll(agg.installments);
+                                    localInstallments.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+                                  });
+                                });
+                                setDialogState(() {
+                                  localInstallments.clear();
+                                  localInstallments.addAll(agg.installments);
+                                  localInstallments.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: localInstallments.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.all(24.0),
+                              child: Center(child: Text('No installments generated for this customer.')),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: localInstallments.length,
+                              itemBuilder: (context, idx) {
+                                final inst = localInstallments[idx];
+                                final isMnt = inst.installmentType == InstallmentType.maintenanceFund;
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isMnt
+                                        ? AppColors.accent.withAlpha(25)
+                                        : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                                    borderRadius: AppBorderRadius.medium,
+                                    border: Border.all(
+                                      color: isMnt ? AppColors.accent : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                                      width: isMnt ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      if (isMnt) ...[
+                                        const Icon(Icons.shield_outlined, color: AppColors.accent, size: 14),
+                                        const SizedBox(width: 6),
+                                      ],
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              isMnt
+                                                  ? 'وديعة الصيانة (MAINTENANCE DEPOSIT)'
+                                                  : 'Installment #${inst.sequenceNumber} - ${inst.installmentType.name.toUpperCase()}',
+                                              style: TextStyle(
+                                                fontFamily: AppTextStyles.fontFamily,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11.5,
+                                                color: isMnt ? AppColors.accent : (isDark ? AppColors.textLight : AppColors.textDark),
+                                              ),
+                                            ),
+                                            Text(
+                                              'Due: ${inst.dueDate.toIso8601String().split("T").first} | Paid: EGP ${_formatNumber(inst.paidAmount)} / EGP ${_formatNumber(inst.principalAmount)}',
+                                              style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 10.5, color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: (inst.isPaid ? AppColors.success : AppColors.warning).withAlpha(25),
+                                          borderRadius: AppBorderRadius.pill,
+                                        ),
+                                        child: Text(
+                                          inst.status.nameString,
+                                          style: TextStyle(fontFamily: AppTextStyles.fontFamily, color: inst.isPaid ? AppColors.success : AppColors.warning, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_calendar, color: AppColors.info, size: 18),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                                        tooltip: 'Edit Due Date',
+                                        onPressed: () async {
+                                          await _showEditInstallmentDateSubDialog(context, agg, inst, () {
+                                            final updated = agg.installments.where((i) => i.id == inst.id).firstOrNull;
+                                            if (updated != null) {
+                                              final iIdx = localInstallments.indexWhere((i) => i.id == inst.id);
+                                              if (iIdx != -1) {
+                                                localInstallments[iIdx] = updated;
+                                                setDialogState(() {});
+                                              }
+                                            }
+                                          });
+                                          setDialogState(() {
+                                            localInstallments.clear();
+                                            localInstallments.addAll(agg.installments);
+                                          });
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                                        tooltip: 'Delete Installment',
+                                        onPressed: () async {
+                                          // Optimistic instant delete from UI without closing modal!
+                                          setDialogState(() {
+                                            localInstallments.removeWhere((i) => i.id == inst.id);
+                                            agg.installments.removeWhere((i) => i.id == inst.id);
+                                          });
+
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Installment #${inst.sequenceNumber} deleted.'),
+                                              backgroundColor: AppColors.error,
+                                              duration: const Duration(seconds: 2),
+                                            ),
+                                          );
+
+                                          await _ledgerRepo.deleteInstallment(inst.contractId, inst.id);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: agg.installments.isEmpty
-                      ? const Center(child: Text('No installments generated for this customer.'))
-                      : ListView.builder(
-                          itemCount: agg.installments.length,
-                          itemBuilder: (context, idx) {
-                            final inst = agg.installments[idx];
-                            final isMnt = inst.installmentType == InstallmentType.maintenanceFund;
-                            return Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isMnt
-                                    ? AppColors.accent.withAlpha(25)
-                                    : (isDark ? AppColors.darkCard : AppColors.lightCard),
-                                borderRadius: AppBorderRadius.medium,
-                                border: Border.all(
-                                  color: isMnt ? AppColors.accent : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                                  width: isMnt ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  if (isMnt) ...[
-                                    const Icon(Icons.shield_outlined, color: AppColors.accent, size: 14),
-                                    const SizedBox(width: 6),
-                                  ],
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          isMnt
-                                              ? 'وديعة الصيانة (MAINTENANCE DEPOSIT)'
-                                              : 'Installment #${inst.sequenceNumber} - ${inst.installmentType.name.toUpperCase()}',
-                                          style: TextStyle(
-                                            fontFamily: AppTextStyles.fontFamily,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: isMnt ? AppColors.accent : (isDark ? AppColors.textLight : AppColors.textDark),
-                                          ),
-                                        ),
-                                        Text(
-                                          'Due: ${inst.dueDate.toIso8601String().split("T").first} | Paid: EGP ${_formatNumber(inst.paidAmount)} / EGP ${_formatNumber(inst.principalAmount)}',
-                                          style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11, color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: (inst.isPaid ? AppColors.success : AppColors.warning).withAlpha(25),
-                                      borderRadius: AppBorderRadius.pill,
-                                    ),
-                                    child: Text(
-                                      inst.status.nameString,
-                                      style: TextStyle(fontFamily: AppTextStyles.fontFamily, color: inst.isPaid ? AppColors.success : AppColors.warning, fontSize: 10, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_calendar, color: AppColors.info, size: 18),
-                                    tooltip: 'Edit Due Date',
-                                    onPressed: () {
-                                      _showEditInstallmentDateSubDialog(context, inst);
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
-                                    tooltip: 'Delete Installment',
-                                    onPressed: () async {
-                                      await _ledgerRepo.deleteInstallment(inst.contractId, inst.id);
-                                      if (context.mounted) Navigator.pop(context);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Close'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
   }
 
-  void _showAddUpdateMaintenanceDepositDialog(BuildContext context, CustomerAggregateData agg, Contract contract) {
+  Future<bool?> _showAddUpdateMaintenanceDepositDialog(BuildContext context, CustomerAggregateData agg, Contract contract, [VoidCallback? onSaved]) {
     Installment? existingMnt;
     for (final i in agg.installments) {
       if (i.installmentType == InstallmentType.maintenanceFund) {
@@ -1378,7 +1614,7 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
     final amountController = TextEditingController(text: initialAmount.toStringAsFixed(0));
     DateTime dueDate = existingMnt?.dueDate ?? contract.deliveryDateExpected;
 
-    AdminFormDialog.show(
+    return AdminFormDialog.show(
       context: context,
       title: 'وديعة الصيانة (Maintenance Deposit)',
       subtitle: 'تحديد وتنزل وديعة الصيانة لـ ${agg.user.fullName} في حساب العميل',
@@ -1397,24 +1633,50 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text('تاريخ الاستحقاق: ${dueDate.toIso8601String().split("T").first}'),
-                  const Spacer(),
-                  TextButton.icon(
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    label: const Text('تغيير التاريخ'),
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: dueDate,
-                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                        lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
-                      );
-                      if (picked != null) setModalState(() => dueDate = picked);
-                    },
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                  borderRadius: AppBorderRadius.medium,
+                  border: Border.all(color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBorder : AppColors.lightBorder),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'تاريخ الاستحقاق (Due Date)',
+                            style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11, color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.textLightMuted : AppColors.textDarkMuted),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dueDate.toIso8601String().split("T").first,
+                            style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                      ),
+                      icon: const Icon(Icons.calendar_today, size: 14),
+                      label: const Text('تغيير التاريخ', style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11)),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: dueDate,
+                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                          lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                        );
+                        if (picked != null) setModalState(() => dueDate = picked);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -1446,24 +1708,25 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
         );
 
         if (existingMnt != null) {
+          final idx = agg.installments.indexWhere((i) => i.id == mntInst.id);
+          if (idx != -1) agg.installments[idx] = mntInst;
           await _ledgerRepo.updateInstallment(mntInst);
         } else {
+          agg.installments.insert(0, mntInst);
           await _ledgerRepo.createInstallment(mntInst);
         }
 
-        if (context.mounted) {
-          Navigator.pop(context); // Close parent manage installments dialog to refresh
-        }
+        onSaved?.call();
       },
     );
   }
 
-  void _showCreateInstallmentSubDialog(BuildContext context, CustomerAggregateData agg, Contract contract) {
+  Future<bool?> _showCreateInstallmentSubDialog(BuildContext context, CustomerAggregateData agg, Contract contract, [VoidCallback? onSaved]) {
     final amountController = TextEditingController(text: '125000');
     DateTime dueDate = DateTime.now().add(const Duration(days: 90));
     InstallmentType type = InstallmentType.regularQuarterly;
 
-    AdminFormDialog.show(
+    return AdminFormDialog.show(
       context: context,
       title: 'Create New Installment',
       subtitle: 'Add custom payment term for contract ${contract.contractNumber}',
@@ -1480,34 +1743,64 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<InstallmentType>(
+                isExpanded: true,
                 initialValue: type,
                 decoration: const InputDecoration(labelText: 'Installment Type'),
                 items: InstallmentType.values.map((t) {
-                  return DropdownMenuItem(value: t, child: Text(t.name.toUpperCase()));
+                  return DropdownMenuItem(
+                    value: t,
+                    child: Text(t.name.toUpperCase(), overflow: TextOverflow.ellipsis),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) setModalState(() => type = val);
                 },
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text('Due Date: ${dueDate.toIso8601String().split("T").first}'),
-                  const Spacer(),
-                  TextButton.icon(
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    label: const Text('Pick Date'),
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: dueDate,
-                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                        lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
-                      );
-                      if (picked != null) setModalState(() => dueDate = picked);
-                    },
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                  borderRadius: AppBorderRadius.medium,
+                  border: Border.all(color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBorder : AppColors.lightBorder),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Due Date',
+                            style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11, color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.textLightMuted : AppColors.textDarkMuted),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dueDate.toIso8601String().split("T").first,
+                            style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                      ),
+                      icon: const Icon(Icons.calendar_today, size: 14),
+                      label: const Text('Pick Date', style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11)),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: dueDate,
+                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                          lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                        );
+                        if (picked != null) setModalState(() => dueDate = picked);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -1532,44 +1825,92 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
           status: InstallmentStatus.unpaid,
         );
 
+        agg.installments.add(inst);
         await _ledgerRepo.createInstallment(inst);
+        onSaved?.call();
       },
     );
   }
 
-  void _showEditInstallmentDateSubDialog(BuildContext context, Installment inst) {
+  Future<bool?> _showEditInstallmentDateSubDialog(BuildContext context, CustomerAggregateData agg, Installment inst, [VoidCallback? onSaved]) {
     DateTime selectedDate = inst.dueDate;
 
-    AdminFormDialog.show(
+    return AdminFormDialog.show(
       context: context,
       title: 'Edit Installment Due Date',
       subtitle: 'Modify schedule date for installment #${inst.sequenceNumber}',
       icon: Icons.edit_calendar,
       body: StatefulBuilder(
         builder: (context, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Current Due Date: ${inst.dueDate.toIso8601String().split("T").first}'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text('New Due Date: ${selectedDate.toIso8601String().split("T").first}'),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.calendar_month, size: 16),
-                    label: const Text('Change Date'),
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2035),
-                      );
-                      if (picked != null) setModalState(() => selectedDate = picked);
-                    },
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                  borderRadius: AppBorderRadius.medium,
+                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Current Due Date:',
+                          style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 12, color: isDark ? AppColors.textLightMuted : AppColors.textDarkMuted),
+                        ),
+                        Text(
+                          inst.dueDate.toIso8601String().split("T").first,
+                          style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'New Due Date',
+                                style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11, color: AppColors.accent, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                selectedDate.toIso8601String().split("T").first,
+                                style: const TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 13.5, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDark ? AppColors.accent : AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                          ),
+                          icon: const Icon(Icons.calendar_month, size: 15),
+                          label: const Text('Change Date', style: TextStyle(fontFamily: AppTextStyles.fontFamily, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2035),
+                            );
+                            if (picked != null) setModalState(() => selectedDate = picked);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -1580,7 +1921,10 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
           dueDate: selectedDate,
           gracePeriodEndDate: selectedDate.add(const Duration(days: 14)),
         );
+        final idx = agg.installments.indexWhere((i) => i.id == inst.id);
+        if (idx != -1) agg.installments[idx] = updatedInst;
         await _ledgerRepo.updateInstallment(updatedInst);
+        onSaved?.call();
       },
     );
   }
@@ -1610,12 +1954,16 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
             children: [
               if (unpaidList.isNotEmpty)
                 DropdownButtonFormField<Installment>(
+                  isExpanded: true,
                   initialValue: selectedInst,
                   decoration: const InputDecoration(labelText: 'Select Unpaid Installment'),
                   items: unpaidList.map((inst) {
                     return DropdownMenuItem(
                       value: inst,
-                      child: Text('Inst #${inst.sequenceNumber} - EGP ${_formatNumber(inst.remainingAmount)} (Due ${inst.dueDate.toIso8601String().split("T").first})'),
+                      child: Text(
+                        'Inst #${inst.sequenceNumber} - EGP ${_formatNumber(inst.remainingAmount)} (Due ${inst.dueDate.toIso8601String().split("T").first})',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) => setModalState(() => selectedInst = val),
@@ -1728,21 +2076,300 @@ class _CustomersModuleScreenState extends State<CustomersModuleScreen> {
   void _confirmDeleteUser(BuildContext context, UserProfile user) {
     AdminConfirmDialog.show(
       context: context,
-      title: 'Delete Customer Profile',
-      message: 'Are you sure you want to permanently delete profile for "${user.fullName}" (${user.email})? This action cannot be undone.',
-      confirmLabel: 'Delete Profile',
+      title: 'Delete Customer & Credentials',
+      message: 'Are you sure you want to permanently delete profile for "${user.fullName}" (${user.email})? This will delete the customer profile, wipe login credentials, and unassign any linked properties. This action cannot be undone.',
+      confirmLabel: 'Delete Customer & Credentials',
       isDanger: true,
       onConfirm: () async {
-        await _userRepo.deleteUser(user.uid);
+        await AuthService.instance.deleteCustomerAccount(user);
+
+        // Cleanly unassign any units currently assigned to this customer
+        try {
+          final allUnits = await _unitRepo.getUnits();
+          for (final unit in allUnits) {
+            if (unit.currentOwnerId == user.uid || (user.clientCode != null && unit.currentOwnerId == user.clientCode)) {
+              await _unitRepo.updateUnit(unit.copyWith(
+                currentOwnerId: '',
+                status: UnitStatus.available,
+              ));
+            }
+          }
+        } catch (e) {
+          debugPrint('[CustomersModuleScreen] Error unassigning units: $e');
+        }
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Customer profile "${user.fullName}" deleted successfully.'),
+              content: Text('Customer "${user.fullName}" and login credentials deleted successfully.'),
               backgroundColor: AppColors.error,
             ),
           );
         }
       },
+    );
+  }
+
+  void _showCredentialsSuccessDialog(
+    BuildContext context, {
+    required UserProfile profile,
+    required String password,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textPrimary = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+
+    bool obscurePass = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setModalState) => Dialog(
+          backgroundColor: bg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withAlpha(30),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.vpn_key_rounded, color: AppColors.accent, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Customer Account Ready',
+                            style: TextStyle(
+                              fontFamily: AppTextStyles.fontFamily,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Working login credentials registered in live Auth & SSOT',
+                            style: TextStyle(
+                              fontFamily: AppTextStyles.fontFamily,
+                              fontSize: 11.5,
+                              color: textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.black.withAlpha(80) : const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: border),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildCredentialRow(
+                        context,
+                        label: 'Customer Name',
+                        value: profile.fullName,
+                        icon: Icons.person_outline,
+                        textPrimary: textPrimary,
+                        textMuted: textMuted,
+                        onCopy: () => _copyToClipboard(context, profile.fullName, 'Customer Name'),
+                      ),
+                      const Divider(height: 18),
+                      _buildCredentialRow(
+                        context,
+                        label: 'Login Email',
+                        value: profile.email,
+                        icon: Icons.alternate_email,
+                        textPrimary: textPrimary,
+                        textMuted: textMuted,
+                        onCopy: () => _copyToClipboard(context, profile.email, 'Email Address'),
+                      ),
+                      const Divider(height: 18),
+                      Row(
+                        children: [
+                          const Icon(Icons.lock_outline, size: 16, color: AppColors.accent),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Password:',
+                            style: TextStyle(
+                              fontFamily: AppTextStyles.fontFamily,
+                              fontSize: 12,
+                              color: textMuted,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              obscurePass ? '••••••••••••' : password,
+                              style: TextStyle(
+                                fontFamily: AppTextStyles.fontFamily,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.accent,
+                                letterSpacing: obscurePass ? 2.0 : 0.5,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              size: 18,
+                              color: textMuted,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            tooltip: obscurePass ? 'Show Password' : 'Hide Password',
+                            onPressed: () => setModalState(() => obscurePass = !obscurePass),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded, size: 18, color: AppColors.accent),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            tooltip: 'Copy Password',
+                            onPressed: () => _copyToClipboard(context, password, 'Password'),
+                          ),
+                        ],
+                      ),
+                      if (profile.clientCode != null && profile.clientCode!.isNotEmpty) ...[
+                        const Divider(height: 18),
+                        _buildCredentialRow(
+                          context,
+                          label: 'Client Code',
+                          value: profile.clientCode!,
+                          icon: Icons.badge_outlined,
+                          textPrimary: textPrimary,
+                          textMuted: textMuted,
+                          onCopy: () => _copyToClipboard(context, profile.clientCode!, 'Client Code'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.copy_all_rounded, size: 18),
+                  label: const Text(
+                    'Copy All Credentials for Client',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    final text = '''
+🏢 iLiving Account Credentials
+━━━━━━━━━━━━━━━━━━━━
+👤 Customer: ${profile.fullName}
+📧 Login Email: ${profile.email}
+🔑 Password: $password
+🆔 Client Code: ${profile.clientCode ?? profile.uid}
+━━━━━━━━━━━━━━━━━━━━
+📱 You can sign in directly into the app using this email and password.''';
+                    Clipboard.setData(ClipboardData(text: text));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('All credentials copied to clipboard! Ready to send to customer.'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: textPrimary,
+                    side: BorderSide(color: border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildCredentialRow(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color textPrimary,
+    required Color textMuted,
+    required VoidCallback onCopy,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: textMuted),
+        const SizedBox(width: 8),
+        Text(
+          '$label:',
+          style: TextStyle(
+            fontFamily: AppTextStyles.fontFamily,
+            fontSize: 12,
+            color: textMuted,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontFamily: AppTextStyles.fontFamily,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: textPrimary,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.copy_rounded, size: 18, color: AppColors.accent),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          tooltip: 'Copy $label',
+          onPressed: onCopy,
+        ),
+      ],
+    );
+  }
+
+  static void _copyToClipboard(BuildContext context, String value, String label) {
+    Clipboard.setData(ClipboardData(text: value));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard'),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 

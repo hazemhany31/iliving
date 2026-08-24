@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// Premium card container matching the Abu Hossain real estate design system.
 /// Features clean white surface, generous corner radius (16px), and ultra-soft floating shadows.
-class IHomeCard extends StatelessWidget {
+class ILivingCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
@@ -16,7 +16,7 @@ class IHomeCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Clip clipBehavior;
 
-  const IHomeCard({
+  const ILivingCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.cardPadding),

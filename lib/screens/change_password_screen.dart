@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
-import '../widgets/ihome_button.dart';
+import '../theme/app_theme.dart';
+import '../widgets/iliving_button.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -223,7 +223,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 const SizedBox(height: 36),
 
-                IHomeButton(
+                ILivingButton(
                   text: 'Update Password',
                   isLoading: _isLoading,
                   leadingIcon: Icons.lock_reset_rounded,

@@ -18,20 +18,20 @@ class ConfigEnv {
       case Environment.dev:
         return 'http://localhost:8000';
       case Environment.staging:
-        return 'https://staging-api.ihome.com.eg';
+        return 'https://staging-api.iliving.com.eg';
       case Environment.prod:
-        return 'https://api.ihome.com.eg';
+        return 'https://api.iliving.com.eg';
     }
   }
 
   static String get firebaseBucket {
     switch (currentEnvironment) {
       case Environment.dev:
-        return 'ihome-dev.appspot.com';
+        return 'iliving-dev.appspot.com';
       case Environment.staging:
-        return 'ihome-staging.appspot.com';
+        return 'iliving-staging.appspot.com';
       case Environment.prod:
-        return 'ihome-prod.appspot.com';
+        return 'iliving-prod.appspot.com';
     }
   }
 

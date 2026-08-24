@@ -1,5 +1,14 @@
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 class AuthMockData {
   static const String defaultMasterPassword = 'iliving2026';
+
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  static const _dynamicUsersKey = 'persisted_dynamic_mock_users';
+  static bool _hasLoadedStorage = false;
 
   static const List<Map<String, dynamic>> mockUsers = [
     {'name': 'أحمد شاذلي عبد الجواد', 'phone': '01127633326', 'code': '87', 'unit': 'A301B208', 'email': 'ahmed.shazly.abdelgawad@new-build-egypt.com'},
@@ -64,23 +73,96 @@ class AuthMockData {
     var s = raw.trim().toLowerCase();
     if (s.isEmpty) return s;
 
-    // Remove any trailing password accidentally concatenated to domain (e.g. .comiliving2026 -> .com)
-    final domainPassMatch = RegExp(r'(\.(?:com|eg|net|org|io|me|app))([a-z0-9!@#\$%^&*]+)$');
-    if (domainPassMatch.hasMatch(s)) {
-      s = s.replaceFirstMapped(domainPassMatch, (m) => m.group(1)!);
-    }
-
     // Common typo fixes: min@ -> admin@
     if (s.startsWith('min@')) {
       s = 'ad$s';
     }
 
+    // Only strip glued passwords if domain is followed by known password suffix (e.g. .comiliving2026 -> .com)
+    final gluedMatch = RegExp(r'(\.(?:com|eg|net|org|io|me|app))(iliving\d*|ihome\d*|admin\d*|\d{4,})$', caseSensitive: false);
+    if (gluedMatch.hasMatch(s)) {
+      s = s.replaceFirstMapped(gluedMatch, (m) => m.group(1)!);
+    }
+
     return s;
+  }
+
+  static final List<Map<String, dynamic>> _dynamicUsers = [];
+
+  static Future<void> ensureLoaded() async {
+    if (_hasLoadedStorage) return;
+    _hasLoadedStorage = true;
+    try {
+      final jsonStr = await _storage.read(key: _dynamicUsersKey);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(jsonStr);
+        for (final item in list) {
+          if (item is Map<String, dynamic>) {
+            final email = (item['email'] as String? ?? '').toLowerCase();
+            final code = (item['code'] as String? ?? '').toLowerCase();
+            if (!_dynamicUsers.any((u) => (u['email'] as String? ?? '').toLowerCase() == email && (u['code'] as String? ?? '').toLowerCase() == code)) {
+              _dynamicUsers.add(Map<String, dynamic>.from(item));
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> _persistDynamicUsers() async {
+    try {
+      final jsonStr = jsonEncode(_dynamicUsers);
+      await _storage.write(key: _dynamicUsersKey, value: jsonStr);
+    } catch (_) {}
+  }
+
+  static void registerDynamicUser({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+    required String code,
+    List<String>? units,
+  }) {
+    final clean = sanitizeEmail(email);
+    final cleanCode = code.trim().toLowerCase();
+    _dynamicUsers.removeWhere((u) {
+      final uEmail = (u['email'] as String? ?? '').toLowerCase();
+      final uCode = (u['code'] as String? ?? '').toLowerCase();
+      return (clean.isNotEmpty && uEmail == clean) || (cleanCode.isNotEmpty && uCode == cleanCode);
+    });
+    _dynamicUsers.add({
+      'name': name,
+      'phone': phone,
+      'code': code,
+      'email': clean.isNotEmpty ? clean : '$cleanCode@iliving.com.eg',
+      'password': password.trim(),
+      'units': units ?? [],
+    });
+    _persistDynamicUsers();
+  }
+
+  static void removeDynamicUser(String emailOrCode) {
+    final clean = sanitizeEmail(emailOrCode);
+    final cleanCode = emailOrCode.trim().toLowerCase();
+    _dynamicUsers.removeWhere((u) {
+      final uEmail = (u['email'] as String? ?? '').toLowerCase();
+      final uCode = (u['code'] as String? ?? '').toLowerCase();
+      return (clean.isNotEmpty && uEmail == clean) || (cleanCode.isNotEmpty && uCode == cleanCode);
+    });
+    _persistDynamicUsers();
   }
 
   static Map<String, dynamic>? findProfile(String emailOrPhone) {
     final cleanInput = sanitizeEmail(emailOrPhone);
     if (cleanInput.isEmpty) return null;
+
+    // 0. Match dynamically registered users first
+    for (final u in _dynamicUsers) {
+      if (u['email'] != null && (u['email'] as String).toLowerCase() == cleanInput) {
+        return u;
+      }
+    }
 
     // 1. Match by exact email string
     for (final u in mockUsers) {
@@ -92,7 +174,7 @@ class AuthMockData {
     // 2. Match by email prefix or client code in email
     if (cleanInput.contains('@')) {
       final prefix = cleanInput.split('@')[0];
-      for (final u in mockUsers) {
+      for (final u in [..._dynamicUsers, ...mockUsers]) {
         if (u['email'] != null) {
           final mockEmail = (u['email'] as String).toLowerCase();
           final mockPrefix = mockEmail.split('@')[0];
@@ -100,11 +182,11 @@ class AuthMockData {
             return u;
           }
         }
-        final code = (u['code'] as String).toLowerCase();
-        if (prefix == 'client$code' ||
+        final code = (u['code'] as String? ?? '').toLowerCase();
+        if (code.isNotEmpty && (prefix == 'client$code' ||
             prefix == 'client_$code' ||
             prefix == 'client-$code' ||
-            prefix == code) {
+            prefix == code)) {
           return u;
         }
       }
@@ -112,8 +194,8 @@ class AuthMockData {
       // Check if digits in email prefix match a user code
       final pDigits = prefix.replaceAll(RegExp(r'[^0-9]'), '');
       if (pDigits.isNotEmpty) {
-        for (final u in mockUsers) {
-          if ((u['code'] as String).toLowerCase() == pDigits) {
+        for (final u in [..._dynamicUsers, ...mockUsers]) {
+          if ((u['code'] as String? ?? '').toLowerCase() == pDigits) {
             return u;
           }
         }
@@ -123,10 +205,10 @@ class AuthMockData {
     // 3. Match by client code or phone digits
     final digits = cleanInput.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isNotEmpty) {
-      for (final u in mockUsers) {
-        final code = (u['code'] as String).toLowerCase();
-        final cleanPhone = (u['phone'] as String).replaceAll(RegExp(r'[^0-9]'), '');
-        if (digits == code ||
+      for (final u in [..._dynamicUsers, ...mockUsers]) {
+        final code = (u['code'] as String? ?? '').toLowerCase();
+        final cleanPhone = (u['phone'] as String? ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+        if ((code.isNotEmpty && digits == code) ||
             (cleanPhone.isNotEmpty && (digits.endsWith(cleanPhone) || cleanPhone.endsWith(digits)))) {
           return u;
         }
@@ -141,20 +223,7 @@ class AuthMockData {
     final cleanInput = sanitizeEmail(emailOrPhone);
     final cleanPass = password.trim();
     if (cleanInput.isEmpty || cleanPass.isEmpty) return false;
-
-    // Universal master passwords
     final passLower = cleanPass.toLowerCase();
-    if (passLower == 'iliving2026' ||
-        passLower == 'ihome2026' ||
-        passLower == 'iliving2026!' ||
-        passLower == 'ihome2026!' ||
-        passLower == 'admin2026' ||
-        passLower == 'admin2026!' ||
-        passLower == 'sterling2026' ||
-        passLower == 'demo2026' ||
-        passLower == '123456') {
-      return true;
-    }
 
     // 1. Admin accounts
     if (cleanInput.startsWith('admin@') || cleanInput == 'admin' || cleanInput.contains('admin')) {
@@ -171,15 +240,28 @@ class AuthMockData {
       return true;
     }
 
-    // 4. Look up client profile in mock registry
+    // 4. Look up client profile in dynamic & mock registry
     final mockData = findProfile(cleanInput);
     if (mockData != null) {
-      final code = (mockData['code'] as String? ?? '').toLowerCase();
-      // Explicit custom password if present in map
-      if (mockData['password'] != null && mockData['password'] == cleanPass) {
+      // Universal master passwords for registered clients
+      if (passLower == 'iliving2026' ||
+          passLower == 'ihome2026' ||
+          passLower == 'iliving2026!' ||
+          passLower == 'ihome2026!' ||
+          passLower == '123456') {
         return true;
       }
-      // Standard client pattern: IHome<code&gt;2026! / IHome<code&gt;2026 / iLiving<code&gt;2026! / <code>
+
+      // Explicit custom password if present in map
+      if (mockData['password'] != null) {
+        final storedPass = (mockData['password'] as String).trim();
+        if (storedPass == cleanPass || storedPass.toLowerCase() == passLower) {
+          return true;
+        }
+      }
+
+      final code = (mockData['code'] as String? ?? '').toLowerCase();
+      // Standard client pattern: iLiving<code>2026! / iLiving<code>2026 / <code>
       if (code.isNotEmpty) {
         if (passLower == 'ihome${code}2026!' ||
             passLower == 'ihome${code}2026' ||
@@ -189,28 +271,13 @@ class AuthMockData {
           return true;
         }
       }
+
+      // If code was custom or generated
+      final passCodeMatch = RegExp(r'^(?:ihome|iliving)(\d+)2026!?$', caseSensitive: false).firstMatch(cleanPass);
+      if (passCodeMatch != null) {
+        return true;
+      }
       return false;
-    }
-
-    // 5. Fallback for client digits if matching pattern
-    final cleanDigits = cleanInput.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cleanDigits.isNotEmpty) {
-      if (passLower == 'ihome${cleanDigits}2026!' ||
-          passLower == 'ihome${cleanDigits}2026' ||
-          passLower == 'iliving${cleanDigits}2026!' ||
-          passLower == 'iliving${cleanDigits}2026' ||
-          cleanPass == cleanDigits) {
-        return true;
-      }
-    }
-
-    // 6. If password is an IHome<code&gt; password, check if it matches ANY client code
-    final passCodeMatch = RegExp(r'^(?:ihome|iliving)(\d+)2026!?$', caseSensitive: false).firstMatch(cleanPass);
-    if (passCodeMatch != null) {
-      final extractedCode = passCodeMatch.group(1);
-      if (extractedCode != null && mockUsers.any((u) => u['code'] == extractedCode)) {
-        return true;
-      }
     }
 
     return false;

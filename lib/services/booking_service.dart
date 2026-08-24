@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../repositories/firestore/firestore_notification_repository.dart';
 import 'auth_service.dart';
+import 'notification_service.dart';
 
 /// Appointment booking data model.
 class Appointment {
@@ -100,12 +102,26 @@ class BookingService {
           .collection('appointments')
           .doc(apptId)
           .set(appointment.toJson());
-      return true;
     } catch (e) {
       debugPrint("[BookingService] Firestore set appointment bypassed (offline fallback): $e");
       _localAppointments.add(appointment);
-      return true;
     }
+
+    try {
+      final notifService = NotificationService(
+        notificationRepository: FirestoreNotificationRepository(),
+      );
+      await notifService.dispatchNotification(
+        targetUserId: user.id,
+        title: 'Appointment Booked: $title',
+        titleAr: 'تم حجز موعد: $title',
+        body: 'Location: $location at ${_formatDateTime(dateTime)}',
+        bodyAr: 'الموقع: $location في ${_formatDateTime(dateTime)}',
+        type: 'appointment_booked',
+      );
+    } catch (_) {}
+
+    return true;
   }
 
   /// Request visitor pass (Visitor Approval Flow).
@@ -135,11 +151,29 @@ class BookingService {
           .collection('visitor_passes')
           .doc(passId)
           .set(pass.toJson());
-      return true;
     } catch (e) {
       debugPrint("[BookingService] Firestore set visitor pass bypassed (offline fallback): $e");
       _localVisitorPasses.add(pass);
-      return true;
     }
+
+    try {
+      final notifService = NotificationService(
+        notificationRepository: FirestoreNotificationRepository(),
+      );
+      await notifService.dispatchNotification(
+        targetUserId: user.id,
+        title: 'Visitor Pass Issued for $visitorName',
+        titleAr: 'تم إصدار تصريح زائر لـ $visitorName',
+        body: 'Plate: $carPlate • Status: Approved',
+        bodyAr: 'لوحة السيارة: $carPlate • الحالة: معتمد',
+        type: 'visitor_pass',
+      );
+    } catch (_) {}
+
+    return true;
+  }
+
+  static String _formatDateTime(DateTime dt) {
+    return '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
