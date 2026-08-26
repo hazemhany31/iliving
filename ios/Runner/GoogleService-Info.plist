@@ -2,20 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>610302298484-k65jadtq80ptt0202ho4h19ibb1ib8rv.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyBCLDR9-Eyo-juuzZRdR9dxXI0UUe4Xykk</string>
+	<string>AIzaSyAmezFfwIwBfEQyIPOLgw3iXFuyhtLhwNs</string>
 	<key>GCM_SENDER_ID</key>
-	<string>610302298484</string>
+	<string>252930638809</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.hazemhany.iliving</string>
 	<key>PROJECT_ID</key>
-	<string>nbig-app</string>
+	<string>iliving-app</string>
 	<key>STORAGE_BUCKET</key>
-	<string>nbig-app.firebasestorage.app</string>
+	<string>iliving-app.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -27,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:610302298484:ios:7324d41e59ed3565fd0421</string>
+	<string>1:252930638809:ios:dfc44964c820ba44160fc8</string>
 </dict>
 </plist>

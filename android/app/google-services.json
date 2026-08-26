@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252930638809",
+    "project_id": "iliving-app",
+    "storage_bucket": "iliving-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252930638809:android:dd839b61fd0dcdc7160fc8",
+        "android_client_info": {
+          "package_name": "com.hazemhany.iliving"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHa_uy5WYhr9fXzz3pwc7ectOjrSZIPPY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
