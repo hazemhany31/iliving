@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../repositories/firestore/firestore_notification_repository.dart';
@@ -22,7 +23,15 @@ class PushNotificationService {
   PushNotificationService._();
   static final PushNotificationService instance = PushNotificationService._();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? get _messaging {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseMessaging.instance;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -46,11 +55,22 @@ class PushNotificationService {
     if (_initialized) return;
 
     try {
+      if (Firebase.apps.isEmpty) {
+        debugPrint('[PushNotificationService] Firebase not initialized. Skipping push notification setup.');
+        _initialized = true;
+        return;
+      }
+      final messaging = _messaging;
+      if (messaging == null) {
+        _initialized = true;
+        return;
+      }
+
       // Register background handler
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
       // Request permission (iOS shows a dialog; Android 13+ shows a dialog)
-      final settings = await _messaging.requestPermission(
+      final settings = await messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -85,13 +105,13 @@ class PushNotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
       // Check if app was opened from a terminated state via notification
-      final initialMessage = await _messaging.getInitialMessage();
+      final initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
         _handleNotificationTap(initialMessage);
       }
 
       // Set foreground notification presentation options for iOS
-      await _messaging.setForegroundNotificationPresentationOptions(
+      await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
         badge: true,
         sound: true,
@@ -111,7 +131,9 @@ class PushNotificationService {
     _currentUserId = userId;
 
     try {
-      final token = await _messaging.getToken();
+      final messaging = _messaging;
+      if (messaging == null) return;
+      final token = await messaging.getToken();
       if (token != null && token.isNotEmpty) {
         await FirestoreNotificationRepository().saveFcmToken(userId, token);
         debugPrint('[PushNotificationService] Token registered for user $userId');
@@ -119,7 +141,7 @@ class PushNotificationService {
 
       // Listen for token refreshes
       _tokenRefreshSub?.cancel();
-      _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) async {
+      _tokenRefreshSub = messaging.onTokenRefresh.listen((newToken) async {
         if (_currentUserId != null && newToken.isNotEmpty) {
           await FirestoreNotificationRepository()
               .saveFcmToken(_currentUserId!, newToken);
@@ -134,7 +156,9 @@ class PushNotificationService {
   /// Unregister the device FCM token. Call on user logout.
   Future<void> unregisterToken(String userId) async {
     try {
-      final token = await _messaging.getToken();
+      final messaging = _messaging;
+      if (messaging == null) return;
+      final token = await messaging.getToken();
       if (token != null) {
         await FirestoreNotificationRepository().removeFcmToken(userId, token);
       }

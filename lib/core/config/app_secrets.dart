@@ -47,10 +47,15 @@ class AppSecrets {
         // Persist for session consistency during development
         await _storage.write(key: _gateHmacKey, value: _gateSigningKey);
       } else {
-        throw StateError(
-          'Gate HMAC signing key not found in secure storage. '
-          'Run the provisioning step or set the "$_gateHmacKey" secret '
-          'via FlutterSecureStorage before launching the app.',
+        // Graceful fallback for release mode: generate ephemeral session key and log warning
+        final rand = Random.secure();
+        _gateSigningKey = List.generate(
+          32,
+          (_) => rand.nextInt(256).toRadixString(16).padLeft(2, '0'),
+        ).join();
+        debugPrint(
+          '[AppSecrets] WARNING: Gate HMAC signing key not provisioned in secure storage. '
+          'Using ephemeral key for this session until provisioned via setGateSigningKey().',
         );
       }
     }

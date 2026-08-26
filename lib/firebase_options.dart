@@ -5,10 +5,9 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with iLiving Firebase services across platforms.
 ///
-/// **IMPORTANT:** The API keys below are PLACEHOLDER values for development.
-/// Replace them with real credentials from the Firebase Console before any
-/// release or staging build.  The [assertRealCredentials] guard will throw
-/// at startup if placeholders are detected in a release build.
+/// These are REAL credentials pulled from the Firebase Console (project: nbig-app)
+/// via `firebase apps:sdkconfig`.  The [assertRealCredentials] guard validates
+/// that no placeholder keys slipped back in for release builds.
 class DefaultFirebaseOptions {
   /// Call during app bootstrap to ensure we're not running with placeholder
   /// keys in a release binary.
@@ -46,44 +45,44 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // ┌──────────────────────────────────────────────────────────────────────┐
-  // │  TODO: Replace ALL keys below with real Firebase project values.    │
-  // │  Get them from: Firebase Console → Project Settings → Your Apps.    │
-  // └──────────────────────────────────────────────────────────────────────┘
+  // ──────────────────────────────────────────────────────────────────────
+  //  Real credentials — Firebase project: nbig-app (610302298484)
+  //  Pulled via:  firebase apps:sdkconfig <PLATFORM> <APP_ID> --project nbig-app
+  // ──────────────────────────────────────────────────────────────────────
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForILivingWebPortal1234567',
-    appId: '1:123456789012:web:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'iliving-app',
-    authDomain: 'iliving-app.firebaseapp.com',
-    storageBucket: 'iliving-app.appspot.com',
+    apiKey: 'AIzaSyAOYjOjxFznpV1st9cW2q7ADRlmSzQCmXk',
+    appId: '1:610302298484:web:f77e47d11773ddadfd0421',
+    messagingSenderId: '610302298484',
+    projectId: 'nbig-app',
+    authDomain: 'nbig-app.firebaseapp.com',
+    storageBucket: 'nbig-app.firebasestorage.app',
+    measurementId: 'G-WFKWZ9ENFC',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForILivingAndroidPortal12',
-    appId: '1:123456789012:android:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'iliving-app',
-    storageBucket: 'iliving-app.appspot.com',
+    apiKey: 'AIzaSyD4LrQKOWySgY31rwg6XEw4G_sijbbdHr4',
+    appId: '1:610302298484:android:ab07fc61a51c9c24fd0421',
+    messagingSenderId: '610302298484',
+    projectId: 'nbig-app',
+    storageBucket: 'nbig-app.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForILivingIOSPortal12345',
-    appId: '1:123456789012:ios:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'iliving-app',
-    storageBucket: 'iliving-app.appspot.com',
-    iosBundleId: 'com.iliving.app',
+    apiKey: 'AIzaSyBCLDR9-Eyo-juuzZRdR9dxXI0UUe4Xykk',
+    appId: '1:610302298484:ios:7324d41e59ed3565fd0421',
+    messagingSenderId: '610302298484',
+    projectId: 'nbig-app',
+    storageBucket: 'nbig-app.firebasestorage.app',
+    iosBundleId: 'com.hazemhany.iliving',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForILivingMacOsPortal123',
-    appId: '1:123456789012:ios:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'iliving-app',
-    storageBucket: 'iliving-app.appspot.com',
-    iosBundleId: 'com.iliving.app',
+    apiKey: 'AIzaSyBCLDR9-Eyo-juuzZRdR9dxXI0UUe4Xykk',
+    appId: '1:610302298484:ios:7324d41e59ed3565fd0421',
+    messagingSenderId: '610302298484',
+    projectId: 'nbig-app',
+    storageBucket: 'nbig-app.firebasestorage.app',
+    iosBundleId: 'com.hazemhany.iliving',
   );
 }
-
