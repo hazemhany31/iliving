@@ -11,9 +11,26 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function hasRole(role) {
-      return isAuthenticated() && 
-        (request.auth.token.role == role || request.auth.token.userRole == role);
+      return isAuthenticated() && (
+        request.auth.token.role == role || 
+        request.auth.token.userRole == role ||
+        request.auth.token.role == role.lower() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().role == role ||
+          getUserData().role == role.lower() ||
+          getUserData().userRole == role ||
+          (role == 'SUPER_ADMIN' && (getUserData().role == 'admin' || getUserData().role == 'SUPER_ADMIN' || getUserData().role == 'super_admin')) ||
+          (role == 'BROKER' && (getUserData().role == 'broker' || getUserData().role == 'sales_agent')) ||
+          (role == 'FINANCE' && (getUserData().role == 'finance' || getUserData().role == 'finance_officer')) ||
+          (role == 'FACILITY_MANAGER' && (getUserData().role == 'facility_manager' || getUserData().role == 'property_manager')) ||
+          (role == 'SECURITY' && getUserData().role == 'security')
+        ))
+      );
     }
 
     function isSuperAdmin() {
