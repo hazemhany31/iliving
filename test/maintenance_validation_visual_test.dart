@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iliving/models/maintenance_request.dart';
 import 'package:iliving/models/unit_model.dart';
 import 'package:iliving/models/user_profile.dart';
-import 'package:iliving/models/auth_model.dart';
 import 'package:iliving/repositories/interfaces/maintenance_repository.dart';
 import 'package:iliving/models/maintenance_comment.dart';
 import 'package:iliving/widgets/maintenance_request_modal.dart';

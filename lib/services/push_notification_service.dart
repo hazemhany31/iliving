@@ -67,36 +67,51 @@ class PushNotificationService {
       }
 
       // Register background handler
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      try {
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      } catch (e) {
+        debugPrint('[PushNotificationService] onBackgroundMessage note: $e');
+      }
 
       // Request permission (iOS shows a dialog; Android 13+ shows a dialog)
-      final settings = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-        announcement: true,
-        criticalAlert: false,
-      );
+      NotificationSettings? settings;
+      try {
+        settings = await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+          provisional: false,
+          announcement: true,
+          criticalAlert: false,
+        ).timeout(const Duration(seconds: 2));
+      } catch (e) {
+        debugPrint('[PushNotificationService] requestPermission note: $e');
+      }
 
       debugPrint(
-        '[PushNotificationService] Permission status: ${settings.authorizationStatus}',
+        '[PushNotificationService] Permission status: ${settings?.authorizationStatus}',
       );
 
-      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      if (settings?.authorizationStatus == AuthorizationStatus.denied) {
         debugPrint('[PushNotificationService] Notifications denied by user.');
         _initialized = true;
         return;
       }
 
       // Initialize local notifications plugin
-      await _initializeLocalNotifications();
+      try {
+        await _initializeLocalNotifications().timeout(const Duration(seconds: 2));
+      } catch (e) {
+        debugPrint('[PushNotificationService] _initializeLocalNotifications note: $e');
+      }
 
       // Create the Android notification channel
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(_channel);
+      try {
+        await _localNotifications
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(_channel);
+      } catch (_) {}
 
       // Listen for foreground FCM messages and display as local notifications
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -105,17 +120,21 @@ class PushNotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
       // Check if app was opened from a terminated state via notification
-      final initialMessage = await messaging.getInitialMessage();
-      if (initialMessage != null) {
-        _handleNotificationTap(initialMessage);
-      }
+      try {
+        final initialMessage = await messaging.getInitialMessage().timeout(const Duration(seconds: 2));
+        if (initialMessage != null) {
+          _handleNotificationTap(initialMessage);
+        }
+      } catch (_) {}
 
       // Set foreground notification presentation options for iOS
-      await messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      try {
+        await messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        ).timeout(const Duration(seconds: 2));
+      } catch (_) {}
 
       _initialized = true;
       debugPrint('[PushNotificationService] Initialized successfully.');

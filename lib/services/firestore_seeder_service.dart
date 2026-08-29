@@ -247,7 +247,11 @@ class FirestoreSeederService {
       items: rawUsers,
       entityName: 'UserProfile',
       mapper: (item) {
-        final user = UserProfile.fromJson(item);
+        final doc = Map<String, dynamic>.from(item);
+        if (!doc.containsKey('mustChangePassword')) {
+          doc['mustChangePassword'] = true;
+        }
+        final user = UserProfile.fromJson(doc);
         return MapEntry(user.uid, user.toJson());
       },
       onProgress: onProgress,

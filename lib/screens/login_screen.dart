@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/sync_state.dart';
+import '../services/auth_service.dart';
 import '../services/locale_service.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/iliving_button.dart';
+import 'change_password_screen.dart';
 
 class OnboardingSlide {
   final String image;
@@ -49,22 +51,28 @@ class _LoginScreenState extends State<LoginScreen> {
       image: 'images/lamar/lamar-1.jpg',
       titleEn: 'Buy, Sell, Rent Every\nProperty Easily',
       titleAr: 'بيع، شراء، وتأجير\nالعقارات بكل سهولة',
-      subtitleEn: 'Discover, list, and manage homes, offices, and\nproperties effortlessly today.',
-      subtitleAr: 'اكتشف وأدر المنازل، المكاتب، والعقارات\nالمتميزة بسلاسة ومرونة.',
+      subtitleEn:
+          'Discover, list, and manage homes, offices, and\nproperties effortlessly today.',
+      subtitleAr:
+          'اكتشف وأدر المنازل، المكاتب، والعقارات\nالمتميزة بسلاسة ومرونة.',
     ),
     OnboardingSlide(
       image: 'images/zayed_lagoons/zayed-lahogons1.jpg',
       titleEn: 'Explore Modern Living\nSpaces Near You',
       titleAr: 'استكشف مساحات\nالمعيشة العصرية بالقرب منك',
-      subtitleEn: 'Experience smart amenities, lagoon views, and\nworld-class luxury communities.',
-      subtitleAr: 'عش تجربة المرافق الذكية والإطلالات الخلابة\nفي مجتمعات سكنية متكاملة.',
+      subtitleEn:
+          'Experience smart amenities, lagoon views, and\nworld-class luxury communities.',
+      subtitleAr:
+          'عش تجربة المرافق الذكية والإطلالات الخلابة\nفي مجتمعات سكنية متكاملة.',
     ),
     OnboardingSlide(
       image: 'images/skyhills/ski-hills.jpg',
       titleEn: 'Premium Real Estate\nat Your Fingertips',
       titleAr: 'عقارات استثنائية\nبين يديك مباشرة',
-      subtitleEn: 'Track installments, manage smart gate passes,\nand book prime units in seconds.',
-      subtitleAr: 'تابع الأقساط، تصاريح البوابات الذكية،\nواحجز وحدتك في ثوانٍ معدودة.',
+      subtitleEn:
+          'Track installments, manage smart gate passes,\nand book prime units in seconds.',
+      subtitleAr:
+          'تابع الأقساط، تصاريح البوابات الذكية،\nواحجز وحدتك في ثوانٍ معدودة.',
     ),
   ];
 
@@ -107,16 +115,39 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
-    final success = await SyncScope.of(context)
-        .login(_emailController.text.trim(), _passwordController.text);
+    try {
+      final success = await SyncScope.of(context)
+          .login(_emailController.text.trim(), _passwordController.text);
 
-    if (!mounted) return;
-    if (success) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-    } else {
+      if (!mounted) return;
+      if (success) {
+        final user = AuthService.instance.currentProfile;
+        if (user != null && user.mustChangePassword) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => const ChangePasswordScreen(forced: true),
+            ),
+            (route) => false,
+          );
+        } else {
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/home', (route) => false);
+        }
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = l10n.invalidCredentials;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      String message = e.toString().replaceFirst('Exception: ', '').trim();
+      if (message.isEmpty || message == 'Invalid credentials') {
+        message = l10n.invalidCredentials;
+      }
       setState(() {
         _isLoading = false;
-        _errorMessage = l10n.invalidCredentials;
+        _errorMessage = message;
       });
     }
   }
@@ -250,7 +281,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: isSelected ? 24 : 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.white.withAlpha(100),
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withAlpha(100),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -389,11 +422,13 @@ class _LoginScreenState extends State<LoginScreen> {
               onTap: () => LocaleService.instance.toggleLocale(),
               borderRadius: AppBorderRadius.pill,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.black.withAlpha(120),
                   borderRadius: AppBorderRadius.pill,
-                  border: Border.all(color: Colors.white.withAlpha(30), width: 1),
+                  border:
+                      Border.all(color: Colors.white.withAlpha(30), width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -428,7 +463,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final cardBg = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -454,7 +490,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  color:
+                      (isDark ? AppColors.darkBorder : AppColors.lightBorder),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -534,11 +571,14 @@ class _LoginScreenState extends State<LoginScreen> {
               isDark: isDark,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: textMuted,
                   size: 20,
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
               validator: (val) {
                 if (val == null || val.isEmpty) return l10n.password;
@@ -546,18 +586,37 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ),
 
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                key: const Key('forgot_password_btn'),
+                onPressed: _isLoading ? null : _sendPasswordReset,
+                child: Text(
+                  'Forgot Password?',
+                  style: TextStyle(
+                    fontFamily: AppTextStyles.fontFamily,
+                    color: isDark ? AppColors.accent : AppColors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
             // Error banner
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: AppColors.error.withAlpha(isDark ? 30 : 15),
                   borderRadius: AppBorderRadius.pill,
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 16),
+                    const Icon(Icons.error_outline_rounded,
+                        color: AppColors.error, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -575,7 +634,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 6),
 
             // Primary Pill Submit Button
             ILivingButton(
@@ -589,6 +648,34 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() =>
+          _errorMessage = 'Enter your email address to reset your password.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await AuthService.instance.sendPasswordResetEmail(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Password reset email sent. Check your inbox.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(
+          () => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildPillTextField({
@@ -625,7 +712,8 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: AppBorderRadius.pill,
           borderSide: BorderSide.none,
@@ -669,7 +757,8 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withAlpha(25),
-                border: Border.all(color: Colors.white.withAlpha(50), width: 1.5),
+                border:
+                    Border.all(color: Colors.white.withAlpha(50), width: 1.5),
               ),
               child: const Center(
                 child: Icon(

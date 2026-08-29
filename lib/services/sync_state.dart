@@ -28,12 +28,13 @@ class SyncStateManager extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-    final success = await AuthService.instance.login(email, password);
-    if (success) {
-      await PriceSyncRepository.instance.startSync();
-      notifyListeners();
-    }
-    return success;
+    await AuthService.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    await PriceSyncRepository.instance.startSync();
+    notifyListeners();
+    return true;
   }
 
   Future<void> logout() async {

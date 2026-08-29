@@ -48,6 +48,7 @@ import '../widgets/admin/installment_payment_confirm_dialog.dart';
 import '../services/admin_payment_action_service.dart';
 import 'compound_map_screen.dart';
 import '../services/auth_service.dart';
+import 'gate_pass_verifier_screen.dart';
 
 class PropertyOpsDashboard extends StatefulWidget {
   const PropertyOpsDashboard({super.key});
@@ -60,14 +61,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     with TickerProviderStateMixin {
   // Repositories
   final FirestoreProjectRepository _projectRepo = FirestoreProjectRepository();
-  final FirestoreCompoundRepository _compoundRepo = FirestoreCompoundRepository();
-  final FirestoreBuildingRepository _buildingRepo = FirestoreBuildingRepository();
+  final FirestoreCompoundRepository _compoundRepo =
+      FirestoreCompoundRepository();
+  final FirestoreBuildingRepository _buildingRepo =
+      FirestoreBuildingRepository();
   final FirestoreUnitRepository _unitRepo = FirestoreUnitRepository();
   final FirestoreUserRepository _userRepo = FirestoreUserRepository();
-  final FirestoreContractRepository _contractRepo = FirestoreContractRepository();
+  final FirestoreContractRepository _contractRepo =
+      FirestoreContractRepository();
   final FirestoreLedgerRepository _ledgerRepo = FirestoreLedgerRepository();
   final FirestorePaymentRepository _paymentRepo = FirestorePaymentRepository();
-  final FirestoreMaintenanceRepository _maintRepo = FirestoreMaintenanceRepository();
+  final FirestoreMaintenanceRepository _maintRepo =
+      FirestoreMaintenanceRepository();
   final FirestoreDocumentRepository _docRepo = FirestoreDocumentRepository();
 
   // Selection Hierarchy
@@ -169,15 +174,20 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     status: UnitStatus.delivered,
   );
 
-  static List<Installment> _generateDefaultInstallments(Unit unit, Contract contract) {
+  static List<Installment> _generateDefaultInstallments(
+      Unit unit, Contract contract) {
     final list = <Installment>[];
     final startDate = DateTime(2023, 6, 15);
-    final count = contract.totalInstallmentsCount > 0 ? contract.totalInstallmentsCount : 24;
-    final totalRemaining = contract.agreedTotalPrice - contract.downPaymentAmount;
+    final count = contract.totalInstallmentsCount > 0
+        ? contract.totalInstallmentsCount
+        : 24;
+    final totalRemaining =
+        contract.agreedTotalPrice - contract.downPaymentAmount;
     final amount = totalRemaining / count;
 
     for (int i = 1; i <= count; i++) {
-      final dueDate = DateTime(startDate.year, startDate.month + (i - 1) * 3, 15);
+      final dueDate =
+          DateTime(startDate.year, startDate.month + (i - 1) * 3, 15);
       final isPaid = i <= 8;
       final isOverdue = i == 9;
       list.add(Installment(
@@ -194,7 +204,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         paidAt: isPaid ? dueDate.subtract(const Duration(days: 2)) : null,
         status: isPaid
             ? InstallmentStatus.paid
-            : (isOverdue ? InstallmentStatus.overdue : InstallmentStatus.unpaid),
+            : (isOverdue
+                ? InstallmentStatus.overdue
+                : InstallmentStatus.unpaid),
         paymentMethodLastUsed: isPaid ? 'Bank Transfer (CIB)' : null,
         receiptNumber: isPaid ? 'TXN-CIB-2024-$i' : null,
       ));
@@ -202,7 +214,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     return list;
   }
 
-  static List<MaintenanceRequest> _generateDefaultTickets(Unit unit, [UserProfile? user]) {
+  static List<MaintenanceRequest> _generateDefaultTickets(Unit unit,
+      [UserProfile? user]) {
     final residentId = user?.uid ?? unit.currentOwnerId;
     if (residentId == null || residentId.isEmpty) return const [];
     return [
@@ -215,7 +228,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         category: MaintenanceCategory.plumbing,
         urgency: MaintenanceUrgency.medium,
         title: 'صيانة شبكة المياه والفلتر الذكي',
-        description: 'الفحص الدوري الربع سنوي لضغط المياه وصمامات الإغلاق الأوتوماتيكية.',
+        description:
+            'الفحص الدوري الربع سنوي لضغط المياه وصمامات الإغلاق الأوتوماتيكية.',
         status: MaintenanceStatus.completed,
         createdAt: DateTime.now().subtract(const Duration(days: 12)),
         updatedAt: DateTime.now().subtract(const Duration(days: 10)),
@@ -229,7 +243,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         category: MaintenanceCategory.electrical,
         urgency: MaintenanceUrgency.low,
         title: 'فحص لوحة التحكم والسمارت هوم',
-        description: 'تحديث برمجة مفاتيح الإضاءة الذكية ومستشعرات الحركة بالصالة الرئيسية.',
+        description:
+            'تحديث برمجة مفاتيح الإضاءة الذكية ومستشعرات الحركة بالصالة الرئيسية.',
         status: MaintenanceStatus.inProgress,
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
         updatedAt: DateTime.now().subtract(const Duration(days: 1)),
@@ -242,7 +257,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       DocumentItem(
         id: 'doc-cnt-1',
         title: 'عقد التمليك النهائي الموثق - Unit ${unit.unitNumber}',
-        description: 'Official Property Deed & Handover Contract registered under Sky Hills Development.',
+        description:
+            'Official Property Deed & Handover Contract registered under Sky Hills Development.',
         category: DocumentCategory.contract,
         fileUrl: 'https://iliving.app/docs/contract_${unit.unitNumber}.pdf',
         fileExtension: 'pdf',
@@ -253,7 +269,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       DocumentItem(
         id: 'doc-blp-2',
         title: 'المخطط الهندسي والمعماري للوحدة (Architectural Blueprint)',
-        description: 'High-resolution floor plan blueprint, MEP electrical layout, and interior specs.',
+        description:
+            'High-resolution floor plan blueprint, MEP electrical layout, and interior specs.',
         category: DocumentCategory.blueprint,
         fileUrl: 'https://iliving.app/docs/blueprint_${unit.unitNumber}.pdf',
         fileExtension: 'pdf',
@@ -264,7 +281,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       DocumentItem(
         id: 'doc-clr-3',
         title: 'مخالصة الدفعة المقدمة وسندات السداد (Payment Receipts)',
-        description: 'Certified financial clearance receipt for down payment and executed installments.',
+        description:
+            'Certified financial clearance receipt for down payment and executed installments.',
         category: DocumentCategory.receipt,
         fileUrl: 'https://iliving.app/docs/receipts_${unit.unitNumber}.pdf',
         fileExtension: 'pdf',
@@ -277,9 +295,27 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
   static bool _matchesUnitString(String? rawTarget, Unit unit) {
     if (rawTarget == null || rawTarget.trim().isEmpty) return false;
-    final cleanT = rawTarget.toLowerCase().replaceAll('unit', '').replaceAll('-', '').replaceAll('_', '').replaceAll(' ', '').trim();
-    final cleanUId = unit.id.toLowerCase().replaceAll('unit', '').replaceAll('-', '').replaceAll('_', '').replaceAll(' ', '').trim();
-    final cleanUNum = unit.unitNumber.toLowerCase().replaceAll('unit', '').replaceAll('-', '').replaceAll('_', '').replaceAll(' ', '').trim();
+    final cleanT = rawTarget
+        .toLowerCase()
+        .replaceAll('unit', '')
+        .replaceAll('-', '')
+        .replaceAll('_', '')
+        .replaceAll(' ', '')
+        .trim();
+    final cleanUId = unit.id
+        .toLowerCase()
+        .replaceAll('unit', '')
+        .replaceAll('-', '')
+        .replaceAll('_', '')
+        .replaceAll(' ', '')
+        .trim();
+    final cleanUNum = unit.unitNumber
+        .toLowerCase()
+        .replaceAll('unit', '')
+        .replaceAll('-', '')
+        .replaceAll('_', '')
+        .replaceAll(' ', '')
+        .trim();
     if (cleanT.isEmpty) return false;
     return cleanT == cleanUId ||
         cleanT == cleanUNum ||
@@ -371,7 +407,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     // Default Owner fallback: Strictly the primary owner unit (Unit A301B208 in Sky Hills)
     if (_allUnits.isNotEmpty) {
       final defaultOwnerUnit = _allUnits.firstWhere(
-        (u) => u.unitNumber == 'A301B208' || u.id == 'A301B208' || u.unitNumber == 'A01-207',
+        (u) =>
+            u.unitNumber == 'A301B208' ||
+            u.id == 'A301B208' ||
+            u.unitNumber == 'A01-207',
         orElse: () => _allUnits.first,
       );
       return [defaultOwnerUnit];
@@ -411,7 +450,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
     for (final proj in _allProjects) {
       final rawName = proj.name.isNotEmpty ? proj.name : proj.code;
-      final isLamar = rawName.toLowerCase().contains('lamar') || proj.code.toLowerCase().contains('lamar');
+      final isLamar = rawName.toLowerCase().contains('lamar') ||
+          proj.code.toLowerCase().contains('lamar');
       final projName = isLamar ? 'Lamar (SOON • قريباً)' : rawName;
       final normProj = normalize(rawName);
 
@@ -444,7 +484,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final uniqueList = <CompoundModel>[];
     final seenTitles = <String>{};
     for (final c in list) {
-      final isLamar = c.title.toLowerCase().contains('lamar') || c.id.toLowerCase().contains('lamar');
+      final isLamar = c.title.toLowerCase().contains('lamar') ||
+          c.id.toLowerCase().contains('lamar');
       final effectiveTitle = isLamar ? 'Lamar (SOON • قريباً)' : c.title;
       final updatedComp = isLamar
           ? CompoundModel(
@@ -486,7 +527,6 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
     return uniqueList;
   }
-
 
   void _loadMasterCollections() {
     if (_cachedUnits == null || _cachedUnits!.isEmpty) {
@@ -534,7 +574,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
             final available = _userAccessibleUnits;
             if (available.isNotEmpty) {
               final alreadySelected = _selectedUnit != null &&
-                  available.any((u) => u.id == _selectedUnit!.id || u.unitNumber == _selectedUnit!.unitNumber);
+                  available.any((u) =>
+                      u.id == _selectedUnit!.id ||
+                      u.unitNumber == _selectedUnit!.unitNumber);
               if (!alreadySelected) {
                 _onUnitSelected(available.first);
               }
@@ -562,7 +604,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         },
       );
     } catch (e) {
-      debugPrint("[PropertyOpsDashboard] Exception in _loadMasterCollections: $e");
+      debugPrint(
+          "[PropertyOpsDashboard] Exception in _loadMasterCollections: $e");
       if (mounted) {
         setState(() {
           _masterDataError = "Initialization error: $e";
@@ -592,9 +635,16 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       // 1. Resolve Compound (All active portfolio units belong to Sky Hills; Lamar is SOON)
       if (_allCompounds.isNotEmpty) {
         _selectedCompound = _allCompounds.firstWhere(
-          (c) => (c.id == unit.compoundId || c.title.toLowerCase().contains(unit.compoundId.toLowerCase())) && !c.title.toLowerCase().contains('lamar'),
+          (c) =>
+              (c.id == unit.compoundId ||
+                  c.title
+                      .toLowerCase()
+                      .contains(unit.compoundId.toLowerCase())) &&
+              !c.title.toLowerCase().contains('lamar'),
           orElse: () => _allCompounds.firstWhere(
-            (c) => c.title.toLowerCase().contains('sky hills') || c.id.toLowerCase().contains('sky'),
+            (c) =>
+                c.title.toLowerCase().contains('sky hills') ||
+                c.id.toLowerCase().contains('sky'),
             orElse: () => _allCompounds.first,
           ),
         );
@@ -605,7 +655,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       // 2. Resolve Project (All active inventory belongs to Sky Hills; Lamar is SOON)
       if (_allProjects.isNotEmpty) {
         _selectedProject = _allProjects.firstWhere(
-          (p) => p.name.toLowerCase().contains('sky') && !p.name.toLowerCase().contains('lamar'),
+          (p) =>
+              p.name.toLowerCase().contains('sky') &&
+              !p.name.toLowerCase().contains('lamar'),
           orElse: () => _allProjects.firstWhere(
             (p) => !p.name.toLowerCase().contains('lamar'),
             orElse: () => _allProjects.first,
@@ -617,7 +669,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       final results = await Future.wait([
         compId != null
             ? _buildingRepo.getBuildingsForCompound(compId).catchError((e) {
-                debugPrint("[PropertyOpsDashboard] Error loading buildings: $e");
+                debugPrint(
+                    "[PropertyOpsDashboard] Error loading buildings: $e");
                 return <Building>[];
               })
             : Future.value(<Building>[]),
@@ -658,14 +711,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
             c.id == 'CNT-${unit.unitNumber}' ||
             (unit.currentOwnerId != null &&
                 unit.currentOwnerId!.isNotEmpty &&
-                (c.buyerUserId == unit.currentOwnerId || c.clientCode == unit.currentOwnerId))) {
+                (c.buyerUserId == unit.currentOwnerId ||
+                    c.clientCode == unit.currentOwnerId))) {
           matchedContract = c;
           break;
         }
       }
 
       if (_allBuildings.isNotEmpty) {
-        final bMatch = _allBuildings.where((b) => b.id == unit.buildingId || (unit.buildingId != null && b.name.toLowerCase() == unit.buildingId!.toLowerCase()));
+        final bMatch = _allBuildings.where((b) =>
+            b.id == unit.buildingId ||
+            (unit.buildingId != null &&
+                b.name.toLowerCase() == unit.buildingId!.toLowerCase()));
         if (bMatch.isNotEmpty) {
           _selectedBuilding = bMatch.first;
         }
@@ -685,7 +742,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         (ownerId != null && ownerId.isNotEmpty)
             ? _userRepo.getUserById(ownerId).catchError((_) => null)
             : Future.value(null),
-        _paymentRepo.getPayments(unitId: unit.id, payerUserId: ownerId).catchError((e) {
+        _paymentRepo
+            .getPayments(unitId: unit.id, payerUserId: ownerId)
+            .catchError((e) {
           debugPrint("[PropertyOpsDashboard] Error fetching payments: $e");
           return <Payment>[];
         }),
@@ -694,13 +753,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       matchedUser = secondaryResults[0] as UserProfile?;
       final payments = secondaryResults[1] as List<Payment>;
 
-      if (matchedUser == null && _allUsers.isNotEmpty && ownerId != null && ownerId.isNotEmpty) {
+      if (matchedUser == null &&
+          _allUsers.isNotEmpty &&
+          ownerId != null &&
+          ownerId.isNotEmpty) {
         final matches = _allUsers.where(
           (u) =>
               u.uid == ownerId ||
               (u.clientCode != null && u.clientCode == ownerId) ||
-              (matchedContract?.clientCode != null && u.clientCode == matchedContract?.clientCode) ||
-              (u.email.isNotEmpty && u.email.toLowerCase() == ownerId.toLowerCase()) ||
+              (matchedContract?.clientCode != null &&
+                  u.clientCode == matchedContract?.clientCode) ||
+              (u.email.isNotEmpty &&
+                  u.email.toLowerCase() == ownerId.toLowerCase()) ||
               (u.phoneNumber.isNotEmpty && u.phoneNumber == ownerId),
         );
         if (matches.isNotEmpty) {
@@ -712,7 +776,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         for (final c in contracts) {
           if (c.buyerUserId == matchedUser.uid ||
               (matchedUser.clientCode != null &&
-                  (c.buyerUserId == matchedUser.clientCode || c.clientCode == matchedUser.clientCode))) {
+                  (c.buyerUserId == matchedUser.clientCode ||
+                      c.clientCode == matchedUser.clientCode))) {
             matchedContract = c;
             break;
           }
@@ -731,12 +796,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       // Stream Installments
       final contractForInst = matchedContract;
       if (contractForInst != null) {
-        _installmentsSub = _ledgerRepo.streamInstallmentsForContract(contractForInst.id).listen(
+        _installmentsSub = _ledgerRepo
+            .streamInstallmentsForContract(contractForInst.id)
+            .listen(
           (insts) {
-            if (mounted) setState(() => _unitInstallments = insts.isNotEmpty ? insts : _generateDefaultInstallments(unit, contractForInst));
+            if (mounted)
+              setState(() => _unitInstallments = insts.isNotEmpty
+                  ? insts
+                  : _generateDefaultInstallments(unit, contractForInst));
           },
           onError: (e) {
-            debugPrint("[PropertyOpsDashboard] Error streaming contract installments: $e");
+            debugPrint(
+                "[PropertyOpsDashboard] Error streaming contract installments: $e");
           },
         );
       } else {
@@ -753,14 +824,19 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                 t.compoundId.toLowerCase() == unit.compoundId.toLowerCase() &&
                 matchedUser != null &&
                 t.residentUserId.isNotEmpty &&
-                (t.residentUserId.toLowerCase() == matchedUser.uid.toLowerCase() ||
-                    (matchedUser.clientCode != null && t.residentUserId.toLowerCase() == matchedUser.clientCode!.toLowerCase())));
+                (t.residentUserId.toLowerCase() ==
+                        matchedUser.uid.toLowerCase() ||
+                    (matchedUser.clientCode != null &&
+                        t.residentUserId.toLowerCase() ==
+                            matchedUser.clientCode!.toLowerCase())));
             return matchesUnit || matchesCompoundUser;
           }).toList();
           if (mounted) {
             setState(() => _unitMaintenanceTickets = unitTickets.isNotEmpty
                 ? unitTickets
-                : (matchedUser != null ? _generateDefaultTickets(unit, matchedUser) : const []));
+                : (matchedUser != null
+                    ? _generateDefaultTickets(unit, matchedUser)
+                    : const []));
           }
         },
         onError: (e) {
@@ -778,7 +854,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
           if (mounted) {
             setState(() => _unitDocuments = unitDocs.isNotEmpty
                 ? unitDocs
-                : (matchedUser != null ? _generateDefaultDocuments(unit) : const []));
+                : (matchedUser != null
+                    ? _generateDefaultDocuments(unit)
+                    : const []));
           }
         },
         onError: (e) {
@@ -786,15 +864,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         },
       );
     } catch (e, stack) {
-      debugPrint("[PropertyOpsDashboard] Exception loading unit data: $e\n$stack");
+      debugPrint(
+          "[PropertyOpsDashboard] Exception loading unit data: $e\n$stack");
       if (mounted) {
-        setState(() => _unitDataError = "Error loading details for Unit ${unit.unitNumber}: $e");
+        setState(() => _unitDataError =
+            "Error loading details for Unit ${unit.unitNumber}: $e");
       }
     } finally {
       if (mounted) {
         setState(() {
           if (_unitInstallments.isEmpty && _assignedContract != null) {
-            _unitInstallments = _generateDefaultInstallments(unit, _assignedContract!);
+            _unitInstallments =
+                _generateDefaultInstallments(unit, _assignedContract!);
           }
           if (_unitMaintenanceTickets.isEmpty && _assignedCustomer != null) {
             _unitMaintenanceTickets = _generateDefaultTickets(unit);
@@ -815,13 +896,15 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
         final l10n = AppLocalizations.of(context);
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return AlertDialog(
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+          backgroundColor:
+              isDark ? AppColors.darkSurface : AppColors.lightSurface,
           shape: RoundedRectangleBorder(
             borderRadius: AppBorderRadius.large,
           ),
           title: Row(
             children: [
-              const Icon(Icons.verified_rounded, color: AppColors.success, size: 24),
+              const Icon(Icons.verified_rounded,
+                  color: AppColors.success, size: 24),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -840,7 +923,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
             subtitle,
             style: TextStyle(
               fontFamily: AppTextStyles.fontFamily,
-              color: isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary,
+              color: isDark
+                  ? AppColors.textLightSecondary
+                  : AppColors.textDarkSecondary,
               fontSize: 12.5,
               height: 1.4,
             ),
@@ -850,8 +935,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
-                shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape:
+                    RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 elevation: 0,
               ),
               child: Text(
@@ -933,7 +1020,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final bgColor =
+        isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
 
@@ -944,9 +1032,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
           child: SingleChildScrollView(
             child: Column(
               children: [
-                LuxuryShimmerGrid(itemCount: 3, crossAxisCount: 3, childAspectRatio: 1.35),
+                LuxuryShimmerGrid(
+                    itemCount: 3, crossAxisCount: 3, childAspectRatio: 1.35),
                 SizedBox(height: 20),
-                LuxuryShimmerGrid(itemCount: 3, crossAxisCount: 3, childAspectRatio: 0.60),
+                LuxuryShimmerGrid(
+                    itemCount: 3, crossAxisCount: 3, childAspectRatio: 0.60),
               ],
             ),
           ),
@@ -963,7 +1053,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                const Icon(Icons.error_outline,
+                    color: AppColors.error, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   l10n.firestoreDataError,
@@ -979,7 +1070,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   _masterDataError!,
                   style: TextStyle(
                     fontFamily: AppTextStyles.fontFamily,
-                    color: isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary,
+                    color: isDark
+                        ? AppColors.textLightSecondary
+                        : AppColors.textDarkSecondary,
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -1038,7 +1131,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         _buildPropertyInformationSection(),
                         const SizedBox(height: 20),
                         _buildCompoundMapSection(),
-                        if (AuthService.instance.currentProfile?.isAdmin ?? false) ...[
+                        if (AuthService.instance.currentProfile?.isAdmin ??
+                            false) ...[
                           const SizedBox(height: 20),
                           _buildCustomerInformationSection(),
                         ],
@@ -1074,7 +1168,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       ],
                     ] else ...[
                       const SizedBox(height: 24),
-                      _buildProjectComingSoonCard(_selectedCompound?.title ?? 'Project'),
+                      _buildProjectComingSoonCard(
+                          _selectedCompound?.title ?? 'Project'),
                     ],
                   ],
                 ),
@@ -1133,7 +1228,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
+          const Icon(Icons.warning_amber_rounded,
+              color: AppColors.error, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -1154,7 +1250,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
   Widget _buildProjectComingSoonCard(String projectName) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1221,11 +1318,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
     final rawCompoundTitle = _selectedCompound?.title ?? 'Sky Hills (سكي هيلز)';
     final compoundTitle = rawCompoundTitle.toLowerCase().contains('lamar')
         ? 'Lamar (SOON • قريباً)'
-        : (rawCompoundTitle.toLowerCase().contains('sky') ? 'Sky Hills (سكي هيلز)' : rawCompoundTitle);
+        : (rawCompoundTitle.toLowerCase().contains('sky')
+            ? 'Sky Hills (سكي هيلز)'
+            : rawCompoundTitle);
 
     final accessibleUnits = _userAccessibleUnits;
     final isMultiUnit = accessibleUnits.length > 1;
@@ -1240,11 +1340,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
             children: [
               // Greeting & Location Selector
               GestureDetector(
-                onTap: isMultiUnit ? _showAssetPickerBottomSheet : _showUnitSpecificationsBottomSheet,
+                onTap: isMultiUnit
+                    ? _showAssetPickerBottomSheet
+                    : _showUnitSpecificationsBottomSheet,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on_rounded, color: AppColors.accent, size: 16),
+                    const Icon(Icons.location_on_rounded,
+                        color: AppColors.accent, size: 16),
                     const SizedBox(width: 4),
                     Text(
                       compoundTitle,
@@ -1257,14 +1360,16 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     ),
                     if (isMultiUnit) ...[
                       const SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down_rounded, color: textMuted, size: 16),
+                      Icon(Icons.keyboard_arrow_down_rounded,
+                          color: textMuted, size: 16),
                     ],
                   ],
                 ),
               ),
               // Verified Status Pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withAlpha(isDark ? 40 : 20),
                   borderRadius: AppBorderRadius.pill,
@@ -1272,7 +1377,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.verified_rounded, color: AppColors.accent, size: 13),
+                    const Icon(Icons.verified_rounded,
+                        color: AppColors.accent, size: 13),
                     const SizedBox(width: 4),
                     Text(
                       l10n.verifiedStatus,
@@ -1317,7 +1423,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
   Widget _buildPillSearchBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
     final cardAltBg = isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt;
     final accessibleUnits = _userAccessibleUnits;
 
@@ -1346,15 +1453,19 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     color: textMuted,
                     fontSize: 12.5,
                   ),
-                  prefixIcon: Icon(Icons.search_rounded, color: textMuted, size: 20),
+                  prefixIcon:
+                      Icon(Icons.search_rounded, color: textMuted, size: 20),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 onSubmitted: (query) {
                   if (query.trim().isEmpty) return;
                   final q = query.trim().toLowerCase();
                   final match = accessibleUnits.firstWhere(
-                    (u) => u.unitNumber.toLowerCase().contains(q) || u.id.toLowerCase().contains(q),
+                    (u) =>
+                        u.unitNumber.toLowerCase().contains(q) ||
+                        u.id.toLowerCase().contains(q),
                     orElse: () => _selectedUnit ?? accessibleUnits.first,
                   );
                   _onUnitSelected(match);
@@ -1373,7 +1484,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                 shape: BoxShape.circle,
                 boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
               ),
-              child: const Icon(Icons.tune_rounded, color: AppColors.accent, size: 20),
+              child: const Icon(Icons.tune_rounded,
+                  color: AppColors.accent, size: 20),
             ),
           ),
         ],
@@ -1408,11 +1520,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? (isDark ? AppColors.accent : const Color(0xFF1B1E28))
-                      : (isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt),
+                      : (isDark
+                          ? AppColors.darkCardAlt
+                          : AppColors.lightCardAlt),
                   borderRadius: AppBorderRadius.pill,
                   boxShadow: isSelected
                       ? (isDark ? AppShadows.darkSoft : AppShadows.soft)
@@ -1426,7 +1541,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       size: 15,
                       color: isSelected
                           ? Colors.white
-                          : (isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary),
+                          : (isDark
+                              ? AppColors.textLightSecondary
+                              : AppColors.textDarkSecondary),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -1435,9 +1552,12 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         fontFamily: AppTextStyles.fontFamily,
                         color: isSelected
                             ? Colors.white
-                            : (isDark ? AppColors.textLight : AppColors.textDark),
+                            : (isDark
+                                ? AppColors.textLight
+                                : AppColors.textDark),
                         fontSize: 11.5,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1455,15 +1575,21 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unit = _selectedUnit;
     final compound = _selectedCompound;
-    final buildingName = _selectedBuilding?.name ?? unit?.buildingId ?? 'Building B207';
+    final buildingName =
+        _selectedBuilding?.name ?? unit?.buildingId ?? 'Building B207';
     final unitNumber = unit?.unitNumber ?? 'B01-207';
-    final config = unit?.configuration.isNotEmpty == true ? unit!.configuration : '2 Bedroom Suite';
+    final config = unit?.configuration.isNotEmpty == true
+        ? unit!.configuration
+        : '2 Bedroom Suite';
     final areaSqm = unit?.areaSquareMeters ?? 4303.0;
     final priceValuation = unit?.priceEGP ?? 12450000;
 
-    final heroCompTitle = (compound != null && !compound.title.toLowerCase().contains('lamar'))
-        ? (compound.title.toLowerCase().contains('sky') ? 'Sky Hills (سكي هيلز)' : compound.title)
-        : 'Sky Hills (سكي هيلز)';
+    final heroCompTitle =
+        (compound != null && !compound.title.toLowerCase().contains('lamar'))
+            ? (compound.title.toLowerCase().contains('sky')
+                ? 'Sky Hills (سكي هيلز)'
+                : compound.title)
+            : 'Sky Hills (سكي هيلز)';
 
     final isMultiUnit = _userAccessibleUnits.length > 1;
 
@@ -1514,12 +1640,15 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: AppColors.success,
                           borderRadius: AppBorderRadius.pill,
                           boxShadow: [
-                            BoxShadow(color: AppColors.success.withAlpha(120), blurRadius: 6),
+                            BoxShadow(
+                                color: AppColors.success.withAlpha(120),
+                                blurRadius: 6),
                           ],
                         ),
                         child: Text(
@@ -1535,7 +1664,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: Colors.white.withAlpha(35),
                           borderRadius: AppBorderRadius.pill,
@@ -1583,8 +1713,13 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           ),
                           duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: newlySaved ? AppColors.accent : (isDark ? AppColors.darkCard : AppColors.textDark),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          backgroundColor: newlySaved
+                              ? AppColors.accent
+                              : (isDark
+                                  ? AppColors.darkCard
+                                  : AppColors.textDark),
                         ),
                       );
                     },
@@ -1593,21 +1728,29 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: _selectedUnit != null && _bookmarkedUnitIds.contains(_selectedUnit!.id)
+                        color: _selectedUnit != null &&
+                                _bookmarkedUnitIds.contains(_selectedUnit!.id)
                             ? AppColors.accent
                             : Colors.white.withAlpha(40),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _selectedUnit != null && _bookmarkedUnitIds.contains(_selectedUnit!.id)
+                          color: _selectedUnit != null &&
+                                  _bookmarkedUnitIds.contains(_selectedUnit!.id)
                               ? AppColors.accent
                               : Colors.white.withAlpha(60),
                         ),
-                        boxShadow: _selectedUnit != null && _bookmarkedUnitIds.contains(_selectedUnit!.id)
-                            ? [BoxShadow(color: AppColors.accent.withAlpha(120), blurRadius: 8)]
+                        boxShadow: _selectedUnit != null &&
+                                _bookmarkedUnitIds.contains(_selectedUnit!.id)
+                            ? [
+                                BoxShadow(
+                                    color: AppColors.accent.withAlpha(120),
+                                    blurRadius: 8)
+                              ]
                             : null,
                       ),
                       child: Icon(
-                        _selectedUnit != null && _bookmarkedUnitIds.contains(_selectedUnit!.id)
+                        _selectedUnit != null &&
+                                _bookmarkedUnitIds.contains(_selectedUnit!.id)
                             ? Icons.bookmark_rounded
                             : Icons.bookmark_border_rounded,
                         color: Colors.white,
@@ -1629,7 +1772,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: AppColors.accent, size: 13),
+                      const Icon(Icons.location_on_rounded,
+                          color: AppColors.accent, size: 13),
                       const SizedBox(width: 4),
                       Text(
                         '$heroCompTitle • $buildingName',
@@ -1687,9 +1831,12 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
                   // Floating Action Pill Button (Dribbble Signature)
                   GestureDetector(
-                    onTap: isMultiUnit ? _showAssetPickerBottomSheet : _showUnitSpecificationsBottomSheet,
+                    onTap: isMultiUnit
+                        ? _showAssetPickerBottomSheet
+                        : _showUnitSpecificationsBottomSheet,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha(35),
                         borderRadius: AppBorderRadius.pill,
@@ -1699,7 +1846,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            isMultiUnit ? 'Switch Property or View Specifications' : 'View Unit Specifications & Details',
+                            isMultiUnit
+                                ? 'Switch Property or View Specifications'
+                                : 'View Unit Specifications & Details',
                             style: const TextStyle(
                               fontFamily: AppTextStyles.fontFamily,
                               color: Colors.white,
@@ -1737,16 +1886,29 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     final unit = _selectedUnit;
     final areaSqm = unit?.areaSquareMeters ?? 4303.0;
 
     final specs = [
       {'icon': Icons.bed_rounded, 'label': 'Bedrooms', 'value': '2 Beds'},
-      {'icon': Icons.square_foot_rounded, 'label': 'Floor Area', 'value': '${areaSqm.toStringAsFixed(0)} sqm'},
-      {'icon': Icons.layers_rounded, 'label': 'Floor Level', 'value': 'Floor 2'},
-      {'icon': Icons.directions_car_rounded, 'label': 'Parking', 'value': '1 Slot'},
+      {
+        'icon': Icons.square_foot_rounded,
+        'label': 'Floor Area',
+        'value': '${areaSqm.toStringAsFixed(0)} sqm'
+      },
+      {
+        'icon': Icons.layers_rounded,
+        'label': 'Floor Level',
+        'value': 'Floor 2'
+      },
+      {
+        'icon': Icons.directions_car_rounded,
+        'label': 'Parking',
+        'value': '1 Slot'
+      },
     ];
 
     return Padding(
@@ -1770,7 +1932,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       color: AppColors.accent.withAlpha(isDark ? 35 : 18),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(s['icon'] as IconData, size: 16, color: AppColors.accent),
+                    child: Icon(s['icon'] as IconData,
+                        size: 16, color: AppColors.accent),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -1810,7 +1973,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetBg = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
     final cardAltBg = isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt;
     final accessibleUnits = _userAccessibleUnits;
 
@@ -1826,8 +1990,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: sheetBg,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                boxShadow: isDark ? AppShadows.darkElevated : AppShadows.elevated,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow:
+                    isDark ? AppShadows.darkElevated : AppShadows.elevated,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1880,14 +2046,16 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       itemCount: _effectiveCompoundsList.length,
                       itemBuilder: (context, index) {
                         final c = _effectiveCompoundsList[index];
-                        final isSelected = c.id == _selectedCompound?.id || c.title == _selectedCompound?.title;
+                        final isSelected = c.id == _selectedCompound?.id ||
+                            c.title == _selectedCompound?.title;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: GestureDetector(
                             onTap: () {
                               setSheetState(() => _selectedCompound = c);
                               setState(() => _selectedCompound = c);
-                              final isLamar = c.title.toLowerCase().contains('lamar');
+                              final isLamar =
+                                  c.title.toLowerCase().contains('lamar');
                               if (isLamar) {
                                 setState(() {
                                   _selectedUnit = null;
@@ -1896,21 +2064,28 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 Navigator.pop(context);
                                 return;
                               }
-                              final matching = accessibleUnits.where((u) =>
-                                u.compoundId == c.id ||
-                                u.parentCompoundId == c.id ||
-                                u.compoundId.toLowerCase() == c.id.toLowerCase() ||
-                                u.compoundId.toLowerCase() == c.title.toLowerCase() ||
-                                c.title.toLowerCase().contains(u.compoundId.toLowerCase())
-                              ).toList();
+                              final matching = accessibleUnits
+                                  .where((u) =>
+                                      u.compoundId == c.id ||
+                                      u.parentCompoundId == c.id ||
+                                      u.compoundId.toLowerCase() ==
+                                          c.id.toLowerCase() ||
+                                      u.compoundId.toLowerCase() ==
+                                          c.title.toLowerCase() ||
+                                      c.title
+                                          .toLowerCase()
+                                          .contains(u.compoundId.toLowerCase()))
+                                  .toList();
                               if (matching.isNotEmpty) {
                                 _onUnitSelected(matching.first);
                               }
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppColors.accent : cardAltBg,
+                                color:
+                                    isSelected ? AppColors.accent : cardAltBg,
                                 borderRadius: AppBorderRadius.pill,
                               ),
                               child: Text(
@@ -1947,11 +2122,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           if (_selectedCompound == null) return true;
                           final cId = _selectedCompound!.id.toLowerCase();
                           final cTitle = _selectedCompound!.title.toLowerCase();
-                          if (cTitle.contains('lamar') || cId.contains('lamar')) {
+                          if (cTitle.contains('lamar') ||
+                              cId.contains('lamar')) {
                             return false; // Zero units in Lamar
                           }
                           return u.compoundId.toLowerCase().contains('sky') ||
-                              u.parentCompoundId.toLowerCase().contains('sky') ||
+                              u.parentCompoundId
+                                  .toLowerCase()
+                                  .contains('sky') ||
                               cTitle.contains('sky') ||
                               u.compoundId == _selectedCompound!.id;
                         }).toList();
@@ -1959,7 +2137,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         if (activeCompoundUnits.isEmpty) {
                           return Center(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24.0),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 24.0),
                               child: Text(
                                 'No units available in ${_selectedCompound?.title ?? "selected project"}',
                                 style: TextStyle(
@@ -1977,7 +2156,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           itemCount: activeCompoundUnits.length,
                           itemBuilder: (context, idx) {
                             final u = activeCompoundUnits[idx];
-                            final isSelected = u.id == _selectedUnit?.id || u.unitNumber == _selectedUnit?.unitNumber;
+                            final isSelected = u.id == _selectedUnit?.id ||
+                                u.unitNumber == _selectedUnit?.unitNumber;
                             return GestureDetector(
                               onTap: () {
                                 _onUnitSelected(u);
@@ -1988,11 +2168,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppColors.accent.withAlpha(isDark ? 40 : 20)
+                                      ? AppColors.accent
+                                          .withAlpha(isDark ? 40 : 20)
                                       : cardAltBg,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? AppColors.accent : Colors.transparent,
+                                    color: isSelected
+                                        ? AppColors.accent
+                                        : Colors.transparent,
                                     width: 1.5,
                                   ),
                                 ),
@@ -2001,24 +2184,32 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: isSelected ? AppColors.accent : (isDark ? AppColors.darkCard : Colors.white),
+                                        color: isSelected
+                                            ? AppColors.accent
+                                            : (isDark
+                                                ? AppColors.darkCard
+                                                : Colors.white),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.home_work_rounded,
-                                        color: isSelected ? Colors.white : AppColors.accent,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppColors.accent,
                                         size: 18,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Unit ${u.unitNumber}',
                                             style: TextStyle(
-                                              fontFamily: AppTextStyles.fontFamily,
+                                              fontFamily:
+                                                  AppTextStyles.fontFamily,
                                               color: textColor,
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,
@@ -2028,7 +2219,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                           Text(
                                             '${u.configuration.isNotEmpty ? u.configuration : u.assetClass} • ${u.areaSquareMeters.toStringAsFixed(0)} sqm',
                                             style: TextStyle(
-                                              fontFamily: AppTextStyles.fontFamily,
+                                              fontFamily:
+                                                  AppTextStyles.fontFamily,
                                               color: textMuted,
                                               fontSize: 11.5,
                                             ),
@@ -2040,7 +2232,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                       '${(u.priceEGP / 1000000).toStringAsFixed(2)}M EGP',
                                       style: TextStyle(
                                         fontFamily: AppTextStyles.fontFamily,
-                                        color: isSelected ? AppColors.accent : textColor,
+                                        color: isSelected
+                                            ? AppColors.accent
+                                            : textColor,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -2067,12 +2261,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetBg = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
     final cardAltBg = isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt;
     final u = _selectedUnit;
     if (u == null) return;
 
-    final buildingName = _selectedBuilding?.name ?? u.buildingId ?? 'Building B207';
+    final buildingName =
+        _selectedBuilding?.name ?? u.buildingId ?? 'Building B207';
     final config = u.configuration.isNotEmpty ? u.configuration : u.assetClass;
     final areaSqm = u.areaSquareMeters;
     final priceVal = u.priceEGP;
@@ -2112,7 +2308,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.location_on_rounded, color: AppColors.accent, size: 14),
+                          const Icon(Icons.location_on_rounded,
+                              color: AppColors.accent, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             'Sky Hills (سكي هيلز) • $buildingName',
@@ -2139,7 +2336,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.success.withAlpha(isDark ? 40 : 20),
                       borderRadius: AppBorderRadius.pill,
@@ -2160,10 +2358,17 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
               // Amenity specs
               Row(
                 children: [
-                  _buildSpecTileItem(Icons.bed_rounded, '${u.parkingSpaces + 1} Beds', 'Bedrooms', isDark),
-                  _buildSpecTileItem(Icons.square_foot_rounded, '${areaSqm.toStringAsFixed(0)} sqm', 'Area', isDark),
-                  _buildSpecTileItem(Icons.layers_rounded, 'Floor ${u.unitNumber.length > 3 ? u.unitNumber[u.unitNumber.length - 3] : "2"}', 'Level', isDark),
-                  _buildSpecTileItem(Icons.directions_car_rounded, '${u.parkingSpaces} Slot', 'Parking', isDark),
+                  _buildSpecTileItem(Icons.bed_rounded,
+                      '${u.parkingSpaces + 1} Beds', 'Bedrooms', isDark),
+                  _buildSpecTileItem(Icons.square_foot_rounded,
+                      '${areaSqm.toStringAsFixed(0)} sqm', 'Area', isDark),
+                  _buildSpecTileItem(
+                      Icons.layers_rounded,
+                      'Floor ${u.unitNumber.length > 3 ? u.unitNumber[u.unitNumber.length - 3] : "2"}',
+                      'Level',
+                      isDark),
+                  _buildSpecTileItem(Icons.directions_car_rounded,
+                      '${u.parkingSpaces} Slot', 'Parking', isDark),
                 ],
               ),
               const SizedBox(height: 20),
@@ -2188,11 +2393,22 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   children: [
                     _buildSpecRow('Unit Layout', config, textColor, textMuted),
                     const Divider(height: 16),
-                    _buildSpecRow('Total Valuation', '${(priceVal / 1000000).toStringAsFixed(2)}M EGP', AppColors.accent, textMuted),
+                    _buildSpecRow(
+                        'Total Valuation',
+                        '${(priceVal / 1000000).toStringAsFixed(2)}M EGP',
+                        AppColors.accent,
+                        textMuted),
                     const Divider(height: 16),
-                    _buildSpecRow('Finishing Status', u.furnishingStatus.isNotEmpty ? u.furnishingStatus : 'Luxury Semi-Finished', textColor, textMuted),
+                    _buildSpecRow(
+                        'Finishing Status',
+                        u.furnishingStatus.isNotEmpty
+                            ? u.furnishingStatus
+                            : 'Luxury Semi-Finished',
+                        textColor,
+                        textMuted),
                     const Divider(height: 16),
-                    _buildSpecRow('Ownership', 'Verified Registered Resident', AppColors.success, textMuted),
+                    _buildSpecRow('Ownership', 'Verified Registered Resident',
+                        AppColors.success, textMuted),
                   ],
                 ),
               ),
@@ -2203,7 +2419,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     );
   }
 
-  Widget _buildSpecRow(String label, String value, Color valColor, Color labelColor) {
+  Widget _buildSpecRow(
+      String label, String value, Color valColor, Color labelColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -2228,10 +2445,12 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     );
   }
 
-  Widget _buildSpecTileItem(IconData icon, String value, String label, bool isDark) {
+  Widget _buildSpecTileItem(
+      IconData icon, String value, String label, bool isDark) {
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Expanded(
       child: Container(
@@ -2288,7 +2507,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary;
+    final textMuted =
+        isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary;
 
     if (_selectedUnit == null) return const SizedBox.shrink();
     final u = _selectedUnit!;
@@ -2296,22 +2516,59 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final bldg = _selectedBuilding;
     final proj = _selectedProject;
 
-    final String projName = (proj != null && !proj.name.toLowerCase().contains('lamar'))
-        ? proj.name
-        : 'Sky Hills';
-    final String compName = (comp != null && !comp.title.toLowerCase().contains('lamar'))
-        ? comp.title
-        : 'Sky Hills (سكي هيلز)';
+    final String projName =
+        (proj != null && !proj.name.toLowerCase().contains('lamar'))
+            ? proj.name
+            : 'Sky Hills';
+    final String compName =
+        (comp != null && !comp.title.toLowerCase().contains('lamar'))
+            ? comp.title
+            : 'Sky Hills (سكي هيلز)';
 
     final infoItems = [
-      {'label': l10n.projectName, 'val': projName, 'icon': Icons.business_rounded},
-      {'label': l10n.compoundName, 'val': compName, 'icon': Icons.location_city_rounded},
-      {'label': l10n.building, 'val': bldg?.name ?? u.buildingId ?? 'Building B208', 'icon': Icons.apartment_rounded},
-      {'label': l10n.unitNumber, 'val': u.unitNumber, 'icon': Icons.tag_rounded},
-      {'label': l10n.unitTypeConfig, 'val': u.configuration.isNotEmpty ? u.configuration : u.assetClass, 'icon': Icons.weekend_rounded},
-      {'label': l10n.unitAreaSqmSqft, 'val': '${u.areaSquareMeters.toStringAsFixed(1)} sqm (${u.areaSqFt.toStringAsFixed(0)} sqft)', 'icon': Icons.square_foot_rounded},
-      {'label': l10n.priceValuation, 'val': '${u.priceEGP.toStringAsFixed(0)} EGP', 'icon': Icons.payments_rounded},
-      {'label': l10n.ownershipStatus, 'val': _assignedCustomer != null ? l10n.soldToUser(_assignedCustomer!.fullName) : l10n.developerInventory, 'icon': Icons.verified_user_rounded},
+      {
+        'label': l10n.projectName,
+        'val': projName,
+        'icon': Icons.business_rounded
+      },
+      {
+        'label': l10n.compoundName,
+        'val': compName,
+        'icon': Icons.location_city_rounded
+      },
+      {
+        'label': l10n.building,
+        'val': bldg?.name ?? u.buildingId ?? 'Building B208',
+        'icon': Icons.apartment_rounded
+      },
+      {
+        'label': l10n.unitNumber,
+        'val': u.unitNumber,
+        'icon': Icons.tag_rounded
+      },
+      {
+        'label': l10n.unitTypeConfig,
+        'val': u.configuration.isNotEmpty ? u.configuration : u.assetClass,
+        'icon': Icons.weekend_rounded
+      },
+      {
+        'label': l10n.unitAreaSqmSqft,
+        'val':
+            '${u.areaSquareMeters.toStringAsFixed(1)} sqm (${u.areaSqFt.toStringAsFixed(0)} sqft)',
+        'icon': Icons.square_foot_rounded
+      },
+      {
+        'label': l10n.priceValuation,
+        'val': '${u.priceEGP.toStringAsFixed(0)} EGP',
+        'icon': Icons.payments_rounded
+      },
+      {
+        'label': l10n.ownershipStatus,
+        'val': _assignedCustomer != null
+            ? l10n.soldToUser(_assignedCustomer!.fullName)
+            : l10n.developerInventory,
+        'icon': Icons.verified_user_rounded
+      },
     ];
 
     return Column(
@@ -2339,7 +2596,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           color: AppColors.accent.withAlpha(isDark ? 35 : 18),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(item['icon'] as IconData, size: 16, color: AppColors.accent),
+                        child: Icon(item['icon'] as IconData,
+                            size: 16, color: AppColors.accent),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -2381,7 +2639,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
     final cust = _assignedCustomer;
     final contract = _assignedContract;
 
@@ -2420,13 +2679,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppColors.accent.withAlpha(isDark ? 40 : 25),
+                              color:
+                                  AppColors.accent.withAlpha(isDark ? 40 : 25),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.accent, width: 1.5),
+                              border: Border.all(
+                                  color: AppColors.accent, width: 1.5),
                             ),
                             child: Center(
                               child: Text(
-                                (cust?.fullName.isNotEmpty == true ? cust!.fullName[0] : 'O').toUpperCase(),
+                                (cust?.fullName.isNotEmpty == true
+                                        ? cust!.fullName[0]
+                                        : 'O')
+                                    .toUpperCase(),
                                 style: const TextStyle(
                                   fontFamily: AppTextStyles.fontFamily,
                                   color: AppColors.accent,
@@ -2463,9 +2727,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withAlpha(isDark ? 35 : 18),
+                              color:
+                                  AppColors.success.withAlpha(isDark ? 35 : 18),
                               borderRadius: AppBorderRadius.pill,
                             ),
                             child: const Text(
@@ -2487,20 +2753,26 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                if (cust?.phoneNumber != null && cust!.phoneNumber.isNotEmpty) {
-                                  launchUrl(Uri.parse('tel:${cust.phoneNumber}'));
+                                if (cust?.phoneNumber != null &&
+                                    cust!.phoneNumber.isNotEmpty) {
+                                  launchUrl(
+                                      Uri.parse('tel:${cust.phoneNumber}'));
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                                  color: isDark
+                                      ? AppColors.darkCardAlt
+                                      : AppColors.lightCardAlt,
                                   borderRadius: AppBorderRadius.pill,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.phone_rounded, color: AppColors.accent, size: 15),
+                                    const Icon(Icons.phone_rounded,
+                                        color: AppColors.accent, size: 15),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Call',
@@ -2520,20 +2792,25 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                if (cust?.phoneNumber != null && cust!.phoneNumber.isNotEmpty) {
-                                  launchUrl(Uri.parse('https://wa.me/${cust.phoneNumber.replaceAll("+", "")}'));
+                                if (cust?.phoneNumber != null &&
+                                    cust!.phoneNumber.isNotEmpty) {
+                                  launchUrl(Uri.parse(
+                                      'https://wa.me/${cust.phoneNumber.replaceAll("+", "")}'));
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withAlpha(isDark ? 35 : 18),
+                                  color: AppColors.success
+                                      .withAlpha(isDark ? 35 : 18),
                                   borderRadius: AppBorderRadius.pill,
                                 ),
                                 child: const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.chat_bubble_rounded, color: AppColors.success, size: 15),
+                                    Icon(Icons.chat_bubble_rounded,
+                                        color: AppColors.success, size: 15),
                                     SizedBox(width: 6),
                                     Text(
                                       'WhatsApp',
@@ -2553,20 +2830,25 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                if (cust?.email != null && cust!.email.isNotEmpty) {
+                                if (cust?.email != null &&
+                                    cust!.email.isNotEmpty) {
                                   launchUrl(Uri.parse('mailto:${cust.email}'));
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                                  color: isDark
+                                      ? AppColors.darkCardAlt
+                                      : AppColors.lightCardAlt,
                                   borderRadius: AppBorderRadius.pill,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.email_rounded, color: textMuted, size: 15),
+                                    Icon(Icons.email_rounded,
+                                        color: textMuted, size: 15),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Email',
@@ -2596,21 +2878,25 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary;
+    final textMuted =
+        isDark ? AppColors.textLightSecondary : AppColors.textDarkSecondary;
 
     final contract = _assignedContract;
     final ledger = _unitLedger;
     final installments = _unitInstallments;
 
-    final double contractValue = contract?.agreedTotalPrice != null && contract!.agreedTotalPrice > 0
-        ? contract.agreedTotalPrice
-        : (_selectedUnit?.priceEGP != null && _selectedUnit!.priceEGP > 0
-            ? _selectedUnit!.priceEGP
-            : (installments.isNotEmpty
-                ? installments.fold(0.0, (acc, i) => acc + i.totalAmountDue)
-                : ((ledger?.totalPaidEGP ?? 0.0) + (ledger?.totalOutstandingEGP ?? 0.0))));
+    final double contractValue =
+        contract?.agreedTotalPrice != null && contract!.agreedTotalPrice > 0
+            ? contract.agreedTotalPrice
+            : (_selectedUnit?.priceEGP != null && _selectedUnit!.priceEGP > 0
+                ? _selectedUnit!.priceEGP
+                : (installments.isNotEmpty
+                    ? installments.fold(0.0, (acc, i) => acc + i.totalAmountDue)
+                    : ((ledger?.totalPaidEGP ?? 0.0) +
+                        (ledger?.totalOutstandingEGP ?? 0.0))));
 
-    final double downPayment = contract?.downPaymentAmount ?? (contractValue * 0.10);
+    final double downPayment =
+        contract?.downPaymentAmount ?? (contractValue * 0.10);
 
     double totalPaid = 0.0;
     if (installments.isNotEmpty) {
@@ -2621,14 +2907,21 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       totalPaid = ledger.totalPaidEGP;
     }
 
-    final double outstanding = (contractValue - totalPaid).clamp(0.0, double.infinity);
-    final double percentPaid = contractValue > 0 ? (totalPaid / contractValue).clamp(0.0, 1.0) : 0.0;
+    final double outstanding =
+        (contractValue - totalPaid).clamp(0.0, double.infinity);
+    final double percentPaid =
+        contractValue > 0 ? (totalPaid / contractValue).clamp(0.0, 1.0) : 0.0;
 
     final int overdueCount = installments.where((i) => i.isOverdue).length;
 
     final double maintDeposit = (contract?.maintenanceDepositAmount ?? 0) > 0
         ? contract!.maintenanceDepositAmount
-        : (installments.where((i) => i.installmentType == InstallmentType.maintenanceFund).firstOrNull?.principalAmount ?? (contractValue * 0.08));
+        : (installments
+                .where(
+                    (i) => i.installmentType == InstallmentType.maintenanceFund)
+                .firstOrNull
+                ?.principalAmount ??
+            (contractValue * 0.08));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2675,7 +2968,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.accent.withAlpha(isDark ? 35 : 18),
                         borderRadius: AppBorderRadius.pill,
@@ -2699,8 +2993,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   child: LinearProgressIndicator(
                     value: percentPaid,
                     minHeight: 8,
-                    backgroundColor: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                    backgroundColor:
+                        isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(AppColors.accent),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -2710,7 +3006,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          color: isDark
+                              ? AppColors.darkCardAlt
+                              : AppColors.lightCardAlt,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -2743,7 +3041,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          color: isDark
+                              ? AppColors.darkCardAlt
+                              : AppColors.lightCardAlt,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -2762,7 +3062,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               '${outstanding.toStringAsFixed(0)} EGP',
                               style: TextStyle(
                                 fontFamily: AppTextStyles.fontFamily,
-                                color: overdueCount > 0 ? AppColors.error : AppColors.accent,
+                                color: overdueCount > 0
+                                    ? AppColors.error
+                                    : AppColors.accent,
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -2809,7 +3111,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final installments = _unitInstallments;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2851,10 +3154,14 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   ),
                 )
               : Column(
-                  children: (installments.length > 8 ? installments.sublist(0, 8) : installments).map((inst) {
+                  children: (installments.length > 8
+                          ? installments.sublist(0, 8)
+                          : installments)
+                      .map((inst) {
                     final isPaid = inst.isPaid;
                     final isOverdue = inst.isOverdue;
-                    final isPendingApproval = inst.status == InstallmentStatus.pendingApproval;
+                    final isPendingApproval =
+                        inst.status == InstallmentStatus.pendingApproval;
 
                     final Color statusColor = isPaid
                         ? AppColors.success
@@ -2866,15 +3173,19 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                     ? AppColors.accent
                                     : AppColors.warning;
 
-                    final dueDateStr = '${inst.dueDate.day}/${inst.dueDate.month}/${inst.dueDate.year}';
+                    final dueDateStr =
+                        '${inst.dueDate.day}/${inst.dueDate.month}/${inst.dueDate.year}';
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                        color:
+                            isDark ? AppColors.darkCard : AppColors.lightCard,
                         borderRadius: AppBorderRadius.medium,
-                        boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+                        boxShadow:
+                            isDark ? AppShadows.darkSoft : AppShadows.soft,
                       ),
                       child: Row(
                         children: [
@@ -2902,7 +3213,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  inst.installmentType == InstallmentType.maintenanceFund
+                                  inst.installmentType ==
+                                          InstallmentType.maintenanceFund
                                       ? l10n.maintDeposit
                                       : inst.installmentType.name.toUpperCase(),
                                   style: TextStyle(
@@ -2939,29 +3251,38 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               const SizedBox(height: 4),
                               if (isPendingApproval) ...[
                                 GestureDetector(
-                                  onTap: () => PaymentProofModal.showReviewModal(
+                                  onTap: () =>
+                                      PaymentProofModal.showReviewModal(
                                     context: context,
                                     installment: inst,
                                     ledgerRepo: _ledgerRepo,
-                                    isAdmin: AuthService.instance.currentProfile?.isAdmin ?? false,
-                                    clientName: AuthService.instance.currentProfile?.fullName,
-                                    unitId: _selectedUnit?.unitNumber ?? inst.unitId,
+                                    isAdmin: AuthService
+                                            .instance.currentProfile?.isAdmin ??
+                                        false,
+                                    clientName: AuthService
+                                        .instance.currentProfile?.fullName,
+                                    unitId: _selectedUnit?.unitNumber ??
+                                        inst.unitId,
                                   ),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: AppColors.warning.withAlpha(isDark ? 35 : 20),
+                                      color: AppColors.warning
+                                          .withAlpha(isDark ? 35 : 20),
                                       borderRadius: AppBorderRadius.pill,
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.hourglass_top, color: AppColors.warning, size: 10),
+                                        const Icon(Icons.hourglass_top,
+                                            color: AppColors.warning, size: 10),
                                         const SizedBox(width: 4),
                                         Text(
                                           l10n.statusWaiting,
                                           style: const TextStyle(
-                                            fontFamily: AppTextStyles.fontFamily,
+                                            fontFamily:
+                                                AppTextStyles.fontFamily,
                                             color: AppColors.warning,
                                             fontSize: 9,
                                             fontWeight: FontWeight.bold,
@@ -2972,70 +3293,121 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                   ),
                                 ),
                               ] else if (!isPaid) ...[
-                                if (AuthService.instance.currentProfile?.isAdmin ?? false) ...[
+                                if (AuthService
+                                        .instance.currentProfile?.isAdmin ??
+                                    false) ...[
                                   GestureDetector(
                                     onTap: () async {
-                                      final user = _assignedCustomer ?? UserProfile(
-                                        uid: inst.buyerUserId.isNotEmpty ? inst.buyerUserId : 'client',
-                                        email: 'client@iliving.com',
-                                        fullName: 'Client',
-                                        role: UserRole.customer,
-                                        phoneNumber: '',
-                                        createdAt: DateTime.now(),
-                                      );
-                                      final confirmData = await InstallmentPaymentConfirmDialog.show(
+                                      final user = _assignedCustomer ??
+                                          UserProfile(
+                                            uid: inst.buyerUserId.isNotEmpty
+                                                ? inst.buyerUserId
+                                                : 'client',
+                                            email: 'client@iliving.com',
+                                            fullName: 'Client',
+                                            role: UserRole.customer,
+                                            phoneNumber: '',
+                                            createdAt: DateTime.now(),
+                                          );
+                                      final confirmData =
+                                          await InstallmentPaymentConfirmDialog
+                                              .show(
                                         context: context,
                                         customer: user,
-                                        unitNumber: _selectedUnit?.unitNumber ?? inst.unitId,
-                                        contractNumber: _assignedContract?.contractNumber ?? 'CONTRACT',
+                                        unitNumber: _selectedUnit?.unitNumber ??
+                                            inst.unitId,
+                                        contractNumber:
+                                            _assignedContract?.contractNumber ??
+                                                'CONTRACT',
                                         installment: inst,
                                       );
                                       if (confirmData != null && mounted) {
-                                        final adminUid = AuthService.instance.currentProfile?.uid ?? 'admin';
-                                        final adminPaymentService = AdminPaymentActionService();
+                                        final adminUid = AuthService
+                                                .instance.currentProfile?.uid ??
+                                            'admin';
+                                        final adminPaymentService =
+                                            AdminPaymentActionService();
                                         try {
-                                          await adminPaymentService.markAsPaid(
-                                            installment: inst,
-                                            customer: user,
-                                            adminUserId: adminUid,
-                                            paymentMethod: confirmData.paymentMethod,
-                                            receiptReference: confirmData.receiptReference,
-                                            receiptPdfUrl: confirmData.receiptUrl,
-                                            notes: confirmData.notes,
-                                            paymentDate: confirmData.paymentDate,
-                                            confirmedAmount: confirmData.amountPaid,
-                                          ).timeout(const Duration(seconds: 4), onTimeout: () => MarkAsPaidResult(
-                                            payment: Payment(
-                                              id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
-                                              transactionReference: (confirmData.receiptReference != null && confirmData.receiptReference!.isNotEmpty)
-                                                  ? confirmData.receiptReference!
-                                                  : 'PAY',
-                                              contractId: inst.contractId,
-                                              installmentId: inst.id,
-                                              unitId: inst.unitId,
-                                              payerUserId: inst.buyerUserId,
-                                              paymentMethod: confirmData.paymentMethod,
-                                              amountPaid: confirmData.amountPaid,
-                                              currency: inst.currency,
-                                              status: PaymentStatus.success,
-                                              createdAt: confirmData.paymentDate,
-                                            ),
-                                            paidInstallment: inst.copyWith(
-                                              status: InstallmentStatus.paid,
-                                              paidAmount: confirmData.amountPaid,
-                                              paidAt: confirmData.paymentDate,
-                                            ),
-                                          ));
+                                          await adminPaymentService
+                                              .markAsPaid(
+                                                installment: inst,
+                                                customer: user,
+                                                adminUserId: adminUid,
+                                                paymentMethod:
+                                                    confirmData.paymentMethod,
+                                                receiptReference: confirmData
+                                                    .receiptReference,
+                                                receiptPdfUrl:
+                                                    confirmData.receiptUrl,
+                                                notes: confirmData.notes,
+                                                paymentDate:
+                                                    confirmData.paymentDate,
+                                                confirmedAmount:
+                                                    confirmData.amountPaid,
+                                              )
+                                              .timeout(
+                                                  const Duration(seconds: 4),
+                                                  onTimeout: () =>
+                                                      MarkAsPaidResult(
+                                                        payment: Payment(
+                                                          id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
+                                                          transactionReference: (confirmData
+                                                                          .receiptReference !=
+                                                                      null &&
+                                                                  confirmData
+                                                                      .receiptReference!
+                                                                      .isNotEmpty)
+                                                              ? confirmData
+                                                                  .receiptReference!
+                                                              : 'PAY',
+                                                          contractId:
+                                                              inst.contractId,
+                                                          installmentId:
+                                                              inst.id,
+                                                          unitId: inst.unitId,
+                                                          payerUserId:
+                                                              inst.buyerUserId,
+                                                          paymentMethod:
+                                                              confirmData
+                                                                  .paymentMethod,
+                                                          amountPaid:
+                                                              confirmData
+                                                                  .amountPaid,
+                                                          currency:
+                                                              inst.currency,
+                                                          status: PaymentStatus
+                                                              .success,
+                                                          createdAt: confirmData
+                                                              .paymentDate,
+                                                        ),
+                                                        paidInstallment:
+                                                            inst.copyWith(
+                                                          status:
+                                                              InstallmentStatus
+                                                                  .paid,
+                                                          paidAmount:
+                                                              confirmData
+                                                                  .amountPaid,
+                                                          paidAt: confirmData
+                                                              .paymentDate,
+                                                        ),
+                                                      ));
                                         } catch (e) {
-                                          debugPrint('[PropertyOpsDashboard] Error marking payment: $e');
+                                          debugPrint(
+                                              '[PropertyOpsDashboard] Error marking payment: $e');
                                         }
                                         if (mounted) {
                                           setState(() {
-                                            final idx = _unitInstallments.indexWhere((i) => i.id == inst.id);
+                                            final idx =
+                                                _unitInstallments.indexWhere(
+                                                    (i) => i.id == inst.id);
                                             if (idx != -1) {
-                                              _unitInstallments[idx] = _unitInstallments[idx].copyWith(
+                                              _unitInstallments[idx] =
+                                                  _unitInstallments[idx]
+                                                      .copyWith(
                                                 status: InstallmentStatus.paid,
-                                                paidAmount: confirmData.amountPaid,
+                                                paidAmount:
+                                                    confirmData.amountPaid,
                                                 paidAt: confirmData.paymentDate,
                                               );
                                             }
@@ -3044,16 +3416,24 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                       }
                                     },
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        color: (isOverdue ? AppColors.error : AppColors.accent).withAlpha(isDark ? 35 : 20),
+                                        color: (isOverdue
+                                                ? AppColors.error
+                                                : AppColors.accent)
+                                            .withAlpha(isDark ? 35 : 20),
                                         borderRadius: AppBorderRadius.pill,
                                       ),
                                       child: Text(
-                                        isOverdue ? l10n.overdue : l10n.statusUnpaid,
+                                        isOverdue
+                                            ? l10n.overdue
+                                            : l10n.statusUnpaid,
                                         style: TextStyle(
                                           fontFamily: AppTextStyles.fontFamily,
-                                          color: isOverdue ? AppColors.error : AppColors.accent,
+                                          color: isOverdue
+                                              ? AppColors.error
+                                              : AppColors.accent,
                                           fontSize: 9,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -3063,37 +3443,47 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 ] else ...[
                                   GestureDetector(
                                     onTap: () async {
-                                      final res = await PaymentProofModal.showUploadSheet(
+                                      final res = await PaymentProofModal
+                                          .showUploadSheet(
                                         context: context,
                                         installment: inst,
                                         ledgerRepo: _ledgerRepo,
                                       );
                                       if (res == true && mounted) {
                                         setState(() {
-                                          final idx = _unitInstallments.indexWhere((i) => i.id == inst.id);
+                                          final idx =
+                                              _unitInstallments.indexWhere(
+                                                  (i) => i.id == inst.id);
                                           if (idx != -1) {
-                                            _unitInstallments[idx] = _unitInstallments[idx].copyWith(
-                                              status: InstallmentStatus.pendingApproval,
+                                            _unitInstallments[idx] =
+                                                _unitInstallments[idx].copyWith(
+                                              status: InstallmentStatus
+                                                  .pendingApproval,
                                             );
                                           }
                                         });
                                       }
                                     },
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        color: AppColors.accent.withAlpha(isDark ? 35 : 20),
+                                        color: AppColors.accent
+                                            .withAlpha(isDark ? 35 : 20),
                                         borderRadius: AppBorderRadius.pill,
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.upload_file_rounded, color: AppColors.accent, size: 11),
+                                          const Icon(Icons.upload_file_rounded,
+                                              color: AppColors.accent,
+                                              size: 11),
                                           const SizedBox(width: 4),
                                           Text(
                                             l10n.payAndUploadProof,
                                             style: const TextStyle(
-                                              fontFamily: AppTextStyles.fontFamily,
+                                              fontFamily:
+                                                  AppTextStyles.fontFamily,
                                               color: AppColors.accent,
                                               fontSize: 9,
                                               fontWeight: FontWeight.bold,
@@ -3106,9 +3496,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 ],
                               ] else ...[
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: AppColors.success.withAlpha(isDark ? 35 : 20),
+                                    color: AppColors.success
+                                        .withAlpha(isDark ? 35 : 20),
                                     borderRadius: AppBorderRadius.pill,
                                   ),
                                   child: Text(
@@ -3134,7 +3526,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     );
   }
 
-  Widget _buildMiniCounter(String label, String count, Color color, bool isDark) {
+  Widget _buildMiniCounter(
+      String label, String count, Color color, bool isDark) {
     return Column(
       children: [
         Text(
@@ -3166,11 +3559,18 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
     final tickets = _unitMaintenanceTickets;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
-    final int openCount = tickets.where((t) => t.status == MaintenanceStatus.submitted || t.status == MaintenanceStatus.assigned).length;
-    final int progressCount = tickets.where((t) => t.status == MaintenanceStatus.inProgress).length;
-    final int completedCount = tickets.where((t) => t.status == MaintenanceStatus.completed).length;
+    final int openCount = tickets
+        .where((t) =>
+            t.status == MaintenanceStatus.submitted ||
+            t.status == MaintenanceStatus.assigned)
+        .length;
+    final int progressCount =
+        tickets.where((t) => t.status == MaintenanceStatus.inProgress).length;
+    final int completedCount =
+        tickets.where((t) => t.status == MaintenanceStatus.completed).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3189,16 +3589,32 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildTradeRequestCard('صيانة المياه', 'PLUMBING', Icons.water_drop_rounded, () => _showMaintenanceRequestSheet('Plumbing'), isDark),
-                  _buildTradeRequestCard('الصرف الصحي', 'DRAINAGE', Icons.waves_rounded, () => _showMaintenanceRequestSheet('Drainage'), isDark),
-                  _buildTradeRequestCard('صيانة الكهرباء', 'ELECTRICAL', Icons.electric_bolt_rounded, () => _showMaintenanceRequestSheet('Electrical'), isDark),
+                  _buildTradeRequestCard(
+                      'صيانة المياه',
+                      'PLUMBING',
+                      Icons.water_drop_rounded,
+                      () => _showMaintenanceRequestSheet('Plumbing'),
+                      isDark),
+                  _buildTradeRequestCard(
+                      'الصرف الصحي',
+                      'DRAINAGE',
+                      Icons.waves_rounded,
+                      () => _showMaintenanceRequestSheet('Drainage'),
+                      isDark),
+                  _buildTradeRequestCard(
+                      'صيانة الكهرباء',
+                      'ELECTRICAL',
+                      Icons.electric_bolt_rounded,
+                      () => _showMaintenanceRequestSheet('Electrical'),
+                      isDark),
                 ],
               ),
               const SizedBox(height: 12),
 
               // Status Counts Banner in Pill Container
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkCard : AppColors.lightCard,
                   borderRadius: AppBorderRadius.pill,
@@ -3207,9 +3623,12 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildMiniCounter(l10n.openTicketsCount, '$openCount', AppColors.warning, isDark),
-                    _buildMiniCounter(l10n.inProgressCount, '$progressCount', AppColors.accent, isDark),
-                    _buildMiniCounter(l10n.completed, '$completedCount', AppColors.success, isDark),
+                    _buildMiniCounter(l10n.openTicketsCount, '$openCount',
+                        AppColors.warning, isDark),
+                    _buildMiniCounter(l10n.inProgressCount, '$progressCount',
+                        AppColors.accent, isDark),
+                    _buildMiniCounter(l10n.completed, '$completedCount',
+                        AppColors.success, isDark),
                   ],
                 ),
               ),
@@ -3232,22 +3651,31 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       ),
                     )
                   : Column(
-                      children: (tickets.length > 4 ? tickets.sublist(0, 4) : tickets).map((tick) {
-                        final isCompleted = tick.status == MaintenanceStatus.completed;
-                        final statusColor = isCompleted ? AppColors.success : AppColors.accent;
+                      children:
+                          (tickets.length > 4 ? tickets.sublist(0, 4) : tickets)
+                              .map((tick) {
+                        final isCompleted =
+                            tick.status == MaintenanceStatus.completed;
+                        final statusColor =
+                            isCompleted ? AppColors.success : AppColors.accent;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                            color: isDark
+                                ? AppColors.darkCard
+                                : AppColors.lightCard,
                             borderRadius: AppBorderRadius.medium,
-                            boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+                            boxShadow:
+                                isDark ? AppShadows.darkSoft : AppShadows.soft,
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                isCompleted ? Icons.check_circle_rounded : Icons.build_circle_outlined,
+                                isCompleted
+                                    ? Icons.check_circle_rounded
+                                    : Icons.build_circle_outlined,
                                 color: statusColor,
                                 size: 20,
                               ),
@@ -3280,9 +3708,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: statusColor.withAlpha(isDark ? 35 : 20),
+                                  color:
+                                      statusColor.withAlpha(isDark ? 35 : 20),
                                   borderRadius: AppBorderRadius.pill,
                                 ),
                                 child: Text(
@@ -3307,9 +3737,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     );
   }
 
-  Widget _buildTradeRequestCard(String ar, String en, IconData icon, VoidCallback onTap, bool isDark) {
+  Widget _buildTradeRequestCard(
+      String ar, String en, IconData icon, VoidCallback onTap, bool isDark) {
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return InteractiveTapBounce(
       onTap: onTap,
@@ -3361,7 +3793,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final docs = _unitDocuments;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3385,11 +3818,13 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   ),
                 )
               : Column(
-                  children: (docs.length > 5 ? docs.sublist(0, 5) : docs).map((d) {
+                  children:
+                      (docs.length > 5 ? docs.sublist(0, 5) : docs).map((d) {
                     return GestureDetector(
                       onTap: () async {
                         try {
-                          await PdfDocumentGeneratorService.instance.previewOrPrintDocument(
+                          await PdfDocumentGeneratorService.instance
+                              .previewOrPrintDocument(
                             context: context,
                             document: d,
                             unit: _selectedUnit,
@@ -3410,21 +3845,26 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                          color:
+                              isDark ? AppColors.darkCard : AppColors.lightCard,
                           borderRadius: AppBorderRadius.medium,
-                          boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+                          boxShadow:
+                              isDark ? AppShadows.darkSoft : AppShadows.soft,
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.error.withAlpha(isDark ? 35 : 15),
+                                color:
+                                    AppColors.error.withAlpha(isDark ? 35 : 15),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 18),
+                              child: const Icon(Icons.picture_as_pdf_rounded,
+                                  color: AppColors.error, size: 18),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -3453,7 +3893,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.download_rounded, color: AppColors.accent, size: 20),
+                              icon: const Icon(Icons.download_rounded,
+                                  color: AppColors.accent, size: 20),
                               tooltip: 'Download PDF',
                               onPressed: () async {
                                 final messenger = ScaffoldMessenger.of(context);
@@ -3461,19 +3902,24 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 messenger.showSnackBar(
                                   SnackBar(
                                     duration: const Duration(seconds: 2),
-                                    backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+                                    backgroundColor: isDark
+                                        ? AppColors.darkCard
+                                        : AppColors.lightCard,
                                     content: Row(
                                       children: [
                                         const SizedBox(
                                           width: 14,
                                           height: 14,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.accent),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
                                             'Generating & Downloading ${d.title}...',
-                                            style: TextStyle(color: textColor, fontSize: 12),
+                                            style: TextStyle(
+                                                color: textColor, fontSize: 12),
                                           ),
                                         ),
                                       ],
@@ -3482,7 +3928,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 );
 
                                 try {
-                                  await PdfDocumentGeneratorService.instance.downloadAndShareDocument(
+                                  await PdfDocumentGeneratorService.instance
+                                      .downloadAndShareDocument(
                                     context: context,
                                     document: d,
                                     unit: _selectedUnit,
@@ -3495,7 +3942,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                     messenger.hideCurrentSnackBar();
                                     messenger.showSnackBar(
                                       SnackBar(
-                                        content: Text('Failed to download PDF: $e'),
+                                        content:
+                                            Text('Failed to download PDF: $e'),
                                         backgroundColor: AppColors.error,
                                       ),
                                     );
@@ -3518,7 +3966,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     final comp = _selectedCompound ??
         const CompoundModel(
@@ -3564,7 +4013,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                   color: AppColors.accent.withAlpha(isDark ? 35 : 18),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.map_outlined, color: AppColors.accent, size: 22),
+                child: const Icon(Icons.map_outlined,
+                    color: AppColors.accent, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -3606,7 +4056,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final title = _selectedCompound?.title ?? 'Sky Hills';
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -3627,7 +4078,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     color: AppColors.accent.withAlpha(isDark ? 35 : 18),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.accent, size: 24),
+                  child: const Icon(Icons.qr_code_scanner_rounded,
+                      color: AppColors.accent, size: 24),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -3666,10 +4118,35 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
               mainAxisSpacing: 10,
               childAspectRatio: 1.25,
               children: [
-                _buildAccessActionCard(l10n.courierQr, Icons.delivery_dining_rounded, () => _showQrPassModal(context, 'Courier'), isDark),
-                _buildAccessActionCard(l10n.visitorQr, Icons.group_rounded, () => _showQrPassModal(context, 'Visitor'), isDark),
-                _buildAccessActionCard(l10n.serviceQr, Icons.build_rounded, () => _showQrPassModal(context, 'Service Crew'), isDark),
+                _buildAccessActionCard(
+                    l10n.courierQr,
+                    Icons.delivery_dining_rounded,
+                    () => _showQrPassModal(context, 'Courier'),
+                    isDark),
+                _buildAccessActionCard(l10n.visitorQr, Icons.group_rounded,
+                    () => _showQrPassModal(context, 'Visitor'), isDark),
+                _buildAccessActionCard(l10n.serviceQr, Icons.build_rounded,
+                    () => _showQrPassModal(context, 'Service Crew'), isDark),
               ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const GatePassVerifierScreen()),
+                ),
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: const Text('Verify Gate Pass'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: AppBorderRadius.pill),
+                ),
+              ),
             ),
           ],
         ),
@@ -3686,7 +4163,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
     final cardAltBg = isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt;
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
-    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
+    final textMuted =
+        isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
     final gateService = GateService(gateRepository: FirestoreGateRepository());
 
@@ -3694,14 +4172,19 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     final phoneController = TextEditingController();
 
     int selectedDurationMinutes = 120; // Default 2 hours
-    DateTime validUntil = DateTime.now().add(Duration(minutes: selectedDurationMinutes));
+    DateTime validUntil =
+        DateTime.now().add(Duration(minutes: selectedDurationMinutes));
 
     GatePass currentPass = gateService.generatePass(
       compoundId: _selectedCompound?.id ?? 'comp_1',
       unitId: unitId,
       hostUserId: currentProfile?.id ?? 'CLIENT_01',
-      visitorName: nameController.text.trim().isEmpty ? 'Guest ($passCategory)' : nameController.text.trim(),
-      visitorPhone: phoneController.text.trim().isEmpty ? '+20 100 000 0000' : phoneController.text.trim(),
+      visitorName: nameController.text.trim().isEmpty
+          ? 'Guest ($passCategory)'
+          : nameController.text.trim(),
+      visitorPhone: phoneController.text.trim().isEmpty
+          ? '+20 100 000 0000'
+          : phoneController.text.trim(),
       passType: PassType.durationBased,
       validFrom: DateTime.now(),
       validUntil: validUntil,
@@ -3728,19 +4211,23 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
             final now = DateTime.now();
             final remainingDiff = currentPass.validUntil.difference(now);
-            final remainingSeconds = remainingDiff.inSeconds > 0 ? remainingDiff.inSeconds : 0;
+            final remainingSeconds =
+                remainingDiff.inSeconds > 0 ? remainingDiff.inSeconds : 0;
             final isExpired = remainingSeconds == 0;
 
             final hours = (remainingSeconds ~/ 3600).toString().padLeft(2, '0');
-            final minutes = ((remainingSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
+            final minutes =
+                ((remainingSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
             final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
 
-            final realQrPayload = 'https://iliving.app/gate-pass?passId=${currentPass.id}&compound=${Uri.encodeComponent(compoundTitle)}&unit=${Uri.encodeComponent(unitId)}&host=${Uri.encodeComponent(hostName)}&type=${Uri.encodeComponent(passCategory)}&validUntil=${Uri.encodeComponent(currentPass.validUntil.toIso8601String())}&token=${currentPass.qrPayloadSigned}';
+            final realQrPayload = currentPass.qrPayloadSigned;
 
             return Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBackground : AppColors.lightSurface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                color:
+                    isDark ? AppColors.darkBackground : AppColors.lightSurface,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               padding: EdgeInsets.only(
                 left: 20,
@@ -3781,16 +4268,24 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: (isExpired ? AppColors.error : AppColors.success).withAlpha(isDark ? 35 : 20),
+                                    color: (isExpired
+                                            ? AppColors.error
+                                            : AppColors.success)
+                                        .withAlpha(isDark ? 35 : 20),
                                     borderRadius: AppBorderRadius.pill,
                                   ),
                                   child: Text(
-                                    isExpired ? l10n.passExpired : l10n.liveActive,
+                                    isExpired
+                                        ? l10n.passExpired
+                                        : l10n.liveActive,
                                     style: TextStyle(
                                       fontFamily: AppTextStyles.fontFamily,
-                                      color: isExpired ? AppColors.error : AppColors.success,
+                                      color: isExpired
+                                          ? AppColors.error
+                                          : AppColors.success,
                                       fontSize: 9,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -3810,7 +4305,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           ],
                         ),
                         IconButton(
-                          icon: Icon(Icons.close_rounded, color: textMuted, size: 22),
+                          icon: Icon(Icons.close_rounded,
+                              color: textMuted, size: 22),
                           onPressed: () => Navigator.pop(modalContext),
                         ),
                       ],
@@ -3820,7 +4316,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     // Live Ticking Countdown Banner
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: isExpired
                             ? AppColors.error.withAlpha(isDark ? 35 : 15)
@@ -3831,16 +4328,24 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isExpired ? Icons.error_outline_rounded : Icons.timer_outlined,
-                            color: isExpired ? AppColors.error : AppColors.accent,
+                            isExpired
+                                ? Icons.error_outline_rounded
+                                : Icons.timer_outlined,
+                            color:
+                                isExpired ? AppColors.error : AppColors.accent,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            isExpired ? l10n.passExpiredNotice : l10n.expiresInCountdown(hours, minutes, seconds),
+                            isExpired
+                                ? l10n.passExpiredNotice
+                                : l10n.expiresInCountdown(
+                                    hours, minutes, seconds),
                             style: TextStyle(
                               fontFamily: AppTextStyles.fontFamily,
-                              color: isExpired ? AppColors.error : AppColors.accent,
+                              color: isExpired
+                                  ? AppColors.error
+                                  : AppColors.accent,
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
@@ -3881,33 +4386,49 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 onTap: () {
                                   setModalState(() {
                                     selectedDurationMinutes = mins;
-                                    validUntil = DateTime.now().add(Duration(minutes: selectedDurationMinutes));
+                                    validUntil = DateTime.now().add(Duration(
+                                        minutes: selectedDurationMinutes));
                                     currentPass = gateService.generatePass(
-                                      compoundId: _selectedCompound?.id ?? 'comp_1',
+                                      compoundId:
+                                          _selectedCompound?.id ?? 'comp_1',
                                       unitId: unitId,
-                                      hostUserId: currentProfile?.id ?? 'CLIENT_01',
-                                      visitorName: nameController.text.trim().isEmpty ? 'Guest ($passCategory)' : nameController.text.trim(),
-                                      visitorPhone: phoneController.text.trim().isEmpty ? '+20 100 000 0000' : phoneController.text.trim(),
+                                      hostUserId:
+                                          currentProfile?.id ?? 'CLIENT_01',
+                                      visitorName:
+                                          nameController.text.trim().isEmpty
+                                              ? 'Guest ($passCategory)'
+                                              : nameController.text.trim(),
+                                      visitorPhone:
+                                          phoneController.text.trim().isEmpty
+                                              ? '+20 100 000 0000'
+                                              : phoneController.text.trim(),
                                       passType: PassType.durationBased,
                                       validFrom: DateTime.now(),
                                       validUntil: validUntil,
-                                      serverSecretKey: 'iliving_gate_secret_2026',
+                                      serverSecretKey:
+                                          'iliving_gate_secret_2026',
                                     );
                                   });
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: isSelected ? AppColors.primary : cardAltBg,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : cardAltBg,
                                     borderRadius: AppBorderRadius.pill,
                                   ),
                                   child: Text(
                                     label,
                                     style: TextStyle(
                                       fontFamily: AppTextStyles.fontFamily,
-                                      color: isSelected ? Colors.white : textColor,
+                                      color:
+                                          isSelected ? Colors.white : textColor,
                                       fontSize: 11,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -3928,12 +4449,15 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: AppBorderRadius.large,
-                            boxShadow: isDark ? AppShadows.darkSoft : AppShadows.soft,
+                            boxShadow:
+                                isDark ? AppShadows.darkSoft : AppShadows.soft,
                           ),
                           child: QrCodeWidget(
                             qrData: realQrPayload,
                             size: 190,
-                            primaryColor: isExpired ? Colors.grey : const Color(0xFF1A1A2E),
+                            primaryColor: isExpired
+                                ? Colors.grey
+                                : const Color(0xFF1A1A2E),
                             backgroundColor: Colors.white,
                             repaintBoundaryKey: qrBoundaryKey,
                           ),
@@ -3949,7 +4473,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.lock_rounded, color: Colors.redAccent, size: 36),
+                                const Icon(Icons.lock_rounded,
+                                    color: Colors.redAccent, size: 36),
                                 const SizedBox(height: 8),
                                 Text(
                                   l10n.passExpired,
@@ -3978,7 +4503,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
 
                     // Pass ID
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: cardAltBg,
                         borderRadius: AppBorderRadius.pill,
@@ -3987,8 +4513,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isExpired ? Icons.error_outline_rounded : Icons.verified_rounded,
-                            color: isExpired ? AppColors.error : AppColors.accent,
+                            isExpired
+                                ? Icons.error_outline_rounded
+                                : Icons.verified_rounded,
+                            color:
+                                isExpired ? AppColors.error : AppColors.accent,
                             size: 14,
                           ),
                           const SizedBox(width: 6),
@@ -4009,14 +4538,22 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     // Optional Visitor Inputs
                     TextField(
                       controller: nameController,
-                      style: TextStyle(fontFamily: AppTextStyles.fontFamily, color: textColor, fontSize: 13),
+                      style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 13),
                       decoration: InputDecoration(
                         hintText: l10n.visitorNameOptional,
-                        hintStyle: TextStyle(fontFamily: AppTextStyles.fontFamily, color: textMuted, fontSize: 13),
+                        hintStyle: TextStyle(
+                            fontFamily: AppTextStyles.fontFamily,
+                            color: textMuted,
+                            fontSize: 13),
                         filled: true,
                         fillColor: cardAltBg,
-                        prefixIcon: Icon(Icons.person_outline_rounded, color: textMuted, size: 18),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        prefixIcon: Icon(Icons.person_outline_rounded,
+                            color: textMuted, size: 18),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: AppBorderRadius.pill,
                           borderSide: BorderSide.none,
@@ -4031,14 +4568,22 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                     TextField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
-                      style: TextStyle(fontFamily: AppTextStyles.fontFamily, color: textColor, fontSize: 13),
+                      style: TextStyle(
+                          fontFamily: AppTextStyles.fontFamily,
+                          color: textColor,
+                          fontSize: 13),
                       decoration: InputDecoration(
                         hintText: l10n.visitorMobileOptional,
-                        hintStyle: TextStyle(fontFamily: AppTextStyles.fontFamily, color: textMuted, fontSize: 13),
+                        hintStyle: TextStyle(
+                            fontFamily: AppTextStyles.fontFamily,
+                            color: textMuted,
+                            fontSize: 13),
                         filled: true,
                         fillColor: cardAltBg,
-                        prefixIcon: Icon(Icons.phone_outlined, color: textMuted, size: 18),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        prefixIcon: Icon(Icons.phone_outlined,
+                            color: textMuted, size: 18),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: AppBorderRadius.pill,
                           borderSide: BorderSide.none,
@@ -4062,7 +4607,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: AppBorderRadius.pill),
                             ),
                             icon: const Icon(Icons.share_rounded, size: 16),
                             label: const Text(
@@ -4083,8 +4629,11 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 );
                                 return;
                               }
-                              final name = nameController.text.trim().isEmpty ? 'Valued Guest' : nameController.text.trim();
-                              final shareText = '🚨 *iLiving Smart Gate Access Pass* 🚨\n\n'
+                              final name = nameController.text.trim().isEmpty
+                                  ? 'Valued Guest'
+                                  : nameController.text.trim();
+                              final shareText =
+                                  '🚨 *iLiving Smart Gate Access Pass* 🚨\n\n'
                                   '📍 Compound: $compoundTitle\n'
                                   '🚪 Unit: $unitId\n'
                                   '👤 Host: $hostName\n'
@@ -4096,7 +4645,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               await _shareQrPassWithImage(
                                 boundaryKey: qrBoundaryKey,
                                 shareText: shareText,
-                                subject: 'iLiving Smart Gate Pass • $compoundTitle • Unit $unitId',
+                                subject:
+                                    'iLiving Smart Gate Pass • $compoundTitle • Unit $unitId',
                               );
                             },
                           ),
@@ -4108,8 +4658,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             backgroundColor: const Color(0xFF25D366),
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.pill),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 14, horizontal: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: AppBorderRadius.pill),
                           ),
                           icon: const Icon(Icons.send_rounded, size: 16),
                           label: Text(
@@ -4130,7 +4682,9 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               );
                               return;
                             }
-                            final name = nameController.text.trim().isEmpty ? 'Valued Guest' : nameController.text.trim();
+                            final name = nameController.text.trim().isEmpty
+                                ? 'Valued Guest'
+                                : nameController.text.trim();
                             final text = '🚨 *iLiving Smart Gate Pass* 🚨\n'
                                 '📍 Compound: $compoundTitle\n'
                                 '🚪 Unit: $unitId\n'
@@ -4141,24 +4695,30 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                                 '🔑 Pass Code: ${currentPass.id}\n'
                                 '🔗 Verify Link: $realQrPayload\n\n'
                                 'Please scan the QR code at the security gate.';
-                            final waUrl = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(text)}');
-                            final webWaUrl = Uri.parse('https://api.whatsapp.com/send?text=${Uri.encodeComponent(text)}');
+                            final waUrl = Uri.parse(
+                                'whatsapp://send?text=${Uri.encodeComponent(text)}');
+                            final webWaUrl = Uri.parse(
+                                'https://api.whatsapp.com/send?text=${Uri.encodeComponent(text)}');
 
                             try {
                               if (await canLaunchUrl(waUrl)) {
                                 await launchUrl(waUrl);
                               } else if (await canLaunchUrl(webWaUrl)) {
-                                await launchUrl(webWaUrl, mode: LaunchMode.externalApplication);
+                                await launchUrl(webWaUrl,
+                                    mode: LaunchMode.externalApplication);
                               } else {
-                                await Clipboard.setData(ClipboardData(text: text));
+                                await Clipboard.setData(
+                                    ClipboardData(text: text));
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(l10n.gatePassCopied)),
+                                    SnackBar(
+                                        content: Text(l10n.gatePassCopied)),
                                   );
                                 }
                               }
                             } catch (_) {
-                              await Clipboard.setData(ClipboardData(text: text));
+                              await Clipboard.setData(
+                                  ClipboardData(text: text));
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(l10n.gatePassCopied)),
@@ -4175,7 +4735,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             backgroundColor: cardAltBg,
                             padding: const EdgeInsets.all(12),
                           ),
-                          icon: const Icon(Icons.copy_rounded, color: AppColors.accent, size: 20),
+                          icon: const Icon(Icons.copy_rounded,
+                              color: AppColors.accent, size: 20),
                           onPressed: () async {
                             if (isExpired) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -4186,7 +4747,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                               );
                               return;
                             }
-                            await Clipboard.setData(ClipboardData(text: realQrPayload));
+                            await Clipboard.setData(
+                                ClipboardData(text: realQrPayload));
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -4208,16 +4770,23 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
                             backgroundColor: cardAltBg,
                             padding: const EdgeInsets.all(12),
                           ),
-                          icon: const Icon(Icons.refresh_rounded, color: AppColors.accent, size: 20),
+                          icon: const Icon(Icons.refresh_rounded,
+                              color: AppColors.accent, size: 20),
                           onPressed: () {
                             setModalState(() {
-                              validUntil = DateTime.now().add(Duration(minutes: selectedDurationMinutes));
+                              validUntil = DateTime.now().add(
+                                  Duration(minutes: selectedDurationMinutes));
                               currentPass = gateService.generatePass(
                                 compoundId: _selectedCompound?.id ?? 'comp_1',
                                 unitId: unitId,
                                 hostUserId: currentProfile?.id ?? 'CLIENT_01',
-                                visitorName: nameController.text.trim().isEmpty ? 'Guest ($passCategory)' : nameController.text.trim(),
-                                visitorPhone: phoneController.text.trim().isEmpty ? '+20 100 000 0000' : phoneController.text.trim(),
+                                visitorName: nameController.text.trim().isEmpty
+                                    ? 'Guest ($passCategory)'
+                                    : nameController.text.trim(),
+                                visitorPhone:
+                                    phoneController.text.trim().isEmpty
+                                        ? '+20 100 000 0000'
+                                        : phoneController.text.trim(),
                                 passType: PassType.durationBased,
                                 validFrom: DateTime.now(),
                                 validUntil: validUntil,
@@ -4248,7 +4817,10 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     Rect? shareOrigin;
     try {
       final box = boundaryKey.currentContext?.findRenderObject() as RenderBox?;
-      if (box != null && box.hasSize && box.size.width > 0 && box.size.height > 0) {
+      if (box != null &&
+          box.hasSize &&
+          box.size.width > 0 &&
+          box.size.height > 0) {
         shareOrigin = box.localToGlobal(Offset.zero) & box.size;
       }
     } catch (_) {}
@@ -4257,7 +4829,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
       try {
         if (mounted) {
           final size = MediaQuery.of(context).size;
-          shareOrigin = Rect.fromLTWH(0, 0, size.width, size.height > 0 ? size.height / 2 : 300);
+          shareOrigin = Rect.fromLTWH(
+              0, 0, size.width, size.height > 0 ? size.height / 2 : 300);
         }
       } catch (_) {
         shareOrigin = const Rect.fromLTWH(0, 0, 300, 300);
@@ -4265,17 +4838,22 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     }
 
     try {
-      final boundary = boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
       if (boundary != null) {
         final image = await boundary.toImage(pixelRatio: 3.0);
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         if (byteData != null) {
           final bytes = byteData.buffer.asUint8List();
           final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/iliving_gate_pass_${DateTime.now().millisecondsSinceEpoch}.png');
+          final file = File(
+              '${tempDir.path}/iliving_gate_pass_${DateTime.now().millisecondsSinceEpoch}.png');
           await file.writeAsBytes(bytes);
           await Share.shareXFiles(
-            [XFile(file.path, mimeType: 'image/png', name: 'iLiving_Gate_Pass.png')],
+            [
+              XFile(file.path,
+                  mimeType: 'image/png', name: 'iLiving_Gate_Pass.png')
+            ],
             text: shareText,
             subject: subject,
             sharePositionOrigin: shareOrigin,
@@ -4294,7 +4872,8 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
     );
   }
 
-  Widget _buildAccessActionCard(String title, IconData icon, VoidCallback onTap, bool isDark) {
+  Widget _buildAccessActionCard(
+      String title, IconData icon, VoidCallback onTap, bool isDark) {
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
 
     return InteractiveTapBounce(
@@ -4346,14 +4925,19 @@ class _PropertyOpsDashboardState extends State<PropertyOpsDashboard>
               const SizedBox(
                 width: 60,
                 height: 60,
-                child: CircularProgressIndicator(color: Colors.green, strokeWidth: 4),
+                child: CircularProgressIndicator(
+                    color: Colors.green, strokeWidth: 4),
               ),
               const SizedBox(height: 24),
               const Icon(Icons.share, color: Colors.green, size: 40),
               const SizedBox(height: 16),
               Text(
                 l10n.dispatchingWhatsapp,
-                style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                style: const TextStyle(
+                    color: Colors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5),
               ),
               const SizedBox(height: 6),
               Text(
@@ -4381,7 +4965,8 @@ class _AnimatedShakeField extends StatefulWidget {
   State<_AnimatedShakeField> createState() => _AnimatedShakeFieldState();
 }
 
-class _AnimatedShakeFieldState extends State<_AnimatedShakeField> with SingleTickerProviderStateMixin {
+class _AnimatedShakeFieldState extends State<_AnimatedShakeField>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
   bool _hasError = false;
@@ -4400,7 +4985,8 @@ class _AnimatedShakeFieldState extends State<_AnimatedShakeField> with SingleTic
       TweenSequenceItem(tween: Tween(begin: 6.0, end: 6.0), weight: 2),
       TweenSequenceItem(tween: Tween(begin: 6.0, end: -4.0), weight: 2),
       TweenSequenceItem(tween: Tween(begin: -4.0, end: 0.0), weight: 1),
-    ]).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut));
+    ]).animate(
+        CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut));
     _shakeController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _shakeController.reset();
@@ -4447,7 +5033,9 @@ class _AnimatedShakeFieldState extends State<_AnimatedShakeField> with SingleTic
                   border: Border.all(
                     color: _hasError
                         ? AppColors.error
-                        : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                        : (isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder),
                     width: _hasError ? 1.5 : 1.0,
                   ),
                 ),
@@ -4460,7 +5048,8 @@ class _AnimatedShakeFieldState extends State<_AnimatedShakeField> with SingleTic
                   padding: const EdgeInsets.only(top: 6, left: 4),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 11),
+                      const Icon(Icons.error_outline,
+                          color: AppColors.error, size: 11),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(

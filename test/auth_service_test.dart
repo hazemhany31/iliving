@@ -9,6 +9,15 @@ void main() {
       AuthService.instance.logout();
     });
 
+    test('Password reset is limited to validated real accounts only', () {
+      expect(AuthService.instance.isApprovedPasswordResetEmail('admin@iliving.com.eg'), isTrue);
+      expect(AuthService.instance.isApprovedPasswordResetEmail('sterling@iliving.com.eg'), isTrue);
+      expect(AuthService.instance.isApprovedPasswordResetEmail('demo@iliving.com.eg'), isTrue);
+      expect(AuthService.instance.isApprovedPasswordResetEmail('ahmed.shazly.abdelgawad@new-build-egypt.com'), isTrue);
+      expect(AuthService.instance.isApprovedPasswordResetEmail('fictional.client.93@new-build-egypt.com'), isFalse);
+      expect(AuthService.instance.isApprovedPasswordResetEmail('nonexistent@new-build-egypt.com'), isFalse);
+    });
+
     test('Login succeeds with name-based email (ahmed.shazly.abdelgawad@new-build-egypt.com) and master password', () async {
       final success = await AuthService.instance.login(
         'ahmed.shazly.abdelgawad@new-build-egypt.com',

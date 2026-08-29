@@ -123,6 +123,7 @@ class AuthMockData {
     required String phone,
     required String code,
     List<String>? units,
+    bool mustChangePassword = false,
   }) {
     final clean = sanitizeEmail(email);
     final cleanCode = code.trim().toLowerCase();
@@ -138,6 +139,7 @@ class AuthMockData {
       'email': clean.isNotEmpty ? clean : '$cleanCode@iliving.com.eg',
       'password': password.trim(),
       'units': units ?? [],
+      'mustChangePassword': mustChangePassword,
     });
     _persistDynamicUsers();
   }

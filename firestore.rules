@@ -20,6 +20,7 @@ service cloud.firestore {
         request.auth.token.role == role || 
         request.auth.token.userRole == role ||
         request.auth.token.role == role.lower() ||
+        request.auth.token.userRole == role.lower() ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
           getUserData().role == role ||
           getUserData().role == role.lower() ||

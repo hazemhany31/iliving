@@ -14,12 +14,16 @@ class FirestoreUserRepository implements UserRepository {
   @override
   Future<UserProfile?> getUserById(String uid) async {
     try {
-      final doc = await _usersRef.doc(uid).get();
+      final doc = await _usersRef.doc(uid).get().timeout(const Duration(milliseconds: 2500));
       final data = doc.data();
       if (doc.exists && data != null) {
         return UserProfile.fromJson(data);
       }
-      final querySnap = await _usersRef.where('uid', isEqualTo: uid).limit(1).get();
+      final querySnap = await _usersRef
+          .where('uid', isEqualTo: uid)
+          .limit(1)
+          .get()
+          .timeout(const Duration(milliseconds: 2500));
       if (querySnap.docs.isNotEmpty && querySnap.docs.first.data().isNotEmpty) {
         return UserProfile.fromJson(querySnap.docs.first.data());
       }
@@ -32,7 +36,11 @@ class FirestoreUserRepository implements UserRepository {
     final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty) return null;
     try {
-      final querySnap = await _usersRef.where('email', isEqualTo: cleanEmail).limit(1).get();
+      final querySnap = await _usersRef
+          .where('email', isEqualTo: cleanEmail)
+          .limit(1)
+          .get()
+          .timeout(const Duration(milliseconds: 2500));
       if (querySnap.docs.isNotEmpty && querySnap.docs.first.data().isNotEmpty) {
         return UserProfile.fromJson(querySnap.docs.first.data());
       }

@@ -1,3 +1,5 @@
+gradle.startParameter.projectCacheDir = java.io.File("${System.getProperty("user.home")}/.gradle/caches/iliving-project-cache")
+
 pluginManagement {
     val flutterSdkPath =
         run {

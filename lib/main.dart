@@ -12,6 +12,7 @@ import 'theme/luxury_theme.dart';
 import 'screens/property_ops_dashboard.dart';
 import 'screens/document_viewer_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/change_password_screen.dart';
 import 'widgets/luxury_shimmer.dart';
 import 'widgets/offline_state_manager.dart';
 import 'models/auth_model.dart';
@@ -64,7 +65,7 @@ void main() async {
   }
   // Initialize runtime secrets (gate HMAC key, etc.) from secure storage.
   try {
-    await AppSecrets.instance.initialize();
+    await AppSecrets.instance.initialize().timeout(const Duration(seconds: 2));
   } catch (e) {
     debugPrint("[AppSecrets] Initialization failed: $e");
   }
@@ -82,22 +83,37 @@ class LuxuryRealEstateApp extends StatefulWidget {
 class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
   final SyncStateManager _syncManager = SyncStateManager();
   bool _initialized = false;
+  Timer? _safetyTimer;
 
   @override
   void initState() {
     super.initState();
+    // Safety watchdog: ensure splash screen unlocks even if platform channel hangs
+    _safetyTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted && !_initialized) {
+        setState(() {
+          _initialized = true;
+        });
+      }
+    });
     _bootstrap();
   }
 
   Future<void> _bootstrap() async {
     try {
-      await LocaleService.instance.initialize();
+      await LocaleService.instance.initialize().timeout(
+        const Duration(milliseconds: 1200),
+        onTimeout: () {},
+      );
       unawaited(_syncManager.initialize());
-      await AuthService.instance.initialize();
-      // Initialize push notification service (FCM + local notifications)
-      await PushNotificationService.instance.initialize();
-      // Do NOT await ensureSeeded() here — it can block the first frame.
-      // Schedule it after the first frame so the UI becomes interactive first.
+      await AuthService.instance.initialize().timeout(
+        const Duration(milliseconds: 2000),
+        onTimeout: () {
+          debugPrint("[Bootstrap] AuthService initialization timed out; continuing to UI.");
+        },
+      );
+      // PushNotificationService runs asynchronously in the background so it never blocks UI bootstrap
+      unawaited(PushNotificationService.instance.initialize());
     } catch (e) {
       debugPrint("Bootstrap initialization error: $e");
     } finally {
@@ -133,9 +149,9 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
     }
   }
 
-
   @override
   void dispose() {
+    _safetyTimer?.cancel();
     AuthService.instance.stateNotifier.removeListener(_onAuthChanged);
     _syncManager.dispose();
     super.dispose();
@@ -168,14 +184,21 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
                 routes: {
                   '/home': (context) {
                     final user = AuthService.instance.currentProfile;
+                    if (user != null && user.mustChangePassword) {
+                      return const ChangePasswordScreen(forced: true);
+                    }
                     if (user != null && user.isStaff) {
                       return const MainNavigationShell();
                     }
                     return const OwnerNavigationShell();
                   },
                   '/login': (context) => const LoginScreen(),
+                  '/change_password': (context) => const ChangePasswordScreen(),
                   '/admin': (context) {
                     final user = AuthService.instance.currentProfile;
+                    if (user != null && user.mustChangePassword) {
+                      return const ChangePasswordScreen(forced: true);
+                    }
                     if (user != null && user.isStaff) {
                       return const AdminPortalShell();
                     }
@@ -183,12 +206,21 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
                   },
                   '/admin/dashboard': (context) {
                     final user = AuthService.instance.currentProfile;
+                    if (user != null && user.mustChangePassword) {
+                      return const ChangePasswordScreen(forced: true);
+                    }
                     if (user != null && user.isStaff) {
                       return const ExecutiveDashboardScreen();
                     }
                     return const OwnerNavigationShell();
                   },
-                  '/owner': (context) => const OwnerNavigationShell(),
+                  '/owner': (context) {
+                    final user = AuthService.instance.currentProfile;
+                    if (user != null && user.mustChangePassword) {
+                      return const ChangePasswordScreen(forced: true);
+                    }
+                    return const OwnerNavigationShell();
+                  },
                 },
                 home: _buildInitialRoute(),
               );
@@ -206,12 +238,11 @@ class _LuxuryRealEstateAppState extends State<LuxuryRealEstateApp> {
     return ValueListenableBuilder<AuthState>(
       valueListenable: AuthService.instance.stateNotifier,
       builder: (context, authState, _) {
-        if (authState == AuthState.authenticating) {
-          return _buildSplashScreen();
-        }
-
         if (authState == AuthState.authenticated && AuthService.instance.currentProfile != null) {
           final user = AuthService.instance.currentProfile!;
+          if (user.mustChangePassword) {
+            return const ChangePasswordScreen(forced: true);
+          }
           if (user.isStaff) {
             return const MainNavigationShell();
           }

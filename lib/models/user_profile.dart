@@ -77,6 +77,7 @@ class UserProfile {
   final DateTime createdAt;
   final DateTime? lastLoginAt;
   final String? avatarUrl;
+  final bool mustChangePassword;
 
   const UserProfile({
     required this.uid,
@@ -95,6 +96,7 @@ class UserProfile {
     required this.createdAt,
     this.lastLoginAt,
     this.avatarUrl,
+    this.mustChangePassword = false,
   });
 
   bool get isVerified => kycStatus == KycStatus.verified;
@@ -147,6 +149,7 @@ class UserProfile {
       createdAt: DateTimeUtil.parse(json['createdAt']),
       lastLoginAt: DateTimeUtil.tryParse(json['lastLoginAt']),
       avatarUrl: json['avatarUrl'] as String? ?? json['avatar_url'] as String?,
+      mustChangePassword: json['mustChangePassword'] as bool? ?? false,
     );
   }
 
@@ -168,6 +171,7 @@ class UserProfile {
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'avatarUrl': avatarUrl,
+      'mustChangePassword': mustChangePassword,
     };
   }
 
@@ -188,6 +192,7 @@ class UserProfile {
     DateTime? createdAt,
     DateTime? lastLoginAt,
     String? avatarUrl,
+    bool? mustChangePassword,
     bool clearAvatar = false,
   }) {
     return UserProfile(
@@ -207,6 +212,7 @@ class UserProfile {
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
+      mustChangePassword: mustChangePassword ?? this.mustChangePassword,
     );
   }
 

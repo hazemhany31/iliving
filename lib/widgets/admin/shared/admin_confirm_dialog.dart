@@ -77,7 +77,7 @@ class _AdminConfirmDialogState extends State<AdminConfirmDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppColors.error),
         );
       }

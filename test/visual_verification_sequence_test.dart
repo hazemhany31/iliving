@@ -10,7 +10,6 @@ import 'package:iliving/models/auth_model.dart';
 import 'package:iliving/models/user_profile.dart';
 import 'package:iliving/repositories/interfaces/user_repository.dart';
 import 'package:iliving/services/auth_service.dart';
-import 'package:iliving/screens/login_screen.dart';
 
 class InMemoryUserRepository implements UserRepository {
   final Map<String, UserProfile> _usersByUid = {};

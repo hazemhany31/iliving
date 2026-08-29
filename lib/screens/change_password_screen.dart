@@ -4,7 +4,9 @@ import '../theme/app_theme.dart';
 import '../widgets/iliving_button.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({super.key});
+  final bool forced;
+
+  const ChangePasswordScreen({super.key, this.forced = false});
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
@@ -52,7 +54,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             children: [
               Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
               SizedBox(width: 10),
-              Expanded(child: Text('Password updated successfully!')),
+              Expanded(child: Text('Password updated successfully! Welcome to iLiving.')),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -61,7 +63,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       );
 
-      Navigator.of(context).pop();
+      if (widget.forced) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      } else {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -84,11 +90,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final textColor = isDark ? AppColors.textLight : AppColors.textDark;
     final textMuted = isDark ? AppColors.textLightMuted : AppColors.textDarkMuted;
 
-    return Scaffold(
-      backgroundColor: bg,
+    return PopScope(
+      canPop: !widget.forced,
+      child: Scaffold(
+        backgroundColor: bg,
       appBar: AppBar(
         title: Text(
-          'Change Password',
+          widget.forced ? 'Set New Password' : 'Change Password',
           style: TextStyle(
             color: textColor,
             fontSize: 18,
@@ -97,10 +105,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         backgroundColor: bg,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        automaticallyImplyLeading: !widget.forced,
+        leading: widget.forced
+            ? null
+            : IconButton(
+                icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -110,8 +121,35 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.forced) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withAlpha(25),
+                      borderRadius: AppBorderRadius.medium,
+                      border: Border.all(color: AppColors.accent.withAlpha(70)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.shield_rounded, color: AppColors.accent, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Mandatory First-Time Security Requirement:\nPlease set a new personal password before accessing your account.',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 Text(
-                  'Update Security Credentials',
+                  widget.forced ? 'Create Your New Password' : 'Update Security Credentials',
                   style: TextStyle(
                     color: textColor,
                     fontSize: 22,
@@ -121,7 +159,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter your current password followed by your new desired password.',
+                  'Enter your current initial password (iliving2026) followed by your new desired password.',
                   style: TextStyle(
                     color: textMuted,
                     fontSize: 14,
@@ -234,8 +272,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPasswordField({
     required TextEditingController controller,

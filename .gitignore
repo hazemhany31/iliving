@@ -52,3 +52,8 @@ ios/*_to_delete*
 ios/.*_to_delete*
 /build_old/
 /scratch/
+
+# Local Firebase auth exports and temporary import fixtures
+/temp_auth_users.json
+/test_import.json
+/bin/auth_users_import.json

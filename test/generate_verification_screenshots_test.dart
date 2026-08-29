@@ -1,17 +1,13 @@
-import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:iliving/models/auth_model.dart';
 import 'package:iliving/models/user_profile.dart';
 import 'package:iliving/models/unit_model.dart';
-import 'package:iliving/models/maintenance_request.dart';
 import 'package:iliving/services/auth_service.dart';
 import 'package:iliving/screens/login_screen.dart';
 import 'package:iliving/screens/property_ops_dashboard.dart';
